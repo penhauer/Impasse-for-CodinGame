@@ -1,3 +1,11 @@
+# Executables
+*
+!*.*
+!*/
+
+# Vscode
+.vscode/
+
 # Prerequisites
 *.d
 
@@ -25,8 +33,3 @@
 *.la
 *.a
 *.lib
-
-# Executables
-*.exe
-*.out
-*.app
