@@ -1,14 +1,23 @@
 #pragma once
 
-class Board {
+struct move {
+    int x;
+    int y;
+    int newX;
+    int newY;
+    };
+
+class GameState {
+private:
+    int turn;
+    int gameState;
+    int whiteSingles;
+    int whiteDoubles;
+    int blackSingles;
+    int blackDoubles;
+    Piece board[8][8];
 public:
-    Board();
-    ~Board();
-    void draw();
-    void update();
-    void handleInput();
-    void checkCollision();
-    void reset();
-    bool isGameOver();
-    bool isGameWon();
-    
+    void newGame();
+    void getMoves(int color);
+    void checkDiagonals(int x, int y, bool forward);
+};
