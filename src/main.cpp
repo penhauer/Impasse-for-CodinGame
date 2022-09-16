@@ -3,6 +3,6 @@
 #include <allegro5/allegro.h>
 
 int main() {
-    // create board
+    // create gamestate
     GameState gamestate = GameState();
 }

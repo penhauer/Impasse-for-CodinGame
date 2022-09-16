@@ -30,18 +30,18 @@ private:
                 // 2: (1,7), (2,6), (5,7), (6,6)
                 // -1: (0,6), (3,7), (4,6), (7,7)
                 // -2: (1,1), (2,0), (5,1), (6,0)
-                if ((j < 2) & ((i+j) % 4)) {
+                if (j < 2 && (i+j) % 4) {
                     board[i][j] = 1;
-                    piecemap[i+j*8] = Piece(1, i, j, false);
-                } else if ((j > 5) & ((i+j) % 4 == 0)) {
+                    piecemap[i+j*8] = Piece(1, false);
+                } else if (j > 5 && (i+j) % 4 == 0) {
                     board[i][j] = 2;
-                    piecemap[i+j*8] = Piece(1, i, j, true);
-                } else  if ((j > 5) & ((i+j) % 4 == 2)) {
+                    piecemap[i+j*8] = Piece(1, true);
+                } else  if ((j > 5) && ((i+j) % 4 == 2)) {
                     board[i][j] = -1;
-                    piecemap[i+j*8] = Piece(-1, i, j, false);
-                } else if ((j < 2) & ((i+j) % 4 == 2)) {
+                    piecemap[i+j*8] = Piece(-1, false);
+                } else if (j < 2 && (i+j) % 4 == 2) {
                     board[i][j] = -2;
-                    piecemap[i+j*8] = Piece(-1, i, j, true);
+                    piecemap[i+j*8] = Piece(-1, true);
                 } else {
                     board[i][j] = 0;
                 };
@@ -56,7 +56,7 @@ public:
     void makeMove(Move move) {
         MoveMap moves = getMoves(turn);
         // TODO hashmap instead of set for MoveMap with type of move and maybe already the reward
-        if (moves.count(move.first) & moves[move.first].count(move.second)) {
+        if (moves.count(move.first) && moves[move.first].count(move.second)) {
             // if move is delete piece ...
             // if move is king piece ...
             // if move is impasse ...
@@ -81,7 +81,7 @@ public:
         return moves;
         };
     int getDirection(int color, int isDouble) {
-        if ((color == 1 & !isDouble) | (color == -1 & isDouble)) {
+        if ((color == 1 && !isDouble) | (color == -1 && isDouble)) {
                 return 1;
             } else {
                 return -1;
@@ -91,7 +91,7 @@ public:
         // check diagonals forward
         int j = y;
         MoveMap movemap;
-        while ((j > 0) & (j < 8)) {
+        while (j > 0 && j < 8) {
             int j = y + 1;
             if (forward) {
                 for (int i = x + 1; i < 8; i++) {
