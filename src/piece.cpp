@@ -18,6 +18,6 @@ public:
     bool getType() { return isDouble; }
     int getColor() { return color; }
     // setters
-    void setDouble(bool isDouble) { this->isDouble = isDouble; };
+    void setType(bool isDouble) { this->isDouble = isDouble; };
     void move(int newX, int newY) { x = newX; y = newY; }
 };

@@ -1,15 +1,10 @@
 #include "../include/piece.h"
-#include "../include/board.h"
 #include <map>
-#include <vector>
-using namespace std;
+#include <set>
 
-struct Move {
-    int x;
-    int y;
-    int newX;
-    int newY;
-    };
+typedef std::pair <int, int> Move;
+typedef std::map <int, Piece> PieceMap;
+typedef std::map <int, std::set <int, int>> MoveMap;
 
 class GameState
 {
@@ -21,7 +16,7 @@ private:
     int blackSingles; //number of black singles
     int blackDoubles; //number of black doubles
     int board[8][8];
-    map <int, Piece> pieces;
+    PieceMap piecemap;
     void newGame() {
         turn = 1;
         gameState = 0;
@@ -37,16 +32,16 @@ private:
                 // -2: (1,1), (2,0), (5,1), (6,0)
                 if ((j < 2) & ((i+j) % 4)) {
                     board[i][j] = 1;
-                    pieces[i*8+j] = Piece(1, i, j, false);
+                    piecemap[i+j*8] = Piece(1, i, j, false);
                 } else if ((j > 5) & ((i+j) % 4 == 0)) {
                     board[i][j] = 2;
-                    pieces[i*8+j] = Piece(1, i, j, true);
+                    piecemap[i+j*8] = Piece(1, i, j, true);
                 } else  if ((j > 5) & ((i+j) % 4 == 2)) {
                     board[i][j] = -1;
-                    pieces[i*8+j] = Piece(-1, i, j, false);
+                    piecemap[i+j*8] = Piece(-1, i, j, false);
                 } else if ((j < 2) & ((i+j) % 4 == 2)) {
                     board[i][j] = -2;
-                    pieces[i*8+j] = Piece(-1, i, j, true);
+                    piecemap[i+j*8] = Piece(-1, i, j, true);
                 } else {
                     board[i][j] = 0;
                 };
@@ -58,20 +53,28 @@ public:
     {
         newGame();
     };
-    void getMoves(int color) {
+    void makeMove(Move move) {
+        MoveMap moves = getMoves(turn);
+        if (moves.count(move)) {
+            makeMove(move);
+        }
+            
+        turn = turn * -1;
+    };
+    MoveMap getMoves(int color) {
         // return array of possible moves
+        MoveMap moves;
         for (int i = 0; i < 8; i++) {
             for (int j = 0; j < 8; j++) {
-                Piece piece = board[i][j];
+                Piece piece = piecemap[i+j*8];
                 if (piece.getColor() == color) {
                     int direction = getDirection(piece.getColor(), piece.getType());
-                    vector<Move> moves = checkDiagonals(i, j, direction);
-                    // add moves to array
-                    } else {
-                        // do nothing
+                    MoveMap new_moves = checkDiagonals(i, j, direction);
+                    moves.insert(moves.end(), new_moves.begin(), new_moves.end());
                     };
                 };
             };
+        return moves;
         };
     int getDirection(int color, int isDouble) {
         if ((color == 1 & !isDouble) | (color == -1 & isDouble)) {
@@ -80,17 +83,16 @@ public:
                 return -1;
             };
         };
-    vector<Move> checkDiagonals(int x, int y, bool forward) {
+    MoveMap checkDiagonals(int x, int y, bool forward) {
         // check diagonals forward
         int j = y;
-        vector<Move> moves;
+        MoveMap movemap;
         while ((j > 0) & (j < 8)) {
             int j = y + 1;
             if (forward) {
                 for (int i = x + 1; i < 8; i++) {
-                    if (board[i][j] == 0) {
-                        moves.push_back(Move{x, y, i, j});
-                        // add to possible moves
+                    if (piecemap[i+j*8] == 0) {
+                        movemap[x+y*8] = Move(x+y*8,i+j*8);
                     } else {
                         break;
                     }
@@ -102,13 +104,28 @@ public:
                 j = j - 1;
             };
         };
-        return moves;
+        return movemap;
     };
-    void movePiece(int x, int y, int newX, int newY) {
+    void makeMove(Move move) {
+        int x = move.first % 8;
+        int y = move.first - x;
+        int newX = move.second % 8;
+        int newY = move.second - newX;
         board[newX][newY] = board[x][y];
-        pieces[newX*8+newY] = pieces[x*8+y];
-        pieces.erase(x*8+y);
         board[x][y] = 0;
-        turn = turn * -1;
+        piecemap[move.second] = piecemap[move.first];
+        piecemap.erase(x+y*8);
     };
+    void removePiece(int x, int y) {
+        board[x][y] = 0;
+        piecemap.erase(x+y*8);
+    };
+    void changePieceType(int x, int y) {
+        if (piecemap[x+y*8].getType() == true) {
+            piecemap[x+y*8].setType(false);
+        } else {
+            piecemap[x+y*8].setType(true);
+        };
+    };
+
 };

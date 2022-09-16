@@ -12,6 +12,6 @@ public:
     bool getType();
     int getColor();
     // setters
-    void setDouble(bool isDouble);
+    void setType(bool isDouble);
     void move(int newX, int newY);
 };
