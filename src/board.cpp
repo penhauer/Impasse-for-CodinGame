@@ -4,7 +4,7 @@
 
 typedef std::pair <int, int> Move;
 typedef std::map <int, Piece> PieceMap;
-typedef std::map <int, std::set <int, int>> MoveMap;
+typedef std::map <int, std::set <int>> MoveMap;
 
 class GameState
 {
@@ -55,8 +55,12 @@ public:
     };
     void makeMove(Move move) {
         MoveMap moves = getMoves(turn);
-        if (moves.count(move)) {
-            makeMove(move);
+        // TODO hashmap instead of set for MoveMap with type of move and maybe already the reward
+        if (moves.count(move.first) & moves[move.first].count(move.second)) {
+            // if move is delete piece ...
+            // if move is king piece ...
+            // if move is impasse ...
+            movePiece(move);
         }
             
         turn = turn * -1;
@@ -70,7 +74,7 @@ public:
                 if (piece.getColor() == color) {
                     int direction = getDirection(piece.getColor(), piece.getType());
                     MoveMap new_moves = checkDiagonals(i, j, direction);
-                    moves.insert(moves.end(), new_moves.begin(), new_moves.end());
+                    moves.insert(new_moves.begin(), new_moves.end());
                     };
                 };
             };
@@ -91,8 +95,8 @@ public:
             int j = y + 1;
             if (forward) {
                 for (int i = x + 1; i < 8; i++) {
-                    if (piecemap[i+j*8] == 0) {
-                        movemap[x+y*8] = Move(x+y*8,i+j*8);
+                    if (board[i][j] == 0) {
+                        movemap[x+y*8].insert(i, j);
                     } else {
                         break;
                     }
@@ -106,7 +110,7 @@ public:
         };
         return movemap;
     };
-    void makeMove(Move move) {
+    void movePiece(Move move) {
         int x = move.first % 8;
         int y = move.first - x;
         int newX = move.second % 8;
