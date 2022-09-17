@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../include/piece.h"
+#include "piece.h"
 #include <map>
 #include <set>
 
@@ -25,8 +25,8 @@ public:
     void makeMove(Move move);
     MoveMap getMoves(int color);
     int getDirection(int color, int isDouble);
-    MoveMap checkDiagonals(int x, int y, bool forward);
+    MoveMap checkDiagonals(int col, int row, bool forward);
     void movePiece(Move move);
-    void removePiece(int x, int y);
-    void changePieceType(int x, int y);
+    void removePiece(int col, int row);
+    void changePieceType(int col, int row);
 };

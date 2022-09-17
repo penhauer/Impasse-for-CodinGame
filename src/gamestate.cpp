@@ -1,4 +1,4 @@
-#include "../include/piece.h"
+#include "piece.h"
 #include <map>
 #include <set>
 
@@ -24,26 +24,26 @@ private:
         whiteDoubles = 6;
         blackSingles = 6;
         blackDoubles = 6;
-        for (int i = 0; i < 8; i++) {
-            for (int j = 0; j < 8; j++) {
+        for (int col = 0; col < 8; col++) {
+            for (int row = 0; row < 8; row++) {
                 // 1: (0,0), (3,1), (4,0), (1,7)
                 // 2: (1,7), (2,6), (5,7), (6,6)
                 // -1: (0,6), (3,7), (4,6), (7,7)
                 // -2: (1,1), (2,0), (5,1), (6,0)
-                if (j < 2 && (i+j) % 4) {
-                    board[i][j] = 1;
-                    piecemap[i+j*8] = Piece(1, false);
-                } else if (j > 5 && (i+j) % 4 == 0) {
-                    board[i][j] = 2;
-                    piecemap[i+j*8] = Piece(1, true);
-                } else  if ((j > 5) && ((i+j) % 4 == 2)) {
-                    board[i][j] = -1;
-                    piecemap[i+j*8] = Piece(-1, false);
-                } else if (j < 2 && (i+j) % 4 == 2) {
-                    board[i][j] = -2;
-                    piecemap[i+j*8] = Piece(-1, true);
+                if (row < 2 && (col+row) % 4) {
+                    board[col][row] = 1;
+                    piecemap[col+row*8] = Piece(1, false);
+                } else if (row > 5 && (col+row) % 4 == 0) {
+                    board[col][row] = 2;
+                    piecemap[col+row*8] = Piece(1, true);
+                } else  if ((row > 5) && ((col+row) % 4 == 2)) {
+                    board[col][row] = -1;
+                    piecemap[col+row*8] = Piece(-1, false);
+                } else if (row < 2 && (col+row) % 4 == 2) {
+                    board[col][row] = -2;
+                    piecemap[col+row*8] = Piece(-1, true);
                 } else {
-                    board[i][j] = 0;
+                    board[col][row] = 0;
                 };
             };
         };
@@ -53,6 +53,65 @@ public:
     {
         newGame();
     };
+    // getters
+    int getGameState() {
+        return gameState;
+    };
+    int getTurn() {
+        return turn;
+    };
+    int getDirection(int color, int isDouble) {
+        if ((color == 1 && !isDouble) | (color == -1 && isDouble)) {
+            return 1;
+            } else {
+                return -1;
+            };
+    };
+    // setters
+    void movePiece(Move move) {
+        int col = move.first % 8;
+        int row = move.first - col;
+        int newCol = move.second % 8;
+        int newRow = move.second - newCol;
+        board[newCol][newRow] = board[col][row];
+        board[col][row] = 0;
+        piecemap[move.second] = piecemap[move.first];
+        piecemap.erase(col+row*8);
+    };
+    void removePiece(int col, int row) {
+        board[col][row] = 0;
+        piecemap.erase(col+row*8);
+    };
+    void changePieceType(int col, int row) {
+        if (piecemap[col+row*8].getType() == true) {
+            piecemap[col+row*8].setType(false);
+        } else {
+            piecemap[col+row*8].setType(true);
+        };
+    };
+    MoveMap checkDiagonals(int col, int row, bool forward) {
+        // check diagonals forward
+        int row = row;
+        MoveMap movemap;
+        while (row > 0 && row < 8) {
+            int row = row + 1;
+            if (forward) {
+                for (int col = col + 1; col < 8; col++) {
+                    if (board[col][row] == 0) {
+                        movemap[col+row*8].insert(col, row);
+                    } else {
+                        break;
+                    }
+                }
+                // code here
+                row = row + 1;
+            } else {
+                // code here
+                row = row - 1;
+            };
+        };
+        return movemap;
+    };
     void makeMove(Move move) {
         MoveMap moves = getMoves(turn);
         // TODO hashmap instead of set for MoveMap with type of move and maybe already the reward
@@ -61,75 +120,22 @@ public:
             // if move is king piece ...
             // if move is impasse ...
             movePiece(move);
-        }
-            
+        };
         turn = turn * -1;
     };
     MoveMap getMoves(int color) {
         // return array of possible moves
         MoveMap moves;
-        for (int i = 0; i < 8; i++) {
-            for (int j = 0; j < 8; j++) {
-                Piece piece = piecemap[i+j*8];
+        for (int col = 0; col < 8; col++) {
+            for (int row = 0; row < 8; row++) {
+                Piece piece = piecemap[col+row*8];
                 if (piece.getColor() == color) {
                     int direction = getDirection(piece.getColor(), piece.getType());
-                    MoveMap new_moves = checkDiagonals(i, j, direction);
+                    MoveMap new_moves = checkDiagonals(col, row, direction);
                     moves.insert(new_moves.begin(), new_moves.end());
                     };
                 };
             };
         return moves;
         };
-    int getDirection(int color, int isDouble) {
-        if ((color == 1 && !isDouble) | (color == -1 && isDouble)) {
-                return 1;
-            } else {
-                return -1;
-            };
-        };
-    MoveMap checkDiagonals(int x, int y, bool forward) {
-        // check diagonals forward
-        int j = y;
-        MoveMap movemap;
-        while (j > 0 && j < 8) {
-            int j = y + 1;
-            if (forward) {
-                for (int i = x + 1; i < 8; i++) {
-                    if (board[i][j] == 0) {
-                        movemap[x+y*8].insert(i, j);
-                    } else {
-                        break;
-                    }
-                }
-                // code here
-                j = j + 1;
-            } else {
-                // code here
-                j = j - 1;
-            };
-        };
-        return movemap;
-    };
-    void movePiece(Move move) {
-        int x = move.first % 8;
-        int y = move.first - x;
-        int newX = move.second % 8;
-        int newY = move.second - newX;
-        board[newX][newY] = board[x][y];
-        board[x][y] = 0;
-        piecemap[move.second] = piecemap[move.first];
-        piecemap.erase(x+y*8);
-    };
-    void removePiece(int x, int y) {
-        board[x][y] = 0;
-        piecemap.erase(x+y*8);
-    };
-    void changePieceType(int x, int y) {
-        if (piecemap[x+y*8].getType() == true) {
-            piecemap[x+y*8].setType(false);
-        } else {
-            piecemap[x+y*8].setType(true);
-        };
-    };
-
 };
