@@ -22,11 +22,13 @@ private:
     PieceMap piecemap;
     void newGame();
 public:
-    void makeMove(Move move);
-    MoveMap getMoves(int color);
+    int getGameState();
+    int getTurn();
     int getDirection(int color, int isDouble);
-    MoveMap checkDiagonals(int col, int row, bool forward);
     void movePiece(Move move);
     void removePiece(int col, int row);
     void changePieceType(int col, int row);
+    MoveMap checkDiagonals(int col, int row, bool forward);
+    void makeMove(Move move);
+    MoveMap getMoves(int color);
 };
