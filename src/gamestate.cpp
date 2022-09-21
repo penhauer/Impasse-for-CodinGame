@@ -1,5 +1,6 @@
 #include <unordered_map>
 #include <unordered_set>
+#include <tuple>
 
 struct Piece
 {
@@ -22,31 +23,39 @@ typedef std::unordered_map<int, std::unordered_set<int>> MoveMap;
 // Map of the board represented by integers
 typedef std::unordered_map<int, std::unordered_map<int, int>> Board;
 
+int getPosition(int col, int row)
+{
+    return col + row * 8;
+}
+
+std::tuple<int, int> getColRow(int position) {
+    return {position % 8, position / 8};
+}
+
 class GameState
 {
-private:
+public:
     int player; // 0 = Ai vs Ai, 1 = White vs Ai, -1 = Black vs Ai, 2 = White vs Black
     int turn;         // 1 = white, -1 = black
-    int gameState;    // 0 = in progress, 1 = white win, -1 = black win
+    int state;    // 0 = in progress, 1 = white win, -1 = black win
     int whiteSingles; // number of white singles
     int whiteDoubles; // number of white doubles
     int blackSingles; // number of black singles
     int blackDoubles; // number of black doubles
     Board board;
-
     PieceMap piecemap;
-    void newGame()
+    GameState()
     {
         player = 1;
         turn = 1;
-        gameState = 0;
+        state = 0;
         whiteSingles = 6;
         whiteDoubles = 6;
         blackSingles = 6;
         blackDoubles = 6;
-        for (int row = 0; row < 8; row++)
+        for (int col = 0; col < 8; col++)
         {
-            for (int col = 0; col < 8; col++)
+            for (int row = 0; row < 8; row++)
             {
                 // 1: (0,0), (3,1), (4,0), (1,7)
                 // 2: (1,7), (2,6), (5,7), (6,6)
@@ -55,22 +64,22 @@ private:
                 if (row < 2 && (col + row) % 4 == 0)
                 {
                     board[col][row] = 1;
-                    piecemap[col + row * 8] = Piece(1, false);
+                    piecemap[getPosition(col, row)] = Piece(1, false);
                 }
                 else if (row > 5 && (col + row) % 4 == 0)
                 {
                     board[col][row] = 2;
-                    piecemap[col + row * 8] = Piece(1, true);
+                    piecemap[getPosition(col, row)] = Piece(1, true);
                 }
                 else if ((row > 5) && ((col + row) % 4 == 2))
                 {
                     board[col][row] = -1;
-                    piecemap[col + row * 8] = Piece(-1, false);
+                    piecemap[getPosition(col, row)] = Piece(-1, false);
                 }
                 else if (row < 2 && (col + row) % 4 == 2)
                 {
                     board[col][row] = -2;
-                    piecemap[col + row * 8] = Piece(-1, true);
+                    piecemap[getPosition(col, row)] = Piece(-1, true);
                 }
                 else
                 {
@@ -78,21 +87,6 @@ private:
                 };
             };
         };
-    };
-
-public:
-    GameState()
-    {
-        newGame();
-    };
-    // getters
-    int getGameState() const
-    {
-        return gameState;
-    };
-    int getTurn() const
-    {
-        return turn;
     };
     int getDirection(int color, int isDouble) const
     {
@@ -105,32 +99,30 @@ public:
             return -1;
         };
     };
-    // setters
     void movePiece(Move move)
     {
-        int col = move.from % 8;
-        int row = move.from - col;
-        int newCol = move.to % 8;
-        int newRow = move.to - newCol;
+        int col, row, newCol, newRow;
+        std::tie(col, row) = getColRow(move.from);
+        std::tie(newCol, newRow) = getColRow(move.to);
         board[newCol][newRow] = board[col][row];
         board[col][row] = 0;
         piecemap[move.to] = piecemap[move.from];
-        piecemap.erase(col + row * 8);
+        piecemap.erase(getPosition(col, row));
     };
     void removePiece(int col, int row)
     {
         board[col][row] = 0;
-        piecemap.erase(col + row * 8);
+        piecemap.erase(getPosition(col, row));
     };
     void changePieceType(int col, int row)
     {
-        if (piecemap[col + row * 8].isDouble == true)
+        if (piecemap[getPosition(col, row)].isDouble == true)
         {
-            piecemap[col + row * 8].isDouble = false;
+            piecemap[getPosition(col, row)].isDouble = false;
         }
         else
         {
-            piecemap[col + row * 8].isDouble = true;
+            piecemap[getPosition(col, row)].isDouble = true;
         };
     };
     MoveMap checkDiagonals(int col, int row, bool forward) const
@@ -145,7 +137,7 @@ public:
                 {
                     if (board.at(col).at(row) == 0)
                     {
-                        movemap[col + row * 8].insert(col, row);
+                        movemap[getPosition(col, row)].insert(col, row);
                     }
                     else
                     {
@@ -184,7 +176,7 @@ public:
         {
             for (int row = 0; row < 8; row++)
             {
-                Piece piece = piecemap[col + row * 8];
+                Piece piece = piecemap[getPosition(col, row)];
                 if (piece.color == color)
                 {
                     int direction = getDirection(piece.color, piece.isDouble);

@@ -6,6 +6,9 @@
 # Vscode
 .vscode/
 
+# Test folder
+test/
+
 # Prerequisites
 *.d
 
