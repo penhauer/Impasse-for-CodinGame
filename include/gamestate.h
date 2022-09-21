@@ -1,13 +1,13 @@
 #pragma once
 
 #include "piece.h"
-#include <map>
+#include <unordered_map>
 #include <set>
 
 
 typedef std::pair <int, int> Move;
-typedef std::map <int, Piece> PieceMap;
-typedef std::map <int, std::set <int>> MoveMap;
+typedef std::unordered_map <int, Piece> PieceMap;
+typedef std::unordered_map <int, std::set <int>> MoveMap;
 
 class GameState
 {

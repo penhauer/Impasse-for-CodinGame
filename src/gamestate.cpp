@@ -1,10 +1,11 @@
-#include "piece.h"
-#include <map>
+//#include "piece.h"
+#include <unordered_map>
 #include <set>
 
+typedef std::pair <int, int> Piece;
 typedef std::pair<int, int> Move;
-typedef std::map<int, Piece> PieceMap;
-typedef std::map<int, std::set<int>> MoveMap;
+typedef std::unordered_map<int, Piece> PieceMap;
+typedef std::unordered_map<int, std::set<int>> MoveMap;
 
 class GameState
 {
@@ -67,15 +68,15 @@ public:
         newGame();
     };
     // getters
-    int getGameState()
+    int getGameState() const
     {
         return gameState;
     };
-    int getTurn()
+    int getTurn() const
     {
         return turn;
     };
-    int getDirection(int color, int isDouble)
+    int getDirection(int color, int isDouble) const
     {
         if ((color == 1 && !isDouble) | (color == -1 && isDouble))
         {
@@ -114,7 +115,7 @@ public:
             piecemap[col + row * 8].setType(true);
         };
     };
-    MoveMap checkDiagonals(int col, int row, bool forward)
+    MoveMap checkDiagonals(int col, int row, bool forward) const
     {
         // check diagonals forward
         int row = row;
