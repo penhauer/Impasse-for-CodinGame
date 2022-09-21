@@ -1,13 +1,13 @@
 #pragma once
 
-#include "piece.h"
 #include <unordered_map>
 #include <set>
 
-
-typedef std::pair <int, int> Move;
-typedef std::unordered_map <int, Piece> PieceMap;
-typedef std::unordered_map <int, std::set <int>> MoveMap;
+struct Piece;
+struct Move;
+typedef PieceMap;
+typedef MoveMap;
+typedef Board;
 
 class GameState
 {
@@ -18,7 +18,7 @@ private:
     int whiteDoubles; //number of white doubles
     int blackSingles; //number of black singles
     int blackDoubles; //number of black doubles
-    int board[8][8];
+    Board board;
     PieceMap piecemap;
     void newGame();
 public:
