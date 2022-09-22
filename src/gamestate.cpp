@@ -2,35 +2,43 @@
 #include <unordered_set>
 #include <tuple>
 
-// Simple struct to represent a move
-struct Move {
-    int piece;
-    std::pair<int,int> from;
-    std::pair<int,int> to;
-};
 
 // Map of the board represented by integers
 typedef std::map<int, std::map<int, int>> Board;
 
+// Position on the board
+typedef std::pair<int, int> Pos;
 // Map of all possible moves at the moment
-typedef std::map<std::pair<int,int>, std::unordered_set<int>> MoveMap;
+typedef std::unordered_set<Pos> MoveSet;
+typedef std::pair<Pos, MoveSet> MoveSetPair;
+typedef std::map<Pos, MoveSet> MoveMap;
 
-struct Pieces {
+// Simple struct to represent a move
+struct Move
+{
+    int piece;
+    Pos from;
+    Pos to;
+};
+
+struct Pieces
+{
     int whiteSingles; // number of white singles
     int whiteDoubles; // number of white doubles
     int blackSingles; // number of black singles
     int blackDoubles; // number of black doubles
-    Pieces () : whiteSingles(6), whiteDoubles(6), blackSingles(6), blackDoubles(6) {};
+    Pieces() : whiteSingles(6), whiteDoubles(6), blackSingles(6), blackDoubles(6){};
 };
 
 class GameState
 {
 public:
     int player; // 0 = Ai vs Ai, 1 = White vs Ai, -1 = Black vs Ai, 2 = White vs Black
-    int turn;         // 1 = white, -1 = black
-    int state;    // 0 = in progress, 1 = white win, -1 = black win
+    int turn;   // 1 = white, -1 = black
+    int state;  // 0 = in progress, 1 = white win, -1 = black win
     Pieces pieces;
     Board board;
+    MoveMap movemap;
     GameState()
     {
         player = 1;
@@ -68,78 +76,155 @@ public:
             };
         };
     };
-    int pieceDirection(int piece) const
+    int pieceDirection(const int &piece) const
     {
         return (piece == 1 || piece == -2) ? 1 : -1;
     };
-    void movePiece(const Move& move)
+    void movePiece(const Move &move)
     {
         board[move.to.first][move.to.second] = board[move.from.first][move.from.second];
         board[move.from.first][move.from.second] = 0;
     };
-    void changePieceType(int col, int row) {
-        board[col][row] = board[col][row] % 2 == 0 ? board[col][row] / 2 : board[col][row] * 2;
+    void removePiece(const Pos& pos) {
+        int& piece = board[pos.first][pos.second];
+        switch (piece) {
+            case 1:
+                pieces.whiteSingles--;
+                break;
+            case 2:
+                pieces.whiteDoubles--;
+                break;
+            case -1:
+                pieces.blackSingles--;
+                break;
+            case -2:
+                pieces.blackDoubles--;
+                break;
+        }
+        piece = 0;
     };
-    MoveMap checkDiagonals(int col, int row) const
+    void changePieceType(const Move& move)
+    {
+        int& piece = board[move.from.first][move.from.second];
+        switch (piece) {
+        case 1:
+            piece = 2;
+            break;
+        case 2:
+            piece = 1;
+            break;
+        case -1:
+            piece = -2;
+            break;
+        case -2:
+            piece = -1;
+            break;
+        };
+        removePiece(move.remove); // TODO
+    };
+    MoveSetPair checkPieceDiagonals(const int &col, const int &row)
     {
         // check diagonals forward
-        MoveMap movemap;
-        while (row < 8)
+        const int &piece = board[col][row];
+        const int &direction = pieceDirection(piece);
+        MoveSetPair movesetpair;
+        movesetpair.first = std::make_pair(col, row);
+        // right
+        for (int c = col + 1; c < 8; c++)
         {
-                for (col < 8; col++)
-                {
-                    int piece = board[col][row];
-                    if (pieceDirection() == 1) {
-                    if (board.at(col).at(row) == 0)
-                    {
-                        movemap[getPosition(col, row)].insert(col, row);
-                    }
-                    else
-                    {
-                        break;
-                    }
-                };
-                // code here
-                row = row + 1;
+            int r = row + direction * (c - col);
+            if (r < 0 || r > 7)
+                break;
+            const int &square = board[c][r];
+            // transpose
+            if (c - col == 1 && (square + piece) % 3 == 0)
+            {
+                movesetpair.second.insert(std::make_pair(c, r));
+                break;
+            }
+            // slide
+            else if (square == 0)
+            {
+                movesetpair.second.insert(std::make_pair(c, r));
             }
             else
             {
-                // code here
-                row = row - 1;
-            };
+                break;
+            }
         };
-        return movemap;
-    };
-    void makeMove(Move move)
-    {
-        MoveMap moves = getMoves(turn);
-        // TODO hashmap instead of set for MoveMap with type of move and maybe already the reward
-        if (moves.count(move.from) && moves[move.from].count(move.to))
+        // left
+        for (int c = col - 1; c >= 0; c--)
         {
-            // if move is delete piece ...
-            // if move is king piece ...
-            // if move is impasse ...
-            movePiece(move);
+            int r = row + direction * (col - c);
+            if (r < 0 || r > 7)
+                break;
+            const int &square = board[c][r];
+            // transpose
+            if (col - c == 1 && (square + piece) % 3 == 0)
+            {
+                movesetpair.second.insert(std::make_pair(c, r));
+                break;
+                // slide
+            }
+            else if (square == 0)
+            {
+                movesetpair.second.insert(std::make_pair(c, r));
+            }
+            else
+            {
+                break;
+            }
         };
-        turn = turn * -1;
+        return movesetpair;
     };
-    MoveMap getMoves(int color)
+    void makeMoveMap()
     {
+        movemap.clear();
         // return array of possible moves
-        MoveMap moves;
         for (int col = 0; col < 8; col++)
         {
             for (int row = 0; row < 8; row++)
             {
-                Piece piece = piecemap[getPosition(col, row)];
-                if (piece.color == color)
+                const int &piece = board[col][row];
+                if (piece * turn > 0) // if same color
                 {
-                    int direction = pieceDirection(piece.color, piece.isDouble);
-                    MoveMap new_moves = checkDiagonals(col, row, direction);
-                    moves.insert(new_moves.begin(), new_moves.end());
+                    MoveSetPair movesetpair = checkPieceDiagonals(col, row);
+                    if (movesetpair.second.size() > 0)
+                    {
+                        movemap[movesetpair.first] = movesetpair.second;
+                    }
                 };
             };
         };
-        return moves;
+        if (movemap.size() == 0)
+        {
+            MoveSetPair deleteable = checkDeleteable();
+            if (deleteable.second.size() > 0)
+            {
+                movemap[deleteable.first] = deleteable.second;
+            }
+        };
+    };
+    MoveSetPair checkDeleteable() {
+        // TODO implement
+    };
+    void makeMove(const Move& move)
+    {
+        // if king / bearoff
+        if (board[move.from.first][move.from.second] == 1 || board[move.from.first][move.from.second] == -2)
+        {
+            if (move.to.second == 7)
+            {
+                changePieceType(move);
+            }
+        };
+        // if move is delete piece ...
+        // if move is king piece ...
+        movePiece(move);
+        turn = turn * -1; //because of the way the removal is implemented (after main move, and we want to visualize it)
+        // one way to handle it is remove turn = turn * -1 from here, and handle the turns in main.cpp.
+        // However then the changePieceType has to be changed, as Move shouldn't include the remove piece, instead only once the piece moves to the last row,
+        // should there be a mandatory next move, to crown / bearoff the piece, using changepiecetype
+        makeMoveMap();
     };
 };

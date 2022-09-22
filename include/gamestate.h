@@ -26,7 +26,7 @@ public:
     void movePiece(Move move);
     void removePiece(int col, int row);
     void changePieceType(int col, int row);
-    MoveMap checkDiagonals(int col, int row, bool forward);
+    MoveMap checkPieceDiagonals(int col, int row, bool forward);
     void makeMove(Move move);
     MoveMap getMoves(int color);
 };
