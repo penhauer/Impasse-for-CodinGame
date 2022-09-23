@@ -2,6 +2,7 @@ class Ai
 {
 private:
 public:
-    Ai();
-    ~Ai();
+    Ai(int color) : color(color) {};
+    int evaluateBoard();
+    void orderMoves();
 };

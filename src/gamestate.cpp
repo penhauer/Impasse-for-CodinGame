@@ -1,26 +1,35 @@
 #include <map>
-#include <unordered_set>
-#include <tuple>
-
+#include <unordered_map>
+#include <set>
+#include <iostream>
 
 // Map of the board represented by integers
 typedef std::map<int, std::map<int, int>> Board;
 
-// Position on the board
-typedef std::pair<int, int> Pos;
-// Map of all possible moves at the moment
-typedef std::unordered_set<Pos> MoveSet;
-typedef std::pair<Pos, MoveSet> MoveSetPair;
-typedef std::map<Pos, MoveSet> MoveMap;
-
+// Simple struct to represent a position on the board
+struct Pos {
+    int col;
+    int row;
+    Pos(int col, int row) : col(col), row(row) {};
+};
 // Simple struct to represent a move
 struct Move
 {
-    int piece;
     Pos from;
     Pos to;
+    Pos remove;
+    Move(Pos from, Pos to, Pos remove = Pos(-1, -1)) : from(from), to(to), remove(remove) {};
 };
 
+// Map of all possible moves at the moment
+typedef std::set<Pos> MoveSet;
+typedef std::unordered_map<Pos, MoveSet> MoveMap;
+
+struct MoveSetPair {
+    Pos pos;
+    MoveSet moves;
+    MoveSetPair(Pos pos, MoveSet moves) : pos(pos), moves(moves) {};
+};
 struct Pieces
 {
     int whiteSingles; // number of white singles
@@ -82,11 +91,11 @@ public:
     };
     void movePiece(const Move &move)
     {
-        board[move.to.first][move.to.second] = board[move.from.first][move.from.second];
-        board[move.from.first][move.from.second] = 0;
+        board[move.to.col][move.to.row] = board[move.from.col][move.from.row];
+        board[move.from.col][move.from.row] = 0;
     };
     void removePiece(const Pos& pos) {
-        int& piece = board[pos.first][pos.second];
+        int& piece = board[pos.col][pos.row];
         switch (piece) {
             case 1:
                 pieces.whiteSingles--;
@@ -100,12 +109,19 @@ public:
             case -2:
                 pieces.blackDoubles--;
                 break;
-        }
+        };
         piece = 0;
+        // chickendinner
+        if (pieces.whiteSingles == 0 && pieces.whiteDoubles == 0) {
+            state = -1;
+        }
+        else if (pieces.blackSingles == 0 && pieces.blackDoubles == 0) {
+            state = 1;
+        }
     };
     void changePieceType(const Move& move)
     {
-        int& piece = board[move.from.first][move.from.second];
+        int& piece = board[move.from.col][move.from.row];
         switch (piece) {
         case 1:
             piece = 2;
@@ -120,15 +136,13 @@ public:
             piece = -1;
             break;
         };
-        removePiece(move.remove); // TODO
     };
     MoveSetPair checkPieceDiagonals(const int &col, const int &row)
     {
         // check diagonals forward
         const int &piece = board[col][row];
         const int &direction = pieceDirection(piece);
-        MoveSetPair movesetpair;
-        movesetpair.first = std::make_pair(col, row);
+        MoveSet moves;
         // right
         for (int c = col + 1; c < 8; c++)
         {
@@ -139,13 +153,13 @@ public:
             // transpose
             if (c - col == 1 && (square + piece) % 3 == 0)
             {
-                movesetpair.second.insert(std::make_pair(c, r));
+                moves.insert(Pos(c, r));
                 break;
             }
             // slide
             else if (square == 0)
             {
-                movesetpair.second.insert(std::make_pair(c, r));
+                moves.insert(Pos(c, r));
             }
             else
             {
@@ -162,19 +176,20 @@ public:
             // transpose
             if (col - c == 1 && (square + piece) % 3 == 0)
             {
-                movesetpair.second.insert(std::make_pair(c, r));
+                moves.insert(Pos(c, r));
                 break;
                 // slide
             }
             else if (square == 0)
             {
-                movesetpair.second.insert(std::make_pair(c, r));
+                moves.insert(Pos(c, r));
             }
             else
             {
                 break;
             }
         };
+        MoveSetPair movesetpair(Pos(col, row), moves);// = MoveSetPair(Pos(col, row), MoveSet());
         return movesetpair;
     };
     void makeMoveMap()
@@ -189,9 +204,9 @@ public:
                 if (piece * turn > 0) // if same color
                 {
                     MoveSetPair movesetpair = checkPieceDiagonals(col, row);
-                    if (movesetpair.second.size() > 0)
+                    if (movesetpair.moves.size() > 0)
                     {
-                        movemap[movesetpair.first] = movesetpair.second;
+                        movemap[movesetpair.pos] = movesetpair.moves;
                     }
                 };
             };
@@ -199,24 +214,42 @@ public:
         if (movemap.size() == 0)
         {
             MoveSetPair deleteable = checkDeleteable();
-            if (deleteable.second.size() > 0)
+            if (deleteable.moves.size() > 0)
             {
-                movemap[deleteable.first] = deleteable.second;
+                movemap[deleteable.pos] = deleteable.moves;
             }
         };
     };
     MoveSetPair checkDeleteable() {
-        // TODO implement
+        for (int col = 0; col < 8; col++)
+        {
+            for (int row = 0; row < 8; row++)
+            {
+                const int &piece = board[col][row];
+                if ((piece * turn > 0) && /*in last row*/ )
+                {
+                    MoveSet moves;
+                    moves.insert(Pos(col, row));
+                    MoveSetPair movesetpair = MoveSetPair(Pos(col, row), moves);
+                    return movesetpair;
+                };
+            };
+        };
     };
     void makeMove(const Move& move)
     {
         // if king / bearoff
-        if (board[move.from.first][move.from.second] == 1 || board[move.from.first][move.from.second] == -2)
+        if (move.remove.)
         {
-            if (move.to.second == 7)
-            {
-                changePieceType(move);
-            }
+            changePieceType(move);
+        }
+        else if (pieceDirection(move.piece) == -1 && move.to.row == 0)
+        {
+            changePieceType(move);
+        }
+        else
+        {
+            movePiece(move);
         };
         // if move is delete piece ...
         // if move is king piece ...
@@ -228,3 +261,9 @@ public:
         makeMoveMap();
     };
 };
+int main()
+{
+    GameState gamestate = GameState();
+    gamestate.makeMoveMap();
+    return 0;
+}
