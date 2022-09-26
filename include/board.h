@@ -3,7 +3,7 @@
 #include <string>
 #include <map>
 
-typedef Board;
+typedef BoardArray;
 struct PieceCount {
     int whiteSingles;
     int whiteDoubles;
@@ -11,5 +11,15 @@ struct PieceCount {
     int blackDoubles;
 };
 
-Board get_board(bool paused);
-PieceCount get_pieces();
+class Board
+{
+public:
+    BoardArray boardarray;
+    PieceCount piececount;
+    Board();
+    void save_board();
+    void delete_board();
+private:
+    BoardArray get_board(bool paused);
+    PieceCount get_pieces();
+};

@@ -24,6 +24,24 @@ struct Move
 // Map of all possible moves at the moment
 typedef std::set<Move> MoveSet;
 typedef std::unordered_map<int, MoveSet> MoveMap;
+
+namespace std {
+    template <>
+    struct hash<Move>
+    {
+        std::size_t operator()(const Move& k) const
+        {
+            using std::size_t;
+            using std::hash;
+            using std::string;
+            return ((hash<int>()(k.from.piece)
+                    ^ (hash<int>()(k.from.pos) << 1)) >> 1)
+                    ^ (hash<int>()(k.to.piece)
+                    ^ (hash<int>()(k.to.pos) << 1)) >> 1;
+        }
+    };
+};
+
 struct PosMoveSet
 {
     int pos;
@@ -51,6 +69,7 @@ public:
         turn = 1;
         state = 0;
         board = Board();
+        makeMoveMap();
     };
     int pieceDirection(const int &piece) const
     {
@@ -58,7 +77,7 @@ public:
     };
     void removePiece(const Piece &p)
     {
-        int &piece = board[p.pos];
+        int &piece = board.boardarray[p.pos];
         switch (piece)
         {
         case 1:
@@ -87,7 +106,7 @@ public:
     };
     void changePieceType(const Piece &p)
     {
-        int &piece = board.at(p.pos);
+        int &piece = board.boardarray[p.pos];
         switch (piece)
         {
         case 1:
@@ -114,26 +133,50 @@ public:
     };
     PosMoveSet checkPieceDiagonals(const int &pos) const
     {
-        // check diagonals forward
-        const int &piece = board.at(pos);
+        const int &piece = board.boardarray[pos];
         const int &direction = pieceDirection(piece);
         MoveSet moveset;
         // right
         for (int p = pos; 0 <= p < 64; p += direction)
         {
-            const int &square = board.at(pos);
-            // transpose
-            if (p - pos == 9 * direction && (square + piece) % 3 == 0)
+            const int &square = board.boardarray[pos];
+            // transpose, but only if the piece is a double and square is 1
+            if (p - pos == 9 * direction && piece == 2 * turn && square == turn)
             {
-                Move move = Move(Piece(piece, pos), Piece(square, p));
-                moveset.insert(move);
+                // if crowning
+                if (piece % 2 == 1 && (p > 55 || p < 8))
+                {
+                    std::set<int> singles = checkSingles();
+                    for (auto &s : singles) // TODO what if empty
+                    {
+                        Move move = Move(Piece(piece, pos), Piece(square, p), Piece(turn, s));
+                        moveset.insert(move);
+                    }
+                }
+                else
+                {
+                    Move move = Move(Piece(piece, pos), Piece(square, p));
+                    moveset.insert(move);
+                }
                 break;
             }
             // slide
             else if ((p - pos) % 8 == 1 * direction && square == 0)
             {
-                Move move = Move(Piece(piece, pos), Piece(square, p));
-                moveset.insert(move);
+                if (piece % 2 == 1 && (p > 55 || p < 8))
+                {
+                    std::set<int> singles = checkSingles();
+                    for (auto &s : singles) // TODO what if empty
+                    {
+                        Move move = Move(Piece(piece, pos), Piece(square, p), Piece(turn, s));
+                        moveset.insert(move);
+                    }
+                }
+                else
+                {
+                    Move move = Move(Piece(piece, pos), Piece(square, p));
+                    moveset.insert(move);
+                }
             }
             else
             {
@@ -143,19 +186,43 @@ public:
         // left
         for (int p = pos; 0 <= p < 64; p += direction)
         {
-            const int &square = board.at(pos);
+            const int &square = board.boardarray[pos];
             // transpose
-            if (p - pos == 7 * direction && (square + piece) % 3 == 0)
+            if (p - pos == 7 * direction && piece == 2 * turn && square == turn)
             {
-                Move move = Move(Piece(piece, pos), Piece(square, p));
-                moveset.insert(move);
+                if (piece % 2 == 1 && (p > 55 || p < 8))
+                {
+                    std::set<int> singles = checkSingles();
+                    for (auto &s : singles) // TODO what if empty
+                    {
+                        Move move = Move(Piece(piece, pos), Piece(square, p), Piece(turn, s));
+                        moveset.insert(move);
+                    }
+                }
+                else
+                {
+                    Move move = Move(Piece(piece, pos), Piece(square, p));
+                    moveset.insert(move);
+                }
                 break;
             }
             // slide
             else if ((p - pos) % 8 == 7 * direction && square == 0)
             {
-                Move move = Move(Piece(piece, pos), Piece(square, p));
-                moveset.insert(move);
+                if (piece % 2 == 1 && (p > 55 || p < 8))
+                {
+                    std::set<int> singles = checkSingles();
+                    for (auto &s : singles) // TODO what if empty
+                    {
+                        Move move = Move(Piece(piece, pos), Piece(square, p), Piece(turn, s));
+                        moveset.insert(move);
+                    }
+                }
+                else
+                {
+                    Move move = Move(Piece(piece, pos), Piece(square, p));
+                    moveset.insert(move);
+                }
             }
             else
             {
@@ -171,10 +238,9 @@ public:
         // return array of possible moves
         for (int pos = 0; pos < 64; pos++)
         {
-            const int &piece = board.at(pos);
+            const int &piece = board.boardarray[pos];
             if (piece * turn > 0) // if same color
             {
-                //check if removable
                 PosMoveSet posmoveset = checkPieceDiagonals(pos);
                 if (posmoveset.moveset.size() > 0)
                 {
@@ -188,16 +254,13 @@ public:
             addImpassable();
         };
     };
-    void moveImpasse(const Move &move)
-    {
-        
-    };
+    //new single was added, so check if one needs to be crowned
     void crownIf(const Piece &p)
     {
         if (tocrown.count(turn) > 0)
         {
             const int &pos = tocrown[turn];
-            const int &piece = board.at(pos);
+            const int &piece = board.boardarray[pos];
             changePieceType(Piece(piece, pos));
             tocrown.erase(turn);
             removePiece(p);
@@ -207,7 +270,7 @@ public:
     {
         for (int pos = 0; pos < 64; pos++)
         {
-            const int &piece = board.at(pos);
+            const int &piece = board.boardarray[pos];
             if (piece * turn > 0)
             {
                 Move move = Move(Piece(piece, pos), Piece(0, -1));
@@ -216,21 +279,36 @@ public:
             };
         };
     };
+    std::set<int> checkSingles() const
+    {
+        std::set<int> singles;
+        for (int pos = 0; pos < 64; pos++)
+        {
+            const int &piece = board.boardarray[pos];
+            if (piece == turn)
+            {
+                singles.insert(pos);
+            };
+        };
+        return singles;
+    };
     void doMove(const Move &move)
     {
-        if (move.from.piece == 0) //impasse
+        // Impasse
+        if (move.from.piece == 0)
         {
             if (move.remove.piece % 2 == 0)
             {
                 changePieceType(move.from);
-                crownIf(Piece(1, move.to.pos));
+                crownIf(Piece(1, move.from.pos));
             }
             else
             {
                 removePiece(move.from);
             };
-        };
-        if (move.to.pos < 8 || move.to.pos > 55)
+        }
+        // bear off and crown
+        else if (move.to.pos < 8 || move.to.pos > 55)
         {
             //bear-off
             if (move.from.piece % 2 == 0)
@@ -247,13 +325,12 @@ public:
             //otherwise put crownable to stack
             else
             {
-                changePieceType(move.from);
                 tocrown[turn] = move.to.pos;
             }
         };
-        int from = board.boardmap[move.from.pos];
-        board.boardmap[move.from.pos] = board.boardmap[move.to.pos];
-        board.boardmap[move.to.pos] = from;
+        int from = board.boardarray[move.from.pos];
+        board.boardarray[move.from.pos] = board.boardarray[move.to.pos];
+        board.boardarray[move.to.pos] = from;
 
         movestack.push_back(move);
         turn = turn * -1;
@@ -265,3 +342,8 @@ public:
         movestack.pop_back();
     };
 };
+
+int main()
+{
+    GameState gamestate = GameState();
+}

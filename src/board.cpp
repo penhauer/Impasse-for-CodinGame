@@ -1,8 +1,8 @@
 #include <fstream>
 #include <string>
-#include <map>
+#include <vector>
 
-typedef std::map<int, int> BoardMap;
+typedef int BoardArray[64];
 
 struct PieceCount
 {
@@ -15,11 +15,11 @@ struct PieceCount
 class Board
 {
 public:
-    BoardMap boardmap;
+    BoardArray boardarray;
     PieceCount piececount;
     Board()
     {
-        boardmap = get_board(false);
+        boardarray = get_board(false);
         piececount = PieceCount();
     };
     void save_board()
@@ -30,7 +30,7 @@ public:
         {
             for (int i = 0; i < 64; i++)
             {
-                newfile << boardmap.at(i) << std::endl;
+                newfile << boardarray.at(i) << std::endl;
             }
         newfile.close();
         };
@@ -40,9 +40,9 @@ public:
         std::remove("boardstate.txt");
     };
 private:
-    BoardMap get_board(bool paused)
+    BoardArray get_board(bool paused)
     {
-        BoardMap boardmap;
+        BoardArray boardarray;
         if (paused)
         {
             std::ifstream newfile;
@@ -54,44 +54,44 @@ private:
                 for (int i = 0; i < 64; i++)
                 {
                     getline(newfile, tp);
-                    boardmap[i] = std::stoi(tp);
+                    boardarray[i] = std::stoi(tp);
                 }
             newfile.close();
             };
-            return boardmap;
+            return boardarray;
         };
         //else create new board
         for (int pos = 0; pos < 8; pos++)
         {
             if (pos == 0 || pos == 4 || pos == 11 || pos == 15)
             {
-                boardmap[pos] = 1;
+                boardarray[pos] = 1;
             }
             else if (pos == 50 || pos == 54 || pos == 57 || pos == 61)
             {
-                boardmap[pos] = 2;
+                boardarray[pos] = 2;
             }
             else if (pos == 48 || pos == 52 || pos == 59 || pos == 63)
             {
-                boardmap[pos] = -1;
+                boardarray[pos] = -1;
             }
             else if (pos == 2 || pos == 6 || pos == 9 || pos == 13)
             {
-                boardmap[pos] = -2;
+                boardarray[pos] = -2;
             }
             else
             {
-                boardmap[pos] = 0;
+                boardarray[pos] = 0;
             };
         };
-        return boardmap;
+        return boardarray;
     };
     PieceCount get_pieces()
     {
         PieceCount piececount;
         for (int pos; pos < 64; pos++)
         {
-            const int &piece = boardmap.at(pos);
+            const int &piece = boardarray.at(pos);
             if (piece == 1)
             {
                 piececount.whiteSingles++;
