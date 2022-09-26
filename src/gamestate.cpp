@@ -7,10 +7,11 @@
 typedef std::map<int, std::map<int, int>> Board;
 
 // Simple struct to represent a position on the board
-struct Pos {
+struct Pos
+{
     int col;
     int row;
-    Pos(int col, int row) : col(col), row(row) {};
+    Pos(int col, int row) : col(col), row(row){};
 };
 // Simple struct to represent a move
 struct Move
@@ -18,17 +19,18 @@ struct Move
     Pos from;
     Pos to;
     Pos remove;
-    Move(Pos from, Pos to, Pos remove = Pos(-1, -1)) : from(from), to(to), remove(remove) {};
+    Move(Pos from, Pos to, Pos remove = Pos(-1, -1)) : from(from), to(to), remove(remove){};
 };
 
 // Map of all possible moves at the moment
 typedef std::set<Pos> MoveSet;
 typedef std::unordered_map<Pos, MoveSet> MoveMap;
 
-struct MoveSetPair {
+struct MoveSetPair
+{
     Pos pos;
     MoveSet moves;
-    MoveSetPair(Pos pos, MoveSet moves) : pos(pos), moves(moves) {};
+    MoveSetPair(Pos pos, MoveSet moves) : pos(pos), moves(moves){};
 };
 struct Pieces
 {
@@ -54,36 +56,7 @@ public:
         turn = 1;
         state = 0;
         pieces = Pieces();
-        for (int col = 0; col < 8; col++)
-        {
-            for (int row = 0; row < 8; row++)
-            {
-                // white single (1): (0,0), (3,1), (4,0), (1,7)
-                // white double (2): (1,7), (2,6), (5,7), (6,6)
-                // black single (-1): (0,6), (3,7), (4,6), (7,7)
-                // black double (-2): (1,1), (2,0), (5,1), (6,0)
-                if (row < 2 && (col + row) % 4 == 0)
-                {
-                    board[col][row] = 1;
-                }
-                else if (row > 5 && (col + row) % 4 == 0)
-                {
-                    board[col][row] = 2;
-                }
-                else if ((row > 5) && ((col + row) % 4 == 2))
-                {
-                    board[col][row] = -1;
-                }
-                else if (row < 2 && (col + row) % 4 == 2)
-                {
-                    board[col][row] = -2;
-                }
-                else
-                {
-                    board[col][row] = 0;
-                };
-            };
-        };
+        board = create_board();
     };
     int pieceDirection(const int &piece) const
     {
@@ -94,35 +67,40 @@ public:
         board[move.to.col][move.to.row] = board[move.from.col][move.from.row];
         board[move.from.col][move.from.row] = 0;
     };
-    void removePiece(const Pos& pos) {
-        int& piece = board[pos.col][pos.row];
-        switch (piece) {
-            case 1:
-                pieces.whiteSingles--;
-                break;
-            case 2:
-                pieces.whiteDoubles--;
-                break;
-            case -1:
-                pieces.blackSingles--;
-                break;
-            case -2:
-                pieces.blackDoubles--;
-                break;
+    void removePiece(const Pos &pos)
+    {
+        int &piece = board[pos.col][pos.row];
+        switch (piece)
+        {
+        case 1:
+            pieces.whiteSingles--;
+            break;
+        case 2:
+            pieces.whiteDoubles--;
+            break;
+        case -1:
+            pieces.blackSingles--;
+            break;
+        case -2:
+            pieces.blackDoubles--;
+            break;
         };
         piece = 0;
         // chickendinner
-        if (pieces.whiteSingles == 0 && pieces.whiteDoubles == 0) {
+        if (pieces.whiteSingles == 0 && pieces.whiteDoubles == 0)
+        {
             state = -1;
         }
-        else if (pieces.blackSingles == 0 && pieces.blackDoubles == 0) {
+        else if (pieces.blackSingles == 0 && pieces.blackDoubles == 0)
+        {
             state = 1;
         }
     };
-    void changePieceType(const Move& move)
+    void changePieceType(const Move &move)
     {
-        int& piece = board[move.from.col][move.from.row];
-        switch (piece) {
+        int &piece = board[move.from.col][move.from.row];
+        switch (piece)
+        {
         case 1:
             piece = 2;
             break;
@@ -189,7 +167,7 @@ public:
                 break;
             }
         };
-        MoveSetPair movesetpair(Pos(col, row), moves);// = MoveSetPair(Pos(col, row), MoveSet());
+        MoveSetPair movesetpair(Pos(col, row), moves); // = MoveSetPair(Pos(col, row), MoveSet());
         return movesetpair;
     };
     void makeMoveMap()
@@ -220,13 +198,14 @@ public:
             }
         };
     };
-    MoveSetPair checkDeleteable() {
+    MoveSetPair checkDeleteable()
+    {
         for (int col = 0; col < 8; col++)
         {
             for (int row = 0; row < 8; row++)
             {
                 const int &piece = board[col][row];
-                if ((piece * turn > 0) && /*in last row*/ )
+                if ((piece * turn > 0) && /*in last row*/)
                 {
                     MoveSet moves;
                     moves.insert(Pos(col, row));
@@ -236,7 +215,7 @@ public:
             };
         };
     };
-    void makeMove(const Move& move)
+    void makeMove(const Move &move)
     {
         // if king / bearoff
         if (move.remove.)
@@ -254,16 +233,46 @@ public:
         // if move is delete piece ...
         // if move is king piece ...
         movePiece(move);
-        turn = turn * -1; //because of the way the removal is implemented (after main move, and we want to visualize it)
+        turn = turn * -1; // because of the way the removal is implemented (after main move, and we want to visualize it)
         // one way to handle it is remove turn = turn * -1 from here, and handle the turns in main.cpp.
         // However then the changePieceType has to be changed, as Move shouldn't include the remove piece, instead only once the piece moves to the last row,
         // should there be a mandatory next move, to crown / bearoff the piece, using changepiecetype
         makeMoveMap();
     };
+
+private:
+    Board create_board()
+    {
+        for (int col = 0; col < 8; col++)
+        {
+            for (int row = 0; row < 8; row++)
+            {
+                // white single (1): (0,0), (3,1), (4,0), (1,7)
+                // white double (2): (1,7), (2,6), (5,7), (6,6)
+                // black single (-1): (0,6), (3,7), (4,6), (7,7)
+                // black double (-2): (1,1), (2,0), (5,1), (6,0)
+                if (row < 2 && (col + row) % 4 == 0)
+                {
+                    board[col][row] = 1;
+                }
+                else if (row > 5 && (col + row) % 4 == 0)
+                {
+                    board[col][row] = 2;
+                }
+                else if ((row > 5) && ((col + row) % 4 == 2))
+                {
+                    board[col][row] = -1;
+                }
+                else if (row < 2 && (col + row) % 4 == 2)
+                {
+                    board[col][row] = -2;
+                }
+                else
+                {
+                    board[col][row] = 0;
+                };
+            };
+        };
+        return board;
+    };
 };
-int main()
-{
-    GameState gamestate = GameState();
-    gamestate.makeMoveMap();
-    return 0;
-}

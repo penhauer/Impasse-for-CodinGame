@@ -1,6 +1,6 @@
-#include "SDL2/SDL.h"
 #include "gamestate.h"
 #include "ai.h"
+#include "window.h"
 
 int main(int argc, char *argv[])
 {
@@ -18,8 +18,19 @@ private:
     Piece selectedPiece;
     Pos selectedRemove;
     GameState gamestate;
-    SDL_Window *window;
-    SDL_Renderer *renderer;
+    Window window;
+    void render() {
+        window.render_board();
+    };
+    void reset() {
+        gamestate.reset();
+        game.render();
+    };
+    void render() {
+        window.clean();
+        window.render_board();
+    };
+    }
     void select(int x, int y)
     {
         Pos selectedpos = Pos(x / 80, y / 80);
@@ -85,37 +96,7 @@ private:
             };
         };
     };
-    void clean()
-    {
-        SDL_DestroyWindow(window);
-        SDL_DestroyRenderer(renderer);
-        SDL_Quit();
-    };
     public:
-        void reset()
-        {
-            GameState gamestate = GameState();
-        };
-        void render_board()
-        {
-            SDL_Window *window = SDL_CreateWindow("Checkers", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 800, 800, SDL_WINDOW_SHOWN);
-            SDL_Renderer *renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
-            SDL_SetRenderDrawColor(renderer, 128, 128, 128, 128);
-            SDL_RenderClear(renderer);
-            SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-            for (int i = 0; i < 8; i++)
-            {
-                for (int j = 0; j < 8; j++)
-                {
-                    if ((i + j) % 2 == 0)
-                    {
-                        SDL_Rect rect = {i * 40, j * 30, 40, 30};
-                        SDL_RenderFillRect(renderer, &rect);
-                    }
-                }
-            };
-            SDL_RenderPresent(renderer);
-        };
         void run()
         {
             bool running = true;
@@ -144,6 +125,6 @@ private:
                     };
                 };
             };
-            clean();
+            window.clean();
         };
     };
