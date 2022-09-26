@@ -43,7 +43,7 @@ private:
             {
                 if (removeSelected)
                 {
-                    gamestate.makeMove(Move(selectedPiece.piece, selectedPiece.pos, selectedpos, selectedRemove));
+                    gamestate.doMove(Move(selectedPiece.piece, selectedPiece.pos, selectedpos, selectedRemove));
                     pieceSelected = false;
                     removeSelected = false;
                     return;
@@ -67,7 +67,7 @@ private:
                     MoveSet moves = gamestate.movemap[selectedPiece.pos];
                     if (moves.count(selectedpos) > 0)
                     {
-                        gamestate.makeMove(move);
+                        gamestate.doMove(move);
                         pieceSelected = false;
                         return;
                     }
@@ -110,7 +110,7 @@ private:
                 };
                 if (gamestate.getTurn() == -1)
                 {
-                    gamestate.makeMove(ai.getMove(gamestate));
+                    gamestate.doMove(ai.getMove(gamestate));
                 };
                 while (SDL_PollEvent(&event))
                 {

@@ -2,44 +2,39 @@
 #include <unordered_map>
 #include <set>
 #include <iostream>
+#include <vector>
+#include "board.h"
 
-// Map of the board represented by integers
-typedef std::map<int, std::map<int, int>> Board;
-
-// Simple struct to represent a position on the board
-struct Pos
+struct Piece
 {
-    int col;
-    int row;
-    Pos(int col, int row) : col(col), row(row){};
+    int piece;
+    int pos;
+    Piece(int piece, int pos) : piece(piece), pos(pos){};
 };
+
 // Simple struct to represent a move
 struct Move
 {
-    Pos from;
-    Pos to;
-    Pos remove;
-    Move(Pos from, Pos to, Pos remove = Pos(-1, -1)) : from(from), to(to), remove(remove){};
+    Piece from;
+    Piece to;
+    int type; // 0 = slide, 1 = crown, 2 = impasse
+    Piece remove;
+    Move(Piece from, Piece to, int type, Piece remove = Piece(0,-1)) : from(from), to(to), type(type), remove(remove){};
 };
 
 // Map of all possible moves at the moment
-typedef std::set<Pos> MoveSet;
-typedef std::unordered_map<Pos, MoveSet> MoveMap;
+typedef std::set<Move> MoveSet;
+typedef std::unordered_map<int, MoveSet> MoveMap;
+struct PosMoveSet
+{
+    int pos;
+    MoveSet moveset;
+    PosMoveSet(int pos, MoveSet moveset) : pos(pos), moveset(moveset){};
+};
 
-struct MoveSetPair
-{
-    Pos pos;
-    MoveSet moves;
-    MoveSetPair(Pos pos, MoveSet moves) : pos(pos), moves(moves){};
-};
-struct Pieces
-{
-    int whiteSingles; // number of white singles
-    int whiteDoubles; // number of white doubles
-    int blackSingles; // number of black singles
-    int blackDoubles; // number of black doubles
-    Pieces() : whiteSingles(6), whiteDoubles(6), blackSingles(6), blackDoubles(6){};
-};
+typedef std::vector<Move> MoveStack;
+
+typedef std::map<int,int> ToCrown;
 
 class GameState
 {
@@ -47,16 +42,16 @@ public:
     int player; // 0 = Ai vs Ai, 1 = White vs Ai, -1 = Black vs Ai, 2 = White vs Black
     int turn;   // 1 = white, -1 = black
     int state;  // 0 = in progress, 1 = white win, -1 = black win
-    Pieces pieces;
     Board board;
     MoveMap movemap;
+    MoveStack movestack;
+    ToCrown tocrown;
     GameState()
     {
         player = 1;
         turn = 1;
         state = 0;
-        pieces = Pieces();
-        board = create_board();
+        board = Board();
     };
     int pieceDirection(const int &piece) const
     {
@@ -64,80 +59,109 @@ public:
     };
     void movePiece(const Move &move)
     {
-        board[move.to.col][move.to.row] = board[move.from.col][move.from.row];
-        board[move.from.col][move.from.row] = 0;
+        if (move.to.pos < 8 || move.to.pos > 55)
+        {
+            //bear-off
+            if (move.from.piece % 2 == 0)
+            {
+                changePieceType(move.from);
+                crownIf(move.from);
+            }
+            //crown if single was available
+            else if (move.remove.piece != 0)
+            {
+                changePieceType(move.from);
+                removePiece(move.remove);
+            }
+            //otherwise put crownable to stack
+            else
+            {
+                changePieceType(move.from);
+                tocrown[turn] = move.to.pos;
+            }
+        };
+        int from = board.boardmap[move.from.pos];
+        board.boardmap[move.from.pos] = board.boardmap[move.to.pos];
+        board.boardmap[move.to.pos] = from;
     };
-    void removePiece(const Pos &pos)
+    void removePiece(const Piece &p)
     {
-        int &piece = board[pos.col][pos.row];
+        int &piece = board[p.pos];
         switch (piece)
         {
         case 1:
-            pieces.whiteSingles--;
+            board.piececount.whiteSingles--;
             break;
         case 2:
-            pieces.whiteDoubles--;
+            board.piececount.whiteDoubles--;
             break;
         case -1:
-            pieces.blackSingles--;
+            board.piececount.blackSingles--;
             break;
         case -2:
-            pieces.blackDoubles--;
+            board.piececount.blackDoubles--;
             break;
         };
         piece = 0;
         // chickendinner
-        if (pieces.whiteSingles == 0 && pieces.whiteDoubles == 0)
-        {
-            state = -1;
-        }
-        else if (pieces.blackSingles == 0 && pieces.blackDoubles == 0)
+        if (board.piececount.whiteSingles + board.piececount.whiteDoubles == 0)
         {
             state = 1;
         }
+        else if (board.piececount.blackSingles + board.piececount.blackDoubles == 0)
+        {
+            state = -1;
+        }
     };
-    void changePieceType(const Move &move)
+    void changePieceType(const Piece &p)
     {
-        int &piece = board[move.from.col][move.from.row];
+        int &piece = board.at(p.pos);
         switch (piece)
         {
         case 1:
             piece = 2;
+            board.piececount.whiteSingles--;
+            board.piececount.whiteDoubles++;
             break;
         case 2:
             piece = 1;
+            board.piececount.whiteSingles++;
+            board.piececount.whiteDoubles--;
             break;
         case -1:
             piece = -2;
+            board.piececount.blackSingles--;
+            board.piececount.blackDoubles++;
             break;
         case -2:
             piece = -1;
+            board.piececount.blackSingles++;
+            board.piececount.blackDoubles--;
             break;
         };
     };
-    MoveSetPair checkPieceDiagonals(const int &col, const int &row)
+    PosMoveSet checkPieceDiagonals(const int &pos) const
     {
         // check diagonals forward
-        const int &piece = board[col][row];
+        const int &piece = board.at(pos);
         const int &direction = pieceDirection(piece);
-        MoveSet moves;
+        MoveSet moveset;
         // right
-        for (int c = col + 1; c < 8; c++)
+        for (int p = pos; 0 <= p < 64; p += direction)
         {
-            int r = row + direction * (c - col);
-            if (r < 0 || r > 7)
-                break;
-            const int &square = board[c][r];
+            const int &square = board.at(pos);
             // transpose
-            if (c - col == 1 && (square + piece) % 3 == 0)
+            if (p - pos == 9 * direction && (square + piece) % 3 == 0)
             {
-                moves.insert(Pos(c, r));
+                Move move = Move(Piece(piece, pos), Piece(square, p), 1);
+                moveset.insert(move);
                 break;
             }
             // slide
-            else if (square == 0)
+            else if ((p - pos) % 8 == 1 * direction && square == 0)
             {
-                moves.insert(Pos(c, r));
+                Move move = Move(Piece(piece, pos), Piece(square, p), 0);
+                moveset.insert(move);
             }
             else
             {
@@ -145,134 +169,107 @@ public:
             }
         };
         // left
-        for (int c = col - 1; c >= 0; c--)
+        for (int p = pos; 0 <= p < 64; p += direction)
         {
-            int r = row + direction * (col - c);
-            if (r < 0 || r > 7)
-                break;
-            const int &square = board[c][r];
+            const int &square = board.at(pos);
             // transpose
-            if (col - c == 1 && (square + piece) % 3 == 0)
+            if (p - pos == 7 * direction && (square + piece) % 3 == 0)
             {
-                moves.insert(Pos(c, r));
+                Move move = Move(Piece(piece, pos), Piece(square, p), 1);
+                moveset.insert(move);
                 break;
-                // slide
             }
-            else if (square == 0)
+            // slide
+            else if ((p - pos) % 8 == 7 * direction && square == 0)
             {
-                moves.insert(Pos(c, r));
+                Move move = Move(Piece(piece, pos), Piece(square, p), 0);
+                moveset.insert(move);
             }
             else
             {
                 break;
             }
         };
-        MoveSetPair movesetpair(Pos(col, row), moves); // = MoveSetPair(Pos(col, row), MoveSet());
-        return movesetpair;
+        PosMoveSet posmoveset = PosMoveSet(pos, moveset);
+        return posmoveset;
     };
     void makeMoveMap()
     {
         movemap.clear();
         // return array of possible moves
-        for (int col = 0; col < 8; col++)
+        for (int pos = 0; pos < 64; pos++)
         {
-            for (int row = 0; row < 8; row++)
+            const int &piece = board.at(pos);
+            if (piece * turn > 0) // if same color
             {
-                const int &piece = board[col][row];
-                if (piece * turn > 0) // if same color
+                //check if removable
+                PosMoveSet posmoveset = checkPieceDiagonals(pos);
+                if (posmoveset.moveset.size() > 0)
                 {
-                    MoveSetPair movesetpair = checkPieceDiagonals(col, row);
-                    if (movesetpair.moves.size() > 0)
-                    {
-                        movemap[movesetpair.pos] = movesetpair.moves;
-                    }
-                };
+                    movemap[posmoveset.pos] = posmoveset.moveset;
+                }
             };
         };
+        // if no move, impasse
         if (movemap.size() == 0)
         {
-            MoveSetPair deleteable = checkDeleteable();
-            if (deleteable.moves.size() > 0)
-            {
-                movemap[deleteable.pos] = deleteable.moves;
-            }
+            addImpassable();
         };
     };
-    MoveSetPair checkDeleteable()
+    void moveImpasse(const Move &move)
     {
-        for (int col = 0; col < 8; col++)
+        if (move.from.piece % 2 == 0)
         {
-            for (int row = 0; row < 8; row++)
-            {
-                const int &piece = board[col][row];
-                if ((piece * turn > 0) && /*in last row*/)
-                {
-                    MoveSet moves;
-                    moves.insert(Pos(col, row));
-                    MoveSetPair movesetpair = MoveSetPair(Pos(col, row), moves);
-                    return movesetpair;
-                };
-            };
-        };
-    };
-    void makeMove(const Move &move)
-    {
-        // if king / bearoff
-        if (move.remove.)
-        {
-            changePieceType(move);
-        }
-        else if (pieceDirection(move.piece) == -1 && move.to.row == 0)
-        {
-            changePieceType(move);
+            changePieceType(move.from);
+            crownIf(Piece(1, move.to.pos));
         }
         else
         {
-            movePiece(move);
-        };
-        // if move is delete piece ...
-        // if move is king piece ...
-        movePiece(move);
-        turn = turn * -1; // because of the way the removal is implemented (after main move, and we want to visualize it)
-        // one way to handle it is remove turn = turn * -1 from here, and handle the turns in main.cpp.
-        // However then the changePieceType has to be changed, as Move shouldn't include the remove piece, instead only once the piece moves to the last row,
-        // should there be a mandatory next move, to crown / bearoff the piece, using changepiecetype
-        makeMoveMap();
+            removePiece(move.from);
+        }
     };
-
-private:
-    Board create_board()
+    void crownIf(const Piece &p)
     {
-        for (int col = 0; col < 8; col++)
+        if (tocrown.count(turn) > 0)
         {
-            for (int row = 0; row < 8; row++)
+            const int &pos = tocrown[turn];
+            const int &piece = board.at(pos);
+            changePieceType(Piece(piece, pos));
+            tocrown.erase(turn);
+            removePiece(p);
+        }
+    }
+    void addImpassable()
+    {
+        for (int pos = 0; pos < 64; pos++)
+        {
+            const int &piece = board.at(pos);
+            if (piece * turn > 0)
             {
-                // white single (1): (0,0), (3,1), (4,0), (1,7)
-                // white double (2): (1,7), (2,6), (5,7), (6,6)
-                // black single (-1): (0,6), (3,7), (4,6), (7,7)
-                // black double (-2): (1,1), (2,0), (5,1), (6,0)
-                if (row < 2 && (col + row) % 4 == 0)
-                {
-                    board[col][row] = 1;
-                }
-                else if (row > 5 && (col + row) % 4 == 0)
-                {
-                    board[col][row] = 2;
-                }
-                else if ((row > 5) && ((col + row) % 4 == 2))
-                {
-                    board[col][row] = -1;
-                }
-                else if (row < 2 && (col + row) % 4 == 2)
-                {
-                    board[col][row] = -2;
-                }
-                else
-                {
-                    board[col][row] = 0;
-                };
+                Move move = Move(Piece(piece, pos), Piece(0, -1), 2);
+                MoveSet moveset = {move};
+                movemap[pos] = moveset;
             };
         };
-        return board;
+    };
+    void doMove(const Move &move)
+    {
+        if (move.type == 2) //impasse
+        {
+            moveImpasse(move);
+        }
+        else // slide or transpose
+        {
+            movePiece(move);
+        }
+    movestack.push_back(move);
+    turn = turn * -1;
+    makeMoveMap();
+    };
+    void undoMove()
+    {
+        Move move = movestack.back();
+        movestack.pop_back();
+        //TODO implement
     };
 };

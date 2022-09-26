@@ -13,7 +13,7 @@ private:
     MoveMap currentMoves;
     Move bestMove;
     int evaluateBoard(Board board) {
-        const Pieces& pieces = gamestate.board.pieces;
+        const PieceCount& pieces = gamestate.board.pieces;
         return color * (pieces.whiteSingles + pieces.whiteDoubles - pieces.blackSingles - pieces.blackDoubles);
         // TODO add control, number of available moves, etc.
     };
@@ -31,7 +31,7 @@ private:
             for (auto const& to : toset)
             {
                 Move move = Move(from, to);
-                board.makeMove(move);
+                board.doMove(move);
                 int score = -negamax(board, depth - 1, -color);
                 if (score > best_score) {
                     best_score = score;
