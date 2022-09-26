@@ -17,9 +17,8 @@ struct Move
 {
     Piece from;
     Piece to;
-    int type; // 0 = slide, 1 = crown, 2 = impasse
     Piece remove;
-    Move(Piece from, Piece to, int type, Piece remove = Piece(0,-1)) : from(from), to(to), type(type), remove(remove){};
+    Move(Piece from, Piece to, Piece remove = Piece(0,-1)) : from(from), to(to), remove(remove){};
 };
 
 // Map of all possible moves at the moment
@@ -56,33 +55,6 @@ public:
     int pieceDirection(const int &piece) const
     {
         return (piece == 1 || piece == -2) ? 1 : -1;
-    };
-    void movePiece(const Move &move)
-    {
-        if (move.to.pos < 8 || move.to.pos > 55)
-        {
-            //bear-off
-            if (move.from.piece % 2 == 0)
-            {
-                changePieceType(move.from);
-                crownIf(move.from);
-            }
-            //crown if single was available
-            else if (move.remove.piece != 0)
-            {
-                changePieceType(move.from);
-                removePiece(move.remove);
-            }
-            //otherwise put crownable to stack
-            else
-            {
-                changePieceType(move.from);
-                tocrown[turn] = move.to.pos;
-            }
-        };
-        int from = board.boardmap[move.from.pos];
-        board.boardmap[move.from.pos] = board.boardmap[move.to.pos];
-        board.boardmap[move.to.pos] = from;
     };
     void removePiece(const Piece &p)
     {
@@ -153,14 +125,14 @@ public:
             // transpose
             if (p - pos == 9 * direction && (square + piece) % 3 == 0)
             {
-                Move move = Move(Piece(piece, pos), Piece(square, p), 1);
+                Move move = Move(Piece(piece, pos), Piece(square, p));
                 moveset.insert(move);
                 break;
             }
             // slide
             else if ((p - pos) % 8 == 1 * direction && square == 0)
             {
-                Move move = Move(Piece(piece, pos), Piece(square, p), 0);
+                Move move = Move(Piece(piece, pos), Piece(square, p));
                 moveset.insert(move);
             }
             else
@@ -175,14 +147,14 @@ public:
             // transpose
             if (p - pos == 7 * direction && (square + piece) % 3 == 0)
             {
-                Move move = Move(Piece(piece, pos), Piece(square, p), 1);
+                Move move = Move(Piece(piece, pos), Piece(square, p));
                 moveset.insert(move);
                 break;
             }
             // slide
             else if ((p - pos) % 8 == 7 * direction && square == 0)
             {
-                Move move = Move(Piece(piece, pos), Piece(square, p), 0);
+                Move move = Move(Piece(piece, pos), Piece(square, p));
                 moveset.insert(move);
             }
             else
@@ -218,15 +190,7 @@ public:
     };
     void moveImpasse(const Move &move)
     {
-        if (move.from.piece % 2 == 0)
-        {
-            changePieceType(move.from);
-            crownIf(Piece(1, move.to.pos));
-        }
-        else
-        {
-            removePiece(move.from);
-        }
+        
     };
     void crownIf(const Piece &p)
     {
@@ -246,7 +210,7 @@ public:
             const int &piece = board.at(pos);
             if (piece * turn > 0)
             {
-                Move move = Move(Piece(piece, pos), Piece(0, -1), 2);
+                Move move = Move(Piece(piece, pos), Piece(0, -1));
                 MoveSet moveset = {move};
                 movemap[pos] = moveset;
             };
@@ -254,22 +218,50 @@ public:
     };
     void doMove(const Move &move)
     {
-        if (move.type == 2) //impasse
+        if (move.from.piece == 0) //impasse
         {
-            moveImpasse(move);
-        }
-        else // slide or transpose
+            if (move.remove.piece % 2 == 0)
+            {
+                changePieceType(move.from);
+                crownIf(Piece(1, move.to.pos));
+            }
+            else
+            {
+                removePiece(move.from);
+            };
+        };
+        if (move.to.pos < 8 || move.to.pos > 55)
         {
-            movePiece(move);
-        }
-    movestack.push_back(move);
-    turn = turn * -1;
-    makeMoveMap();
+            //bear-off
+            if (move.from.piece % 2 == 0)
+            {
+                changePieceType(move.from);
+                crownIf(move.from);
+            }
+            //crown if single was available
+            else if (move.remove.piece != 0)
+            {
+                changePieceType(move.from);
+                removePiece(move.remove);
+            }
+            //otherwise put crownable to stack
+            else
+            {
+                changePieceType(move.from);
+                tocrown[turn] = move.to.pos;
+            }
+        };
+        int from = board.boardmap[move.from.pos];
+        board.boardmap[move.from.pos] = board.boardmap[move.to.pos];
+        board.boardmap[move.to.pos] = from;
+
+        movestack.push_back(move);
+        turn = turn * -1;
+        makeMoveMap();
     };
     void undoMove()
     {
         Move move = movestack.back();
         movestack.pop_back();
-        //TODO implement
     };
 };

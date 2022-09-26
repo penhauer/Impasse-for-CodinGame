@@ -17,7 +17,7 @@ public:
     Board board;
     MoveMap movemap;
     int pieceDirection(const int &piece) const;
-    void movePiece(const Move &move);
+    void doMove(const Move &move);
     void removePiece(const Pos &pos);
     void changePieceType(const Move &move);
     PosMoveSet checkPieceDiagonals(const int &col, const int &row);
