@@ -1,50 +1,116 @@
 #include <SDL2/SDL.h>
+#include <string>
+#include <iostream>
 #include "board.h"
 #include "ai.h"
-#include "window.h"
 
 class Game
 {
 private:
-    int player; // 0 = Ai vs Ai, 1 = White vs Ai, -1 = Black vs Ai, 2 = White vs Black
-    Board *board;
-    //Ai *ai;
-    Window *window;
-    void gameLoop()
-    {
-        while (gamestate->state == 0)
-        {
-            //if (gamestate->player == 0 || gamestate->player == gamestate->turn)
-            //{
-            //    ai->doMove();
-            //};
-            window->render_board();
-        };
-    };
+    int player; // 1 = White vs Ai, -1 = Black vs Ai
+    Board board;
+    Ai ai;
     Game()
     {
-        board = new Board();
-        //ai = new Ai();
-        window = new Window();
+        board = Board();
+        std::cout << "Choose your color (white/black): ";
+        std::string playercolor;
+        std::cin >> playercolor;
+        player = (playercolor == "white") ? 1 : -1;
+        ai = Ai();
         gameLoop();
     };
+    void gameLoop()
+    {
+        Move move;
+        while (board.state == 0)
+        {
+            if (player == board.turn)
+            {
+                std::cout << "Your turn" << std::endl;
+                bool turnEnd = false;
+                while (turnEnd)
+                {
+                    std::cout << "Select position: ";
+                    std::string notation;
+                    std::cin >> notation;
+                    int pos = notationToIndex(notation);
+                    turnEnd = trySelect(pos);
+                };
+                board.doMove(move);
+            }
+            else
+            {
+                std::cout << "Ai turn" << std::endl;
+                Move move = ai.getMove(board);
+                board.doMove(move);
+            };
+            board.print();
+        };
+    };
+    bool trySelect(int pos)
+    {
+        if (board.movemap.count(pos) == 0)
+        {
+            std::cout << "Invalid position" << std::endl;
+            return false;
+        }
+        else
+        {
+
+            const MoveSet &moveset = board.movemap[pos];
+            if (moveset.size() == 1)
+            {
+                Move move = Move(pos, moveset.begin);
+                return true;
+            }
+            else
+            {
+                std::cout << "Select move: ";
+                std::string notation;
+                std::cin >> notation;
+                int move = notationToIndex(notation);
+                if (moveset.count(move) == 0)
+                {
+                    std::cout << "Invalid move" << std::endl;
+                    return false;
+                }
+                else
+                {
+                    move = Move(pos, move);
+                    return true;
+                };
+            };
+        }
+        if (
+        {
+            
+            return true;
+        }
+        else
+        {
+            return false;
+        };
     };
     bool pieceSelected = false;
     bool removeSelected = false;
     Piece selectedPiece;
     int selectedRemove;
     Board board;
-    Window window;
     void reset() {
-        window.clean();
-        board.reset();
-        render();
+        board.reset_board();
     };
-    void select(int x, int y)
+    //concert from chess notation to position
+    int notationToIndex(const std::string &notation)
     {
-        x = x / 100;
-        y = y / 100;
-        int pos = x + y * 8;
+        char letter = tolower(notation[0]);
+        int row = notation[1] - '1';
+        int col = (int)letter-97;
+        row = (int)row;
+        return col + 8 * row;
+    };
+    void select(int pos)
+    {
         const int &selected = board.boardarray[pos];
         // if piece was already selected, try to move it
         if (pieceSelected)
@@ -136,10 +202,4 @@ private:
                     };
                 };
             };
-            window.clean();
         };
-        void render_board()
-        {
-            window.render_board();
-        };
-};

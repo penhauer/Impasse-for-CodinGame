@@ -1,6 +1,7 @@
 #include <fstream>
 #include <string>
 #include <vector>
+#include <iostream>
 #include "board.h"
 
 struct PieceCount
@@ -30,9 +31,12 @@ public:
     };
     void reset_board(bool paused)
     {
+        turn = 1;
+        state = 0;
         get_board(paused);
         get_piececount();
         makeMoveMap();
+        boolPieceToCrown = false;
     }
     void save_board()
     {
@@ -54,6 +58,17 @@ public:
     int pieceDirection(const int &piece) const
     {
         return (piece == 1 || piece == -2) ? 1 : -1;
+    };
+    void print_board()
+    {
+        for (int i = 0; i < 64; i++)
+        {
+            std::cout << boardarray[i] << " ";
+            if ((i + 1) % 8 == 0)
+            {
+                std::cout << std::endl;
+            }
+        }
     };
     void makeMoveMap()
     {

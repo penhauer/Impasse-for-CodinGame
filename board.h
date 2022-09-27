@@ -87,13 +87,13 @@ public:
     PosMoveSet checkPieceDiagonals(const int &pos) const;
     void makeMoveMap();
     void crownIf(const Piece &p);
-    PosMoveSet addImpassable();
+    void addImpassable();
     PosSet checkSingles() const;
     void doMove(const Move &move);
     void undoMove();
-    
-    void save_board();
-    void delete_board();
+    void print() const;
+    void save_board() const;
+    void delete_board() const;
 private:
     void get_board(bool paused);
     void get_piececount();
