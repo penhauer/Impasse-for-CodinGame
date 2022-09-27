@@ -1,62 +1,67 @@
-#include "gamestate.h"
+#include "board.h"
 
 class Ai
 {
 public:
-    Ai(int color) : color(color) {};
-    void getBestMove(const GameState& gamestate) {
-        int score = negamax(gamestate.board, 3, color);
+    Ai(int color) : color(color){};
+    void getBestMove(const Board &board) const
+    {
+        int score = negamax(board, 3, color);
     };
+
 private:
     int color;
-    GameState gamestate;
-    MoveMap currentMoves;
     Move bestMove;
-    int evaluateBoard(Board board) {
-        const PieceCount& pieces = gamestate.board.pieces;
-        return color * (pieces.whiteSingles + pieces.whiteDoubles - pieces.blackSingles - pieces.blackDoubles);
+    int evaluateBoard(Board board)
+    {
+        const PieceCount &piececount = board.piececount;
+        return color * (piececount.whiteSingles + piececount.whiteDoubles - piececount.blackSingles - piececount.blackDoubles);
         // TODO add control, number of available moves, etc.
     };
-    void orderMoves() {
+    void orderMoves()
+    {
         MoveMap orderedMoves;
     };
-    int negamax(Board board, int depth, int color) {
-        if (depth == 0 || gamestate.state != 0) {
+    int negamax(Board board, int depth, int color) const
+    {
+        if (depth == 0 || board.state != 0)
+        {
             return evaluateBoard(board);
         };
         int best_score = -1000000;
         Board bestMoveBoard;
-        for (auto const& [from, toset] : currentMoves)
+        for (auto const &[from, toset] : currentMoves)
         {
-            for (auto const& to : toset)
+            for (auto const &to : toset)
             {
                 Move move = Move(from, to);
                 board.doMove(move);
                 int score = -negamax(board, depth - 1, -color);
-                if (score > best_score) {
+                if (score > best_score)
+                {
                     best_score = score;
-                    bestMoveBoard = board;
+                    bestMove = move;
                 }
                 board.undoMove(move);
             }
         };
     };
-    void transPositionTable() {
+    void transPositionTable(){
         // TODO
     };
-    void moveOrdering() {
+    void moveOrdering(){
         // TODO
     };
-    void iterativeDeepening() {
+    void iterativeDeepening(){
         // TODO
     };
-    void alphaBetaPruning() {
+    void alphaBetaPruning(){
         // TODO
     };
-    void openingBook() {
+    void openingBook(){
         // TODO
     };
-    void endgameDatabase() {
+    void endgameDatabase(){
         // TODO
     };
 };

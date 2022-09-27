@@ -1,11 +1,13 @@
-#include "gamestate.h"
+#include <SDL2/SDL.h>
+#include "board.h"
 #include "ai.h"
 #include "window.h"
 
 class Game
 {
 private:
-    GameState *gamestate;
+    int player; // 0 = Ai vs Ai, 1 = White vs Ai, -1 = Black vs Ai, 2 = White vs Black
+    Board *board;
     //Ai *ai;
     Window *window;
     void gameLoop()
@@ -21,7 +23,7 @@ private:
     };
     Game()
     {
-        gamestate = new GameState();
+        board = new Board();
         //ai = new Ai();
         window = new Window();
         gameLoop();
@@ -31,11 +33,11 @@ private:
     bool removeSelected = false;
     Piece selectedPiece;
     int selectedRemove;
-    GameState gamestate;
+    Board board;
     Window window;
     void reset() {
         window.clean();
-        gamestate.reset();
+        board.reset();
         render();
     };
     void select(int x, int y)
@@ -43,7 +45,7 @@ private:
         x = x / 100;
         y = y / 100;
         int pos = x + y * 8;
-        const int &selected = gamestate.board.boardarray[pos];
+        const int &selected = board.boardarray[pos];
         // if piece was already selected, try to move it
         if (pieceSelected)
         {
