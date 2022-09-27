@@ -19,8 +19,8 @@ public:
     PieceCount piececount;
     Board()
     {
-        boardarray = get_board(false);
-        piececount = PieceCount();
+        get_board(false);
+        get_piececount();
     };
     void save_board()
     {
@@ -30,7 +30,7 @@ public:
         {
             for (int i = 0; i < 64; i++)
             {
-                newfile << boardarray.at(i) << std::endl;
+                newfile << boardarray[i] << std::endl;
             }
         newfile.close();
         };
@@ -40,9 +40,8 @@ public:
         std::remove("boardstate.txt");
     };
 private:
-    BoardArray get_board(bool paused)
+    void get_board(bool paused)
     {
-        BoardArray boardarray;
         if (paused)
         {
             std::ifstream newfile;
@@ -58,7 +57,6 @@ private:
                 }
             newfile.close();
             };
-            return boardarray;
         };
         //else create new board
         for (int pos = 0; pos < 8; pos++)
@@ -84,14 +82,12 @@ private:
                 boardarray[pos] = 0;
             };
         };
-        return boardarray;
     };
-    PieceCount get_pieces()
+    void get_piececount()
     {
-        PieceCount piececount;
         for (int pos; pos < 64; pos++)
         {
-            const int &piece = boardarray.at(pos);
+            const int &piece = boardarray[pos];
             if (piece == 1)
             {
                 piececount.whiteSingles++;
@@ -109,6 +105,5 @@ private:
                 piececount.blackDoubles++;
             }
         };
-        return piececount;
     };
 };

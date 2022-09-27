@@ -1,12 +1,11 @@
 #include "SDL2/SDL.h"
 #include <iostream>
 
-SDL_Window *window;
-SDL_Renderer *renderer;
-
 class Window
 {
 public:
+    SDL_Window *window;
+    SDL_Renderer *renderer;
     Window();
     ~Window();
     void render_board();

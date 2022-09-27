@@ -1,30 +1,7 @@
-#include <map>
-#include <unordered_map>
-#include <set>
 #include <iostream>
-#include <vector>
-#include "board.h"
-
-struct Piece
-{
-    int piece;
-    int pos;
-    Piece(int piece, int pos) : piece(piece), pos(pos){};
-};
+#include "gamestate.h"
 
 // Simple struct to represent a move
-struct Move
-{
-    Piece from;
-    Piece to;
-    Piece remove;
-    Move(Piece from, Piece to, Piece remove = Piece(0,-1)) : from(from), to(to), remove(remove){};
-};
-
-// Map of all possible moves at the moment
-typedef std::set<Move> MoveSet;
-typedef std::unordered_map<int, MoveSet> MoveMap;
-
 namespace std {
     template <>
     struct hash<Move>
@@ -42,17 +19,6 @@ namespace std {
     };
 };
 
-struct PosMoveSet
-{
-    int pos;
-    MoveSet moveset;
-    PosMoveSet(int pos, MoveSet moveset) : pos(pos), moveset(moveset){};
-};
-
-typedef std::vector<Move> MoveStack;
-
-typedef std::map<int,int> ToCrown;
-
 class GameState
 {
 public:
@@ -64,6 +30,10 @@ public:
     MoveStack movestack;
     ToCrown tocrown;
     GameState()
+    {
+        reset();
+    };
+    void reset()
     {
         player = 1;
         turn = 1;
@@ -279,9 +249,9 @@ public:
             };
         };
     };
-    std::set<int> checkSingles() const
+    PosSet checkSingles() const
     {
-        std::set<int> singles;
+        PosSet singles;
         for (int pos = 0; pos < 64; pos++)
         {
             const int &piece = board.boardarray[pos];
@@ -342,8 +312,3 @@ public:
         movestack.pop_back();
     };
 };
-
-int main()
-{
-    GameState gamestate = GameState();
-}

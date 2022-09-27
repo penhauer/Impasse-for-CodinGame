@@ -3,8 +3,9 @@
 !*.*
 !*/
 
-# Vscode
+# IDEs
 .vscode/
+.idea/
 
 # Test folder
 test/

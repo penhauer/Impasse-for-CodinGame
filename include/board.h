@@ -20,6 +20,6 @@ public:
     void save_board();
     void delete_board();
 private:
-    BoardArray get_board(bool paused);
-    PieceCount get_pieces();
+    void get_board(bool paused);
+    void get_piececount();
 };
