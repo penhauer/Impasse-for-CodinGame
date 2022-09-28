@@ -12,7 +12,6 @@ int main()
     {
         std::cout << "Unfortunately GUI mode is not yet implemented, defaulting to CLI." << std::endl;
     };
-    std::cout << "Choose your color (1 = White, -1 = Black): ";
-    std::cin >> player;
-    Game game = Game(gui, player);
+    Game game = Game();
+    return 0;
 }

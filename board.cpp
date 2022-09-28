@@ -14,6 +14,7 @@ struct Piece
 {
     int piece;
     int pos;
+    Piece() {};
     Piece(int piece, int pos) : piece(piece), pos(pos){};
 };
 struct Move
@@ -21,16 +22,39 @@ struct Move
     Piece from;
     Piece to;
     Piece remove;
+    Move(Piece remove = Piece(0, -1)) : remove(remove) {};
     Move(Piece from, Piece to, Piece remove = Piece(0,-1)) : from(from), to(to), remove(remove){};
+    //valid if from.pos exist
+    bool validMove() const
+    {
+        return from.pos != -1; //TODO implement
+    };
     bool operator<(const Move &other) const
     {
         return from.pos < other.from.pos && to.pos < other.to.pos && remove.pos < other.remove.pos;
     };
 };
 
+namespace std {
+    template <>
+    struct hash<Move>
+    {
+        std::size_t operator()(const Move& k) const
+        {
+            using std::size_t;
+            using std::hash;
+            using std::string;
+            return ((hash<int>()(k.from.piece)
+                    ^ (hash<int>()(k.from.pos) << 1)) >> 1)
+                    ^ (hash<int>()(k.to.piece)
+                    ^ (hash<int>()(k.to.pos) << 1)) >> 1;
+        }
+    };
+};
+
 typedef std::set<Move> MoveSet;
 
-typedef std::vector<Board>BoardHistory;
+typedef std::vector<BoardArray> BoardHistory;
 
 typedef std::map<int,int> PieceToCrown;
 
@@ -51,16 +75,13 @@ public:
     MoveSet moveset;
     bool boolPieceToCrown;
 private:
-    BoardHistory boardhistory;
+    BoardHistory *boardhistory  = new BoardHistory();
     PieceToCrown piecetocrown;
 public:
-    Board()
+    Board();
+    Board(bool paused)
     {
-        resetBoard(false);
-    };
-    void restore_board(const Board &b)
-    {
-        
+        resetBoard(paused);
     };
     void resetBoard(bool paused)
     {
@@ -71,7 +92,11 @@ public:
         updateMoveSet();
         boolPieceToCrown = false;
         piecetocrown.clear();
-    }
+    };
+    void restoreLast(const Board &b)
+    {
+        //TODO
+    };
     void saveBoard()
     {
         std::ofstream newfile;
@@ -168,14 +193,14 @@ public:
         boardarray[move.from.pos] = boardarray[move.to.pos];
         boardarray[move.to.pos] = from;
 
-        boardhistory.push_back(move);
+        //boardhistory.push_back(move); TODO
         turn = turn * -1;
         updateMoveSet();
     };
     void undoMove()
     {
-        Move move = boardhistory.back();
-        boardhistory.pop_back();
+        //Move move = boardhistory.back();
+        //boardhistory.pop_back();
     };
 private:
     void changePieceType(const Piece &p)
@@ -386,29 +411,32 @@ private:
                 }
             newfile.close();
             };
-        };
-        //else create new board
-        for (int pos = 0; pos < 8; pos++)
+        }
+        else
         {
-            if (pos == 0 || pos == 4 || pos == 11 || pos == 15)
+            //deleteBoard(); TODO
+            for (int pos = 0; pos < 8; pos++)
             {
-                boardarray[pos] = 1;
-            }
-            else if (pos == 50 || pos == 54 || pos == 57 || pos == 61)
-            {
-                boardarray[pos] = 2;
-            }
-            else if (pos == 48 || pos == 52 || pos == 59 || pos == 63)
-            {
-                boardarray[pos] = -1;
-            }
-            else if (pos == 2 || pos == 6 || pos == 9 || pos == 13)
-            {
-                boardarray[pos] = -2;
-            }
-            else
-            {
-                boardarray[pos] = 0;
+                if (pos == 0 || pos == 4 || pos == 11 || pos == 15)
+                {
+                    boardarray[pos] = 1;
+                }
+                else if (pos == 50 || pos == 54 || pos == 57 || pos == 61)
+                {
+                    boardarray[pos] = 2;
+                }
+                else if (pos == 48 || pos == 52 || pos == 59 || pos == 63)
+                {
+                    boardarray[pos] = -1;
+                }
+                else if (pos == 2 || pos == 6 || pos == 9 || pos == 13)
+                {
+                    boardarray[pos] = -2;
+                }
+                else
+                {
+                    boardarray[pos] = 0;
+                };
             };
         };
     };

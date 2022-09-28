@@ -13,22 +13,31 @@ private:
     Board board;
     Ai ai;
 public:
-    Game(int gui, int player)
+    Game()
     {
-        board = Board();
-        ai = Ai(player*-1);
+        std::cout << "Game started" << std::endl;
+        std::cout << "Choose your color (1 = White, -1 = Black): ";
+        std::cin >> player;
+        Board board = Board(false);
+        Ai ai = Ai(player*-1);
         gameLoop();
+    };
+    ~Game()
+    {
+        std::cout << "Thanks for playing!" << std::endl;
+        std::this_thread::sleep_for(std::chrono::milliseconds(1500));
+        //board.deleteBoard();
     };
 private:
     void gameLoop()
     {
-        Move move;
         while (board.state == 0)
         {
             if (player == board.turn)
             {
                 std::cout << "Your turn" << std::endl;
                 bool turnEnd = false;
+                Move move;
                 while (turnEnd)
                 {
                     std::cout << "Select position, write help for help: ";
@@ -52,19 +61,23 @@ private:
                     }
                     else if (notation == "restart")
                     {
-                        board = Board();
+                        reset();
                     }
                     else if (notation == "quit")
                     {
-                        std::cout << "Thanks for playing!" << std::endl;
-                        std::this_thread::sleep_for(std::chrono::milliseconds(1500));
-                        board.deleteBoard();
                         exit(0);
                     }
                     else
                     {
                         int pos = parseMove(notation);
-                        std::tie(turnEnd, move) = trySelect(pos);
+                        if (pos == -1)
+                        {
+                            std::cout << "Invalid position" << std::endl;
+                        }
+                        else
+                        {
+                            std::tie(turnEnd, move) = trySelect(pos, move);
+                        }
                     }
                 };
                 board.doMove(move);
@@ -72,63 +85,44 @@ private:
             else
             {
                 std::cout << "AI turn" << std::endl;
-                //create timer
                 Move move = ai.getMove(board);
                 board.doMove(move);
             };
             board.printBoard();
         };
     };
-    std::tuple<bool, Move> trySelect(int pos)
+    std::tuple<bool, Move> trySelect(int pos, Move move)
     {
-        if (board.movemap.count(pos) == 0)
-        {
-            std::cout << "Invalid position" << std::endl;
-            return false, Move;
-        }
-        else
-        {
-            const MoveSet &moveset = board.movemap[pos];
-            if (moveset.size() == 1)
+        //look through moveset, check if there exists a move with from position
+        MoveSet::iterator itr;
+        for (itr = board.moveset.begin(); itr != board.moveset.end(); itr++)
+        { // TODO implement
+            if (itr->from.pos == pos)
             {
-                Move move = Move(pos, moveset.begin);
-                return true;
+                move.from = Piece();
+                return std::make_tuple(false, move);
             }
             else
             {
-                std::cout << "Select move: ";
-                std::string notation;
-                std::cin >> notation;
-                int move = parseMove(notation);
-                if (moveset.count(move) == 0)
-                {
-                    std::cout << "Invalid move" << std::endl;
-                    return false;
-                }
-                else
-                {
-                    move = Move(pos, move);
-                    return true;
-                };
+                int piece = board.boardarray[pos];
+                move.from = Piece(0, pos);
+                return std::make_tuple(false, move);
             };
-        }
-        if (
-        {
-            
-            return true;
-        }
-        else
-        {
-            return false;
         };
+        std::cout << "Invalid move" << std::endl;
+        return std::make_tuple(false, move);
     };
     void reset()
     {
-        board.resetBoard();
+        board.resetBoard(false);
     };
     //concert from chess notation to position
     int parseMove(const std::string &notation)
     {
+        if (notation.size() != 2)
+        {
+            return -1;
+        };
         char letter = tolower(notation[0]);
         int row = notation[1] - '1';
         int col = (int)letter-97;

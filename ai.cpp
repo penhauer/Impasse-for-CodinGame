@@ -3,6 +3,7 @@
 class Ai
 {
 public:
+    Ai();
     Ai(int color) {this->color = color;};
     Move getMove(const Board &board) const
     {

@@ -10,10 +10,11 @@ private:
     Board board;
     Ai ai;
 public:
-    Game(int gui, int player);
+    Game();
+    ~Game();
 private:
     void gameLoop();
-    std::tuple<bool, Move> trySelect(int pos);
+    std::tuple<bool, Move> trySelect(int pos, Move move);
     void reset();
     int parseMove(const std::string &notation);
 };
