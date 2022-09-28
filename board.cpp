@@ -1,15 +1,44 @@
-#include <fstream>
+#include <map>
+#include <set>
 #include <string>
 #include <vector>
 #include <iostream>
+#include <fstream>
 #include "board.h"
 
-struct PieceCount
+typedef int BoardArray[64];
+
+typedef std::set<int> PosSet;
+
+struct Piece
 {
-    int whiteSingles; // number of white singles
-    int whiteDoubles; // number of white doubles
-    int blackSingles; // number of black singles
-    int blackDoubles; // number of black doubles
+    int piece;
+    int pos;
+    Piece(int piece, int pos) : piece(piece), pos(pos){};
+};
+struct Move
+{
+    Piece from;
+    Piece to;
+    Piece remove;
+    Move(Piece from, Piece to, Piece remove = Piece(0,-1)) : from(from), to(to), remove(remove){};
+    bool operator<(const Move &other) const
+    {
+        return from.pos < other.from.pos && to.pos < other.to.pos && remove.pos < other.remove.pos;
+    };
+};
+
+typedef std::set<Move> MoveSet;
+
+typedef std::vector<Board>BoardHistory;
+
+typedef std::map<int,int> PieceToCrown;
+
+struct PieceCount {
+    int whiteSingles;
+    int whiteDoubles;
+    int blackSingles;
+    int blackDoubles;
 };
 
 class Board
@@ -19,26 +48,31 @@ public:
     int state;  // 0 = in progress, 1 = white win, -1 = black win
     BoardArray boardarray;
     PieceCount piececount;
-    MoveMap movemap;
+    MoveSet moveset;
     bool boolPieceToCrown;
 private:
-    MoveStack movestack;
+    BoardHistory boardhistory;
     PieceToCrown piecetocrown;
 public:
     Board()
     {
-        reset_board(false);
+        resetBoard(false);
     };
-    void reset_board(bool paused)
+    void restore_board(const Board &b)
+    {
+        
+    };
+    void resetBoard(bool paused)
     {
         turn = 1;
         state = 0;
-        get_board(paused);
-        get_piececount();
-        makeMoveMap();
+        initBoard(paused);
+        getPieceCount();
+        updateMoveSet();
         boolPieceToCrown = false;
+        piecetocrown.clear();
     }
-    void save_board()
+    void saveBoard()
     {
         std::ofstream newfile;
         newfile.open("boardstate.txt",std::ios::out);
@@ -51,7 +85,7 @@ public:
         newfile.close();
         };
     };
-    void delete_board()
+    void deleteBoard()
     {
         std::remove("boardstate.txt");
     };
@@ -59,7 +93,11 @@ public:
     {
         return (piece == 1 || piece == -2) ? 1 : -1;
     };
-    void print_board()
+    void printMoves() const
+    {
+        //TODO implement
+    };
+    void printBoard()
     {
         for (int i = 0; i < 64; i++)
         {
@@ -68,32 +106,29 @@ public:
             {
                 std::cout << std::endl;
             }
-        }
+        };
     };
-    void makeMoveMap()
+    void updateMoveSet()
     {
-        movemap.clear();
+        moveset.clear();
         // return array of possible moves
         for (int pos = 0; pos < 64; pos++)
         {
             const int &piece = boardarray[pos];
             if (piece * turn > 0) // if same color
             {
-                PosMoveSet posmoveset = checkPieceDiagonals(pos);
-                if (posmoveset.moveset.size() > 0)
-                {
-                    movemap[posmoveset.pos] = posmoveset.moveset;
-                }
+                addPieceDiagonals(pos);
             };
         };
         // if no move, impasse
-        if (movemap.size() == 0)
+        if (moveset.size() == 0)
         {
             addImpassable();
         };
     };
         void doMove(const Move &move)
     {
+
         // Impasse
         if (move.from.pos == move.remove.pos)
         {
@@ -133,14 +168,14 @@ public:
         boardarray[move.from.pos] = boardarray[move.to.pos];
         boardarray[move.to.pos] = from;
 
-        movestack.push_back(move);
+        boardhistory.push_back(move);
         turn = turn * -1;
-        makeMoveMap();
+        updateMoveSet();
     };
     void undoMove()
     {
-        Move move = movestack.back();
-        movestack.pop_back();
+        Move move = boardhistory.back();
+        boardhistory.pop_back();
     };
 private:
     void changePieceType(const Piece &p)
@@ -212,11 +247,10 @@ private:
         };
         return singles;
     };
-    PosMoveSet checkPieceDiagonals(const int &pos) const
+    void addPieceDiagonals(const int &pos)
     {
         const int &piece = boardarray[pos];
         const int &direction = pieceDirection(piece);
-        MoveSet moveset;
         // right
         for (int p = pos; 0 <= p < 64; p += direction)
         {
@@ -310,12 +344,10 @@ private:
                 break;
             }
         };
-        PosMoveSet posmoveset = PosMoveSet(pos, moveset);
-        return posmoveset;
     };
     void crownIf(const Piece &p)
     {
-        if (piecetocrown.count(turn) > 0)
+        if (boolPieceToCrown)
         {
             const int &pos = piecetocrown[turn];
             const int &piece = boardarray[pos];
@@ -333,12 +365,11 @@ private:
             if (piece * turn > 0)
             {
                 Move move = Move(Piece(piece, pos), Piece(0, -1));
-                MoveSet moveset = {move};
-                movemap[pos] = moveset;
+                moveset.insert(move);
             };
         };
     };
-    void get_board(bool paused)
+    void initBoard(bool paused)
     {
         if (paused)
         {
@@ -381,7 +412,7 @@ private:
             };
         };
     };
-    void get_piececount()
+    void getPieceCount()
     {
         for (int pos; pos < 64; pos++)
         {
@@ -404,4 +435,8 @@ private:
             }
         };
     };
+    void getIfToCrown()
+    {
+        //TODO for when setting up the board again, or just save the whole boardstate
+    }
 };

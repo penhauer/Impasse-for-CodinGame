@@ -1,21 +1,13 @@
 #pragma once
-#include <fstream>
-#include <string>
-#include <map>
-#include <unordered_map>
-#include <set>
-#include <vector>
 
-typedef int BoardArray[64];
-
-typedef std::set<int> PosSet;
-// Map of all possible moves at the moment
+typedef BoardArray;
+typedef PosSet;
 
 struct Piece
 {
     int piece;
     int pos;
-    Piece(int piece, int pos) : piece(piece), pos(pos){};
+    Piece(int piece, int pos);
 };
 
 struct Move
@@ -23,12 +15,7 @@ struct Move
     Piece from;
     Piece to;
     Piece remove;
-    Move(Piece from, Piece to, Piece remove = Piece(0,-1)) : from(from), to(to), remove(remove){};
-
-    bool operator<(const Move &other) const
-    {
-        return from.pos < other.from.pos && to.pos < other.to.pos && remove.pos < other.remove.pos;
-    };
+    Move(Piece from, Piece to, Piece remove = Piece(0,-1));
 };
 
 namespace std {
@@ -48,20 +35,11 @@ namespace std {
     };
 };
 
-typedef std::set<Move> MoveSet;
+typedef MoveSet;
 
-typedef std::unordered_map<int, MoveSet> MoveMap;
+typedef BoardHistory;
 
-struct PosMoveSet
-{
-    int pos;
-    MoveSet moveset;
-    PosMoveSet(int pos, MoveSet moveset) : pos(pos), moveset(moveset){};
-};
-
-typedef std::vector<Move> MoveStack;
-
-typedef std::map<int,int> PieceToCrown;
+typedef PieceToCrown;
 
 struct PieceCount {
     int whiteSingles;
@@ -77,24 +55,25 @@ public:
     int state;
     BoardArray boardarray;
     PieceCount piececount;
-    MoveMap movemap;
-    MoveStack movestack;
+    MoveSet moveset;
+    BoardHistory boardhistory;
     PieceToCrown piecetocrown;
-    void reset_board();
+    void resetBoard();
     int pieceDirection(const int &piece) const;
     void removePiece(const Piece &p);
     void changePieceType(const Piece &p);
-    PosMoveSet checkPieceDiagonals(const int &pos) const;
-    void makeMoveMap();
+    void addPieceDiagonals(const int &pos);
+    void updateMoveSet();
     void crownIf(const Piece &p);
     void addImpassable();
     PosSet checkSingles() const;
     void doMove(const Move &move);
     void undoMove();
-    void print() const;
-    void save_board() const;
-    void delete_board() const;
+    void printMoves() const;
+    void printBoard() const;
+    void saveBoard() const;
+    void deleteBoard() const;
 private:
-    void get_board(bool paused);
-    void get_piececount();
+    void initBoard(bool paused);
+    void getPieceCount();
 };

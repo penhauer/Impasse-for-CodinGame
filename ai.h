@@ -1,8 +1,9 @@
 class Ai
 {
-private:
 public:
-    Ai(int color) : color(color) {};
-    int evaluateBoard();
+    Ai(int color);
+    Move getMove(const Board &board) const;
+private:
+    int evaluateBoard() const;
     void orderMoves();
 };

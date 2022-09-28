@@ -3,16 +3,16 @@
 class Ai
 {
 public:
-    Ai(int color) : color(color){};
-    void getBestMove(const Board &board) const
+    Ai(int color) {this->color = color;};
+    Move getMove(const Board &board) const
     {
         int score = negamax(board, 3, color);
+        return bestMove;
     };
-
 private:
     int color;
     Move bestMove;
-    int evaluateBoard(Board board)
+    int evaluateBoard(Board board) const
     {
         const PieceCount &piececount = board.piececount;
         return color * (piececount.whiteSingles + piececount.whiteDoubles - piececount.blackSingles - piececount.blackDoubles);
@@ -20,11 +20,11 @@ private:
     };
     void orderMoves()
     {
-        MoveMap orderedMoves;
+        MoveSet orderedMoves;
     };
     int negamax(Board board, int depth, int color) const
     {
-        if (depth == 0 || board.state != 0)
+        /*if (depth == 0 || board.state != 0)
         {
             return evaluateBoard(board);
         };
@@ -42,9 +42,10 @@ private:
                     best_score = score;
                     bestMove = move;
                 }
-                board.undoMove(move);
+                board.undoMove();
             }
-        };
+        };*/
+        return 0;
     };
     void transPositionTable(){
         // TODO

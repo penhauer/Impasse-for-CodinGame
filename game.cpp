@@ -1,25 +1,25 @@
-#include <SDL2/SDL.h>
 #include <string>
+#include <tuple>
 #include <iostream>
-#include "board.h"
-#include "ai.h"
+#include <thread>
+#include <chrono>
+#include "game.h"
 
 class Game
 {
 private:
     int player; // 1 = White vs Ai, -1 = Black vs Ai
+    int gui;    // 0 = no gui, 1 = gui
     Board board;
     Ai ai;
-    Game()
+public:
+    Game(int gui, int player)
     {
         board = Board();
-        std::cout << "Choose your color (white/black): ";
-        std::string playercolor;
-        std::cin >> playercolor;
-        player = (playercolor == "white") ? 1 : -1;
-        ai = Ai();
+        ai = Ai(player*-1);
         gameLoop();
     };
+private:
     void gameLoop()
     {
         Move move;
@@ -31,33 +31,63 @@ private:
                 bool turnEnd = false;
                 while (turnEnd)
                 {
-                    std::cout << "Select position: ";
+                    std::cout << "Select position, write help for help: ";
                     std::string notation;
                     std::cin >> notation;
-                    int pos = notationToIndex(notation);
-                    turnEnd = trySelect(pos);
+                    if (notation == "help")
+                    {
+                        std::cout << "Possible options:\nundo: undo last move\nmoves: print possible moves\nboard: print board\nrestart: restart game\nquit: quit program\n";
+                    }
+                    else if (notation == "undo")
+                    {
+                        board.undoMove();
+                    }
+                    else if (notation == "moves")
+                    {
+                        board.printMoves();
+                    }
+                    else if (notation == "board")
+                    {
+                        board.printBoard();
+                    }
+                    else if (notation == "restart")
+                    {
+                        board = Board();
+                    }
+                    else if (notation == "quit")
+                    {
+                        std::cout << "Thanks for playing!" << std::endl;
+                        std::this_thread::sleep_for(std::chrono::milliseconds(1500));
+                        board.deleteBoard();
+                        exit(0);
+                    }
+                    else
+                    {
+                        int pos = parseMove(notation);
+                        std::tie(turnEnd, move) = trySelect(pos);
+                    }
                 };
                 board.doMove(move);
             }
             else
             {
-                std::cout << "Ai turn" << std::endl;
+                std::cout << "AI turn" << std::endl;
+                //create timer
                 Move move = ai.getMove(board);
                 board.doMove(move);
             };
-            board.print();
+            board.printBoard();
         };
     };
-    bool trySelect(int pos)
+    std::tuple<bool, Move> trySelect(int pos)
     {
         if (board.movemap.count(pos) == 0)
         {
             std::cout << "Invalid position" << std::endl;
-            return false;
+            return false, Move;
         }
         else
         {
-
             const MoveSet &moveset = board.movemap[pos];
             if (moveset.size() == 1)
             {
@@ -69,7 +99,7 @@ private:
                 std::cout << "Select move: ";
                 std::string notation;
                 std::cin >> notation;
-                int move = notationToIndex(notation);
+                int move = parseMove(notation);
                 if (moveset.count(move) == 0)
                 {
                     std::cout << "Invalid move" << std::endl;
@@ -92,16 +122,12 @@ private:
             return false;
         };
     };
-    bool pieceSelected = false;
-    bool removeSelected = false;
-    Piece selectedPiece;
-    int selectedRemove;
-    Board board;
-    void reset() {
-        board.reset_board();
+    void reset()
+    {
+        board.resetBoard();
     };
     //concert from chess notation to position
-    int notationToIndex(const std::string &notation)
+    int parseMove(const std::string &notation)
     {
         char letter = tolower(notation[0]);
         int row = notation[1] - '1';
@@ -109,97 +135,4 @@ private:
         row = (int)row;
         return col + 8 * row;
     };
-    void select(int pos)
-    {
-        const int &selected = board.boardarray[pos];
-        // if piece was already selected, try to move it
-        if (pieceSelected)
-        {
-            // if 
-            if (((selectedPiece.piece == 2 || selectedPiece.piece == -1) && (selectedpos.row == 7)) || ((selectedPiece.piece == 1 || selectedPiece.piece == -2) && (selectedpos.row == 0)))
-            {
-                if (removeSelected)
-                {
-                    gamestate.doMove(Move(selectedPiece.piece, selectedPiece.pos, selectedpos, selectedRemove));
-                    pieceSelected = false;
-                    removeSelected = false;
-                    return;
-                }
-                else
-                {
-                    if (gamestate.movemap.count(selected) > 0)
-                    {
-
-                    }
-                    selectedRemove = selectedpos;
-                    removeSelected = true;
-                    return;
-                };
-            }
-            else
-            {
-                Move move = Move(selectedPiece.piece, selectedPiece.pos, selectedpos);
-                if (gamestate.movemap.count(selectedPiece.pos) > 0)
-                {
-                    MoveSet moves = gamestate.movemap[selectedPiece.pos];
-                    if (moves.count(selectedpos) > 0)
-                    {
-                        gamestate.doMove(move);
-                        pieceSelected = false;
-                        return;
-                    }
-                    else
-                    {
-                        pieceSelected = false;
-                        return;
-                    }
-                    ;
-                };
-            };
-        }
-        // else select a piece first, then recursively call select again
-        else
-        {
-            if (gamestate.movemap.count(selectedpos) > 0)
-            {
-                pieceSelected = true;
-                selectedPiece = Piece(piece, selectedpos);
-                return;
-            }
-            else
-            {
-                pieceSelected = false;
-                return;
-            };
-        };
-    };
-    public:
-        void gameLoop()
-        {
-            bool running = true;
-            SDL_Event event;
-            Ai ai = Ai(-1);
-            while (running)
-            {
-                if (gamestate.state != 0)
-                {
-                    running = false;
-                };
-                if (gamestate.getTurn() == -1)
-                {
-                    gamestate.doMove(ai.getMove(gamestate));
-                };
-                while (SDL_PollEvent(&event))
-                {
-                    switch (event.type)
-                    {
-                    case SDL_QUIT:
-                        running = false;
-                    case SDL_MOUSEBUTTONDOWN:
-                        int x, y;
-                        SDL_GetMouseState(&x, &y);
-                        select(x, y);
-                    };
-                };
-            };
-        };
+};
