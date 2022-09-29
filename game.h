@@ -9,12 +9,14 @@ private:
     int gui;    // 0 = no gui, 1 = gui
     Board board;
     Ai ai;
+
 public:
     Game();
     ~Game();
+
 private:
     void gameLoop();
     std::tuple<bool, Move> trySelect(int pos, Move move);
     void reset();
-    int parseMove(const std::string& notation);
+    int parseMove(const std::string &notation);
 };

@@ -3,27 +3,26 @@
 #include <algorithm>
 #include <set>
 
-Ai::Ai() {};
-Ai::Ai(int color) : color(color) {};
-Move Ai::getMove(const Board& board)
+Ai::Ai(){};
+Ai::Ai(int color) : color(color){};
+Move Ai::getMove(const Board &board)
 {
-    //int score = negamax(board, 3, color);
-    //return bestMove;
+    // int score = negamax(board, 3, color);
+    // return bestMove;
     return randomMove(board);
 };
-Move Ai::randomMove(const Board& board) const
+Move Ai::randomMove(const Board &board) const
 {
     const MoveSet &moves = board.moveset;
     int r = rand() % moves.size();
     auto it = std::begin(moves);
     // 'advance' the iterator n times
-    std::advance(it,r);
+    std::advance(it, r);
     return *it;
-
 };
 int Ai::evaluateBoard(Board board) const
 {
-    const PieceCount& piececount = board.piececount;
+    const PieceCount &piececount = board.piececount;
     return color * (piececount.whiteSingles + piececount.whiteDoubles - piececount.blackSingles - piececount.blackDoubles);
     // TODO add control, number of available moves, etc.
 };

@@ -10,29 +10,27 @@ typedef int BoardArray[64];
 
 typedef std::set<int> PosSet;
 
-Piece::Piece() {};
-Piece::Piece(int piece, int pos) : piece(piece), pos(pos) {};
+Piece::Piece(){};
+Piece::Piece(int piece, int pos) : piece(piece), pos(pos){};
 
-Move::Move() {};
-Move::Move(Piece from, Piece to, Piece remove = Piece(-99, -99)) : from(from), to(to), remove(remove) {};
+Move::Move(){};
+Move::Move(Piece from, Piece to, Piece remove = Piece(-99, -99)) : from(from), to(to), remove(remove){};
 bool Move::validMove() const
-    {
-        return from.pos >= 0 && to.pos >= 0;
-    };
+{
+    return from.pos >= 0 && to.pos >= 0;
+};
 
-namespace std {
+namespace std
+{
     template <>
     struct hash<Move>
     {
-        std::size_t operator()(const Move& k) const
+        std::size_t operator()(const Move &k) const
         {
-            using std::size_t;
             using std::hash;
+            using std::size_t;
             using std::string;
-            return ((hash<int>()(k.from.piece)
-                ^ (hash<int>()(k.from.pos) << 1)) >> 1)
-                ^ (hash<int>()(k.to.piece)
-                    ^ (hash<int>()(k.to.pos) << 1)) >> 1;
+            return ((hash<int>()(k.from.piece) ^ (hash<int>()(k.from.pos) << 1)) >> 1) ^ (hash<int>()(k.to.piece) ^ (hash<int>()(k.to.pos) << 1)) >> 1;
         }
     };
 };
@@ -43,7 +41,7 @@ typedef std::vector<BoardArray> BoardHistory;
 
 typedef std::map<int, int> PieceToCrown;
 
-Board::Board() {};
+Board::Board(){};
 Board::Board(bool paused)
 {
     resetBoard(paused);
@@ -58,9 +56,8 @@ void Board::resetBoard(bool paused)
     boolPieceToCrown = false;
     piecetocrown.clear();
 };
-void Board::restoreLast(const Board& b)
-{
-    //TODO
+void Board::restoreLast(const Board &b){
+    // TODO
 };
 void Board::saveBoard() const
 {
@@ -115,11 +112,10 @@ void Board::printBoard() const
     };
     std::cout << "  A B C D E F G H" << std::endl;
 };
-void Board::printMoves() const
-{
-    //TODO implement
+void Board::printMoves() const {
+    // TODO implement
 };
-int Board::pieceDirection(const int& piece) const
+int Board::pieceDirection(const int &piece) const
 {
     return (piece == 1 || piece == -2) ? 1 : -1;
 };
@@ -129,7 +125,7 @@ void Board::updateMoveSet()
     // return array of possible moves
     for (int pos = 0; pos < 64; pos++)
     {
-        const int& piece = boardarray[pos];
+        const int &piece = boardarray[pos];
         if (piece * turn > 0) // if same color
         {
             addPieceDiagonals(pos);
@@ -141,7 +137,7 @@ void Board::updateMoveSet()
         addImpassable();
     };
 };
-void Board::doMove(const Move& move)
+void Board::doMove(const Move &move)
 {
 
     // Impasse
@@ -160,19 +156,19 @@ void Board::doMove(const Move& move)
     // bear off and crown
     else if (move.to.pos < 8 || move.to.pos > 55)
     {
-        //bear-off
+        // bear-off
         if (move.from.piece % 2 == 0)
         {
             changePieceType(move.from);
             crownIf(move.from);
         }
-        //crown if single was available
+        // crown if single was available
         else if (move.remove.piece != 0)
         {
             changePieceType(move.from);
             removePiece(move.remove);
         }
-        //otherwise put crownable to stack
+        // otherwise put crownable to stack
         else
         {
             piecetocrown[turn] = move.to.pos;
@@ -183,18 +179,17 @@ void Board::doMove(const Move& move)
     boardarray[move.from.pos] = boardarray[move.to.pos];
     boardarray[move.to.pos] = from;
 
-    //boardhistory.push_back(move); TODO
+    // boardhistory.push_back(move); TODO
     turn = turn * -1;
     updateMoveSet();
 };
-void Board::undoMove()
-{
-    //Move move = boardhistory.back();
-    //boardhistory.pop_back();
+void Board::undoMove(){
+    // Move move = boardhistory.back();
+    // boardhistory.pop_back();
 };
-void Board::changePieceType(const Piece& p)
+void Board::changePieceType(const Piece &p)
 {
-    int& piece = boardarray[p.pos];
+    int &piece = boardarray[p.pos];
     switch (piece)
     {
     case 1:
@@ -219,9 +214,9 @@ void Board::changePieceType(const Piece& p)
         break;
     };
 };
-void Board::removePiece(const Piece& p)
+void Board::removePiece(const Piece &p)
 {
-    int& piece = boardarray[p.pos];
+    int &piece = boardarray[p.pos];
     switch (piece)
     {
     case 1:
@@ -253,7 +248,7 @@ PosSet Board::checkSingles() const
     PosSet singles;
     for (int pos = 0; pos < 64; pos++)
     {
-        const int& piece = boardarray[pos];
+        const int &piece = boardarray[pos];
         if (piece == turn)
         {
             singles.insert(pos);
@@ -261,14 +256,14 @@ PosSet Board::checkSingles() const
     };
     return singles;
 };
-void Board::addPieceDiagonals(const int& pos)
+void Board::addPieceDiagonals(const int &pos)
 {
-    const int& piece = boardarray[pos];
-    const int& direction = pieceDirection(piece);
+    const int &piece = boardarray[pos];
+    const int &direction = pieceDirection(piece);
     // right
     for (int p = pos; p < 64 && p >= 0; p += direction)
     {
-        const int& square = boardarray[pos];
+        const int &square = boardarray[pos];
         // transpose, but only if the piece is a double and square is 1
         if (p - pos == 9 * direction && piece == 2 * turn && square == turn)
         {
@@ -276,7 +271,7 @@ void Board::addPieceDiagonals(const int& pos)
             if (piece % 2 == 1 && (p > 55 || p < 8))
             {
                 std::set<int> singles = checkSingles();
-                for (auto& s : singles) // TODO what if empty
+                for (auto &s : singles) // TODO what if empty
                 {
                     Move move = Move(Piece(piece, pos), Piece(square, p), Piece(turn, s));
                     moveset.insert(move);
@@ -295,7 +290,7 @@ void Board::addPieceDiagonals(const int& pos)
             if (piece % 2 == 1 && (p > 55 || p < 8))
             {
                 std::set<int> singles = checkSingles();
-                for (auto& s : singles) // TODO what if empty
+                for (auto &s : singles) // TODO what if empty
                 {
                     Move move = Move(Piece(piece, pos), Piece(square, p), Piece(turn, s));
                     moveset.insert(move);
@@ -315,14 +310,14 @@ void Board::addPieceDiagonals(const int& pos)
     // left
     for (int p = pos; p < 64 && p >= 0; p += direction)
     {
-        const int& square = boardarray[pos];
+        const int &square = boardarray[pos];
         // transpose
         if (p - pos == 7 * direction && piece == 2 * turn && square == turn)
         {
             if (piece % 2 == 1 && (p > 55 || p < 8))
             {
                 std::set<int> singles = checkSingles();
-                for (auto& s : singles) // TODO what if empty
+                for (auto &s : singles) // TODO what if empty
                 {
                     Move move = Move(Piece(piece, pos), Piece(square, p), Piece(turn, s));
                     moveset.insert(move);
@@ -341,7 +336,7 @@ void Board::addPieceDiagonals(const int& pos)
             if (piece % 2 == 1 && (p > 55 || p < 8))
             {
                 std::set<int> singles = checkSingles();
-                for (auto& s : singles) // TODO what if empty
+                for (auto &s : singles) // TODO what if empty
                 {
                     Move move = Move(Piece(piece, pos), Piece(square, p), Piece(turn, s));
                     moveset.insert(move);
@@ -359,12 +354,12 @@ void Board::addPieceDiagonals(const int& pos)
         }
     };
 };
-void Board::crownIf(const Piece& p)
+void Board::crownIf(const Piece &p)
 {
     if (boolPieceToCrown)
     {
-        const int& pos = piecetocrown[turn];
-        const int& piece = boardarray[pos];
+        const int &pos = piecetocrown[turn];
+        const int &piece = boardarray[pos];
         changePieceType(Piece(piece, pos));
         piecetocrown.erase(turn);
         boolPieceToCrown = false;
@@ -375,7 +370,7 @@ void Board::addImpassable()
 {
     for (int pos = 0; pos < 64; pos++)
     {
-        const int& piece = boardarray[pos];
+        const int &piece = boardarray[pos];
         if (piece * turn > 0)
         {
             Move move = Move(Piece(piece, pos), Piece(0, -1));
@@ -403,7 +398,7 @@ void Board::initBoard(bool paused)
     }
     else
     {
-        //deleteBoard(); TODO
+        // deleteBoard(); TODO
         for (int pos = 0; pos < 64; pos++)
         {
             if (pos == 0 || pos == 4 || pos == 11 || pos == 15)
@@ -433,7 +428,7 @@ void Board::getPieceCount()
 {
     for (int pos = 0; pos < 64; pos++)
     {
-        const int& piece = boardarray[pos];
+        const int &piece = boardarray[pos];
         if (piece == 1)
         {
             piececount.whiteSingles++;
@@ -454,5 +449,5 @@ void Board::getPieceCount()
 };
 void Board::getIfToCrown()
 {
-    //TODO for when setting up the board again, or just save the whole boardstate
+    // TODO for when setting up the board again, or just save the whole boardstate
 }
