@@ -4,7 +4,7 @@
 
 int main()
 {
-    std::cout << "Welcome to Impasse!\n\nFor the game rules please visit: https://www.marksteeregames.com/Impasse_rules.pdf\n\nEngine and AI implemented by: Balazs Horvath (https://bghorvath.dev)" << std::endl;
+    std::cout << "Welcome to Impasse!\n\nFor the game rules write rules or visit: https://www.marksteeregames.com/Impasse_rules.pdf\n\nEngine and AI implemented by: Balazs Horvath (https://bghorvath.dev)" << std::endl;
     std::cout << "Please select GUI or CLI mode (0 = CLI, 1 = GUI): ";
     int gui;
     std::cin >> gui;

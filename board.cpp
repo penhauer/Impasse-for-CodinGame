@@ -83,15 +83,37 @@ void Board::printBoard() const
 {
     for (int row = 7; row >= 0; row--)
     {
+        std::cout << row + 1 << " ";
         for (int i = 0; i < 64; i++)
         {
             if (i / 8 == row)
             {
-                std::cout << boardarray[i] << " ";
+                const int &piece = boardarray[i];
+                if (piece == 0)
+                {
+                    std::cout << "  ";
+                }
+                else if (piece == 1)
+                {
+                    std::cout << "○ ";
+                }
+                else if (piece == 2)
+                {
+                    std::cout << "◇ ";
+                }
+                else if (piece == -1)
+                {
+                    std::cout << "● ";
+                }
+                else if (piece == -2)
+                {
+                    std::cout << "◆ ";
+                }
             };
         };
         std::cout << std::endl;
     };
+    std::cout << "  A B C D E F G H" << std::endl;
 };
 void Board::printMoves() const
 {
