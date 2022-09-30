@@ -6,15 +6,16 @@
 #include <fstream>
 #include "board.h"
 
-typedef int BoardArray[64];
-
-typedef std::set<int> PosSet;
-
+// pos = bsol*9 - sol*7 + 21
 Piece::Piece(){};
-Piece::Piece(int piece, int pos) : piece(piece), pos(pos){};
+Piece::Piece(int piece, int sol, int bsol) : piece(piece), sol(sol), bsol(bsol) { getPos(); getDirection(); };
+void Piece::getPos() {pos = bsol * 9 - sol * 7 + 21;};
+void Piece::getDirection() {direction = (piece == 1 || piece == -2) ? 1 : -1;};
+void Piece::changeType() {piece = (piece % 2 == 0) ? piece / 2 : piece * 2; ; getDirection();};
+void Piece::changePos(int sol, int bsol) {this->sol = sol; this->bsol = bsol; getPos();};
 
 Move::Move(){};
-Move::Move(Piece from, Piece to, Piece remove = Piece(-99, -99)) : from(from), to(to), remove(remove){};
+Move::Move(Piece from, Piece to, Piece remove = Piece(-99, -99, -99)) : from(from), to(to), remove(remove){};
 bool Move::validMove() const
 {
     return from.pos >= 0 && to.pos >= 0;
@@ -35,12 +36,6 @@ namespace std
     };
 };
 
-typedef std::set<Move> MoveSet;
-
-typedef std::vector<BoardArray> BoardHistory;
-
-typedef std::map<int, int> PieceToCrown;
-
 Board::Board(){};
 Board::Board(bool paused)
 {
@@ -52,7 +47,7 @@ void Board::resetBoard(bool paused)
     state = 0;
     initBoard(paused);
     getPieceCount();
-    updateMoveSet();
+    createMoveSet();
     boolPieceToCrown = false;
     piecetocrown.clear();
 };
@@ -113,23 +108,24 @@ void Board::printBoard() const
     std::cout << "  A B C D E F G H" << std::endl;
 };
 void Board::printMoves() const {
-    // TODO implement
+    for (auto &move : moveset) {
+        std::cout << "from: " << move.from.pos << " to: " << move.to.pos << " remove: " << move.remove.pos << std::endl;
+    }
 };
-int Board::pieceDirection(const int &piece) const
-{
-    return (piece == 1 || piece == -2) ? 1 : -1;
-};
-void Board::updateMoveSet()
+void Board::createMoveSet()
 {
     moveset.clear();
     // return array of possible moves
-    for (int pos = 0; pos < 64; pos++)
+    for (auto const& [sol, val] : piecemap)
     {
-        const int &piece = boardarray[pos];
-        if (piece * turn > 0) // if same color
+        for (auto const& [bsol, piece] : val)
         {
-            addPieceDiagonals(pos);
-        };
+            const Piece &p = piecemap[sol][bsol];
+            if (p.piece  * turn > 0)
+            {
+                addPieceDiagonals(p);
+            }
+        }
     };
     // if no move, impasse
     if (moveset.size() == 0)
@@ -146,7 +142,7 @@ void Board::doMove(const Move &move)
         if (move.remove.piece % 2 == 0)
         {
             changePieceType(move.from);
-            crownIf(Piece(1, move.from.pos));
+            crownIf(Piece(1, move.from.sol, move.from.bsol));
         }
         else
         {
@@ -171,7 +167,7 @@ void Board::doMove(const Move &move)
         // otherwise put crownable to stack
         else
         {
-            piecetocrown[turn] = move.to.pos;
+            piecetocrown[turn] = move.to;
             boolPieceToCrown = true;
         }
     };
@@ -181,7 +177,7 @@ void Board::doMove(const Move &move)
 
     // boardhistory.push_back(move); TODO
     turn = turn * -1;
-    updateMoveSet();
+    createMoveSet(); //updateMoveSet();
 };
 void Board::undoMove(){
     // Move move = boardhistory.back();
@@ -189,6 +185,7 @@ void Board::undoMove(){
 };
 void Board::changePieceType(const Piece &p)
 {
+    piecemap[p.sol][p.bsol].changeType();
     int &piece = boardarray[p.pos];
     switch (piece)
     {
@@ -216,6 +213,7 @@ void Board::changePieceType(const Piece &p)
 };
 void Board::removePiece(const Piece &p)
 {
+    piecemap.at(p.sol).erase(p.bsol);
     int &piece = boardarray[p.pos];
     switch (piece)
     {
@@ -243,29 +241,35 @@ void Board::removePiece(const Piece &p)
         state = -1;
     }
 };
-PosSet Board::checkSingles() const
+PieceSet Board::checkSingles() const
 {
-    PosSet singles;
-    for (int pos = 0; pos < 64; pos++)
+    PieceSet singles;
+    for (int sol = 0; sol < 6; sol++)
     {
-        const int &piece = boardarray[pos];
-        if (piece == turn)
+        for (int bsol = 0; bsol < 7; bsol++)
         {
-            singles.insert(pos);
-        };
+            if (piecemap.at(sol).at(bsol).piece == turn)
+            {
+                singles.insert(piecemap.at(sol).at(bsol));
+            }
+        }
     };
     return singles;
 };
-void Board::addPieceDiagonals(const int &pos)
+void Board::addPieceDiagonals(const Piece &p)
 {
-    const int &piece = boardarray[pos];
-    const int &direction = pieceDirection(piece);
-    // right
-    for (int p = pos; p < 64 && p >= 0; p += direction)
+    //check solidus and back solidus for possible moves
+    int sol = p.sol; //0-6
+    int bsol = p.bsol; //0-7
+    int direction = p.direction;
+    for (int s = sol+direction; s < 7; s += direction)
+
+
+    /*
     {
-        const int &square = boardarray[pos];
+        const int &square = boardarray[p];
         // transpose, but only if the piece is a double and square is 1
-        if (p - pos == 9 * direction && piece == 2 * turn && square == turn)
+        if ((p - pos % 9 == 0 || p - pos % 7 == 0) && piece == 2 * turn && square == turn)
         {
             // if crowning
             if (piece % 2 == 1 && (p > 55 || p < 8))
@@ -285,82 +289,47 @@ void Board::addPieceDiagonals(const int &pos)
             break;
         }
         // slide
-        else if ((p - pos) % 8 == 1 * direction && square == 0)
+        else if ((((p - pos) % 7 == 0) && ((pos % 8 != 7 && pos > p) || (pos % 8 != 0 && p > pos))) || ((p - pos) % 9 == 0 && ((pos % 8 != 7 && p > pos) || (pos % 8 == 0 && p < pos))))
         {
-            if (piece % 2 == 1 && (p > 55 || p < 8))
+            if (square == 0)
             {
-                std::set<int> singles = checkSingles();
-                for (auto &s : singles) // TODO what if empty
+                if (piece % 2 == 1 && (p > 55 || p < 8))
                 {
-                    Move move = Move(Piece(piece, pos), Piece(square, p), Piece(turn, s));
+                    std::set<int> singles = checkSingles();
+                    for (auto &s : singles) // TODO what if empty
+                    {
+                        Move move = Move(Piece(piece, pos), Piece(square, p), Piece(turn, s));
+                        moveset.insert(move);
+                    }
+                }
+                else
+                {
+                    Move move = Move(Piece(piece, pos), Piece(square, p));
                     moveset.insert(move);
                 }
             }
             else
             {
-                Move move = Move(Piece(piece, pos), Piece(square, p));
-                moveset.insert(move);
+                break;
             }
         }
         else
         {
-            break;
+            continue;
         }
     };
-    // left
-    for (int p = pos; p < 64 && p >= 0; p += direction)
-    {
-        const int &square = boardarray[pos];
-        // transpose
-        if (p - pos == 7 * direction && piece == 2 * turn && square == turn)
-        {
-            if (piece % 2 == 1 && (p > 55 || p < 8))
-            {
-                std::set<int> singles = checkSingles();
-                for (auto &s : singles) // TODO what if empty
-                {
-                    Move move = Move(Piece(piece, pos), Piece(square, p), Piece(turn, s));
-                    moveset.insert(move);
-                }
-            }
-            else
-            {
-                Move move = Move(Piece(piece, pos), Piece(square, p));
-                moveset.insert(move);
-            }
-            break;
-        }
-        // slide
-        else if ((p - pos) % 8 == 7 * direction && square == 0)
-        {
-            if (piece % 2 == 1 && (p > 55 || p < 8))
-            {
-                std::set<int> singles = checkSingles();
-                for (auto &s : singles) // TODO what if empty
-                {
-                    Move move = Move(Piece(piece, pos), Piece(square, p), Piece(turn, s));
-                    moveset.insert(move);
-                }
-            }
-            else
-            {
-                Move move = Move(Piece(piece, pos), Piece(square, p));
-                moveset.insert(move);
-            }
-        }
-        else
-        {
-            break;
-        }
-    };
+    */
+};
+void Board::updateMoveSet(const Move &move)
+{
+    // TODO
 };
 void Board::crownIf(const Piece &p)
 {
     if (boolPieceToCrown)
     {
-        const int &pos = piecetocrown[turn];
-        const int &piece = boardarray[pos];
-        changePieceType(Piece(piece, pos));
+        const Piece &piecetc = piecetocrown[turn];
+        changePieceType(piecemap[piecetc.sol][piecetc.bsol]);
         piecetocrown.erase(turn);
         boolPieceToCrown = false;
         removePiece(p);
@@ -399,7 +368,7 @@ void Board::initBoard(bool paused)
     else
     {
         // deleteBoard(); TODO
-        for (int pos = 0; pos < 64; pos++)
+        /*for (int pos = 0; pos < 64; pos++)
         {
             if (pos == 0 || pos == 4 || pos == 11 || pos == 15)
             {
@@ -422,6 +391,33 @@ void Board::initBoard(bool paused)
                 boardarray[pos] = 0;
             };
         };
+        */
+        for (int sol = 0; sol < 7; sol++)
+        {
+            for (int bsol = 0; bsol < 8; bsol++)
+            {
+                if ((sol == 3 && bsol == 0) || (sol == 4 && bsol == 2) || (sol == 5 && bsol == 2) || (sol == 6 && bsol == 4))
+                {
+                    piecemap[sol][bsol] = Piece(1, sol, bsol);
+                    boardarray[bsol*9-sol*7+21] = 1;
+                }
+                else if ((sol == 0 && bsol == 4) || (sol == 1 && bsol == 4) || (sol == 6 && bsol == 2) || (sol == 6 && bsol == 3))
+                {
+                    piecemap[sol][bsol] = Piece(2, sol, bsol);
+                    boardarray[bsol*9-sol*7+21] = 2;
+                }
+                else if ((sol == 0 && bsol == 3) || (sol == 1 && bsol == 5) || (sol == 2 && bsol == 5) || (sol == 3 && bsol == 7))
+                {
+                    piecemap[sol][bsol] = Piece(-1, sol, bsol);
+                    boardarray[bsol*9-sol*7+21] = -1;
+                }
+                else if ((sol == 3 && bsol == 1) || (sol == 4 && bsol == 1) || (sol == 5 && bsol == 3) || (sol == 6 && bsol == 3))
+                {
+                    piecemap[sol][bsol] = Piece(-2, sol, bsol);
+                    boardarray[bsol*9-sol*7+21] = -2;
+                }
+            }
+        }
     };
 };
 void Board::getPieceCount()

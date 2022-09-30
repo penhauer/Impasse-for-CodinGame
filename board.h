@@ -5,14 +5,23 @@
 
 typedef int BoardArray[64];
 
-typedef std::set<int> PosSet;
+typedef std::set<Piece> PieceSet;
 
-struct Piece
+class Piece
 {
+public:
     int piece;
+    int sol;
+    int bsol;
     int pos;
+    int direction;
+    void changeType();
+    void changePos(int sol, int bsol);
     Piece();
-    Piece(int piece, int pos);
+    Piece(int piece, int sol, int bsol);
+private:
+    void getPos();
+    void getDirection();
 };
 
 struct Move
@@ -32,7 +41,7 @@ struct Move
 
 typedef std::set<Move> MoveSet;
 
-typedef std::map<int, int> PieceToCrown;
+typedef std::map<int, Piece> PieceToCrown;
 
 struct PieceCount
 {
@@ -44,12 +53,14 @@ struct PieceCount
 
 typedef std::vector<BoardArray> BoardHistory;
 
+typedef std::map<int, std::map<int, Piece>> PieceMap;
 class Board
 {
 public:
     int turn;
     int state;
     BoardArray boardarray;
+    PieceMap piecemap;
     PieceCount piececount;
     MoveSet moveset;
     bool boolPieceToCrown;
@@ -67,7 +78,7 @@ public:
     void deleteBoard() const;
     void printBoard() const;
     void printMoves() const;
-    void updateMoveSet();
+    void createMoveSet();
     int pieceDirection(const int &piece) const;
     void doMove(const Move &move);
     void undoMove();
@@ -75,8 +86,9 @@ public:
 private:
     void changePieceType(const Piece &p);
     void removePiece(const Piece &p);
-    PosSet checkSingles() const;
-    void addPieceDiagonals(const int &pos);
+    PieceSet Board::checkSingles() const;
+    void Board::addPieceDiagonals(const Piece &p);
+    void updateMoveSet(const Move &move);
     void crownIf(const Piece &p);
     void addImpassable();
     void initBoard(bool paused);
