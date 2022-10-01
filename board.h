@@ -1,18 +1,23 @@
 #pragma once
 #include <map>
+#include <unordered_map>
 #include <set>
 #include <vector>
 
-typedef int BoardArray[64];
+typedef std::set<Piece> PieceSet;
 
-typedef std::set<int> PosSet;
-
-struct Piece
+class Piece
 {
+public:
     int piece;
-    int pos;
+    int color;
+    int col;
+    int row;
+    int direction;
     Piece();
-    Piece(int piece, int pos);
+    Piece(int piece, int color, int col, int row);
+    void getDirection();
+    void changeType();
 };
 
 struct Move
@@ -26,13 +31,13 @@ struct Move
     bool validMove() const;
     bool operator<(const Move &other) const
     {
-        return from.pos < other.from.pos && to.pos < other.to.pos && remove.pos < other.remove.pos;
+        return from.col < other.from.col && from.row < other.from.row && to.col < other.to.col && to.row < other.to.row && remove.col < other.remove.col && remove.row < other.remove.row;
     };
 };
 
 typedef std::set<Move> MoveSet;
 
-typedef std::map<int, int> PieceToCrown;
+typedef std::map<int, Piece> PieceToCrown;
 
 struct PieceCount
 {
@@ -42,14 +47,16 @@ struct PieceCount
     int blackDoubles;
 };
 
-typedef std::vector<BoardArray> BoardHistory;
+typedef std::vector<PieceMap> BoardHistory;
+
+typedef std::unordered_map<int, std::unordered_map<int, Piece>> PieceMap;
 
 class Board
 {
 public:
     int turn;
     int state;
-    BoardArray boardarray;
+    PieceMap piecemap;
     PieceCount piececount;
     MoveSet moveset;
     bool boolPieceToCrown;
@@ -67,16 +74,17 @@ public:
     void deleteBoard() const;
     void printBoard() const;
     void printMoves() const;
-    void updateMoveSet();
-    int pieceDirection(const int &piece) const;
+    void createMoveSet();
+    void updateMoveSet(const Move &move);
     void doMove(const Move &move);
     void undoMove();
 
 private:
-    void changePieceType(const Piece &p);
-    void removePiece(const Piece &p);
-    PosSet checkSingles() const;
-    void addPieceDiagonals(const int &pos);
+    void crown(const Piece &p);
+    void bearOff(const Piece &p);
+    void remove(const Piece &p);
+    PieceSet checkSingles(const Piece &piece) const;
+    void addPieceDiagonals(const Piece &p);
     void crownIf(const Piece &p);
     void addImpassable();
     void initBoard(bool paused);
