@@ -88,5 +88,4 @@ private:
     void addImpassable();
     void initBoard(bool paused);
     void getPieceCount();
-    void getIfToCrown();
 };

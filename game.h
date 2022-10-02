@@ -1,5 +1,6 @@
 #pragma once
 #include <algorithm>
+#include <tuple>
 #include "board.h"
 #include "ai.h"
 

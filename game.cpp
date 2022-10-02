@@ -28,7 +28,7 @@ void Game::gameLoop()
             board.printBoard();
             std::cout << "Your turn" << std::endl;
             bool turnEnd = false;
-            Move move;
+            Move move = Move();
             while (turnEnd == false)
             {
                 std::cout << "Select position: ";
@@ -83,8 +83,8 @@ void Game::gameLoop()
                 }
                 else if (notation == "quit")
                 {
-                    turnEnd == true;
                     board.state == -99;
+                    break;
                 }
                 else
                 {
@@ -102,6 +102,7 @@ void Game::gameLoop()
                 }
             };
             board.doMove(move);
+            ;
         }
         else
         {
@@ -122,7 +123,7 @@ std::tuple<bool, Move> Game::returnIfOnlyMove(const Move &move)
     else if (onlymoves.size() > 1)
     {
         onlymoves.clear();
-        std::copy_if(board.moveset.begin(), board.moveset.end(), std::inserter(onlymoves, onlymoves.end()), [&](const Move &m) { return m.from == move.from && m.to == m.from;});
+        std::copy_if(board.moveset.begin(), board.moveset.end(), std::inserter(onlymoves, onlymoves.end()), [&](const Move &m) { return std::tie(m.from, m.to) == std::tie(move.from, move.to);});
         if (onlymoves.size() == 1)
         {
             return std::make_tuple(true, *(onlymoves.begin()));
@@ -138,7 +139,7 @@ std::tuple<bool, Move> Game::trySelect(int row, int col, Move move)
 {
     // look through moveset, check if there exists a move with from position
     MoveSet::iterator itr;
-    if (move.from.row < -1 || move.from.row > 7)
+    if (move.from.row == -1)
     {
         for (itr = board.moveset.begin(); itr != board.moveset.end(); itr++)
         {
@@ -159,11 +160,11 @@ std::tuple<bool, Move> Game::trySelect(int row, int col, Move move)
             };
         };
     }
-    else if (move.to.row < -1 || move.from.row > 7)
+    else if (move.to.row == -1)
     {
         for (itr = board.moveset.begin(); itr != board.moveset.end(); itr++)
         {
-            if (itr->from.row == move.from.row && itr->from.col == move.from.col && itr->to.row == row && itr->to.col == col)
+            if (itr->from == move.from && itr->to.row == row && itr->to.col == col)
             {
                 move.to = itr->to;
                 bool ifonlymove;
@@ -176,13 +177,18 @@ std::tuple<bool, Move> Game::trySelect(int row, int col, Move move)
                 {
                     return std::make_tuple(false, move);
                 };
-            }
-        }
+            };
+        };
     }
-    else if (itr->from.row == move.from.row && itr->from.col == move.from.col && itr->to.row == move.to.row && itr->to.col == move.to.col && itr->remove.row == row && itr->remove.col == col)
+    else if (move.remove.row == -1)
     {
-        move.remove = itr->remove;
-        return std::make_tuple(true, move);
+        for (itr = board.moveset.begin(); itr != board.moveset.end(); itr++)
+        {
+            if (itr->from == move.from && itr->to == move.to && itr->remove.row == row && itr->remove.col == col)
+            {
+                return std::make_tuple(true, *itr);
+            };
+        };
     };
     std::cout << "Invalid move, enter 'help' for help" << std::endl;
     return std::make_tuple(false, Move());

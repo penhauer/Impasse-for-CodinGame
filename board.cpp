@@ -6,7 +6,13 @@
 #include <fstream>
 #include "board.h"
 
-Piece::Piece(){};
+Piece::Piece()
+{
+    piece = 0;
+    color = 0;
+    row = -1;
+    col = -1;
+};
 Piece::Piece(int piece, int color, int row, int col) : piece(piece), color(color), row(row), col(col){getDirection();};
 void Piece::getDirection() { direction = (piece == 1 && color == 1 || piece == 2 && color == -1) ? 1 : -1; };
 void Piece::changeType()
@@ -16,18 +22,23 @@ void Piece::changeType()
 };
 bool Piece::operator<(const Piece &other) const
 {
-    return col < other.col && row < other.row && color < other.color && piece < other.piece;
+    return std::tie(piece, color, row, col) < std::tie(other.piece, other.color, other.row, other.col);
 };
 bool Piece::operator==(const Piece &other) const
 {
-    return col == other.col && row == other.row && color == other.color && piece == other.piece;
+    return std::tie(col, row, color, piece) == std::tie(other.col, other.row, other.color, other.piece);
 };
 
-Move::Move(){};
+Move::Move()
+{
+    from = Piece();
+    to = Piece();
+    remove = Piece();
+};
 Move::Move(Piece from, Piece to = Piece(0, 0, -1, -1), Piece remove = Piece(0, 0, -1, -1)) : from(from), to(to), remove(remove){};
 bool Move::operator<(const Move &other) const
 {
-    return from < other.from && to < other.to && remove < other.remove;
+    return std::tie(from, to, remove) < std::tie(other.from, other.to, other.remove);
 };
 bool Move::operator==(const Move &other) const
 {
@@ -60,9 +71,9 @@ void Board::resetBoard(bool paused)
     state = 0;
     initBoard(paused);
     getPieceCount();
-    createMoveSet();
     boolPieceToCrown = false;
     piecetocrown.clear();
+    createMoveSet();
 };
 void Board::restoreLast(const Board &b){
     // TODO
@@ -135,7 +146,7 @@ void Board::printMoves() const
 {
     for (const auto &move : moveset)
     {
-        std::cout << move.from.col << move.from.row << " " << move.to.col << move.to.row << " " << move.remove.col << move.remove.row << std::endl;
+        std::cout << "From: (" << move.from.col << "," << move.from.row << "), to: (" << move.to.col << "," << move.to.row << "), remove: (" << move.remove.col << "," << move.remove.row << ")" << std::endl;
     }
 };
 void Board::createMoveSet()
@@ -171,7 +182,7 @@ void Board::updateMoveSet(const Move &move)
 void Board::doMove(const Move &move)
 {
     // Impasse
-    if (move.from.col == move.remove.col && move.from.row == move.remove.row)
+    if (move.from == move.remove)
     {
         if (move.remove.piece == 2)
         {
@@ -206,7 +217,14 @@ void Board::doMove(const Move &move)
         }
     };
     Piece from = piecemap.at(move.from.row).at(move.from.col);
-    piecemap[move.from.row][move.from.col] = piecemap.at(move.to.row).at(move.to.col);
+    if (move.to.piece > 0)
+    {
+        piecemap[move.from.row][move.from.col] = piecemap.at(move.to.row).at(move.to.col);
+    }
+    else
+    {
+        piecemap.at(move.from.row).erase(move.from.col);
+    }
     piecemap[move.to.row][move.to.col] = from;
     // boardhistory.push_back(move); TODO
     turn = turn * -1;
@@ -231,6 +249,7 @@ void Board::crown(const Piece &p)
         break;
     };
     piece.piece = 2;
+    piece.getDirection();
 };
 void Board::bearOff(const Piece &p)
 {
@@ -247,6 +266,7 @@ void Board::bearOff(const Piece &p)
         break;
     };
     piece.piece = 1;
+    piece.getDirection();
 };
 // For impasse / bear-off
 void Board::remove(const Piece &p)
@@ -314,7 +334,7 @@ void Board::addPieceDiagonals(const Piece &piece)
                 break;
             };
             // transpose
-            if ((i == 1 || i == -1) && piece.piece == 2 && piecemap.count(row) > 0 && piecemap.at(row).count(col) > 0 && piecemap.at(row).at(col).piece == 1)
+            if ((i == 1 || i == -1) && piece.piece == 2 && piecemap.count(row) > 0 && piecemap.at(row).count(col) > 0 && piecemap.at(row).at(col).piece == 1 && piecemap.at(row).at(col).color == turn)
             {
                 const Piece &newpiece = piecemap.at(row).at(col);
                 // crown
@@ -353,7 +373,7 @@ void Board::addPieceDiagonals(const Piece &piece)
                         }
                         else
                         {
-                            // if no other singles available
+                            // if no other singles available, just add as normal slide, and add to crownstack
                             moveset.insert(Move(piece, Piece(1, piece.color, col, row)));
                         }
                     }
@@ -431,6 +451,7 @@ void Board::initBoard(bool paused)
     }
     else
     {
+        piecemap.clear();
         // deleteBoard(); TODO
         for (int row = 0; row < 8; row++)
         {
@@ -491,7 +512,3 @@ void Board::getPieceCount()
         };
     };
 };
-void Board::getIfToCrown()
-{
-    // TODO for when setting up the board again, or just save the whole boardstate
-}
