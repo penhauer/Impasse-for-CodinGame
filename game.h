@@ -1,4 +1,5 @@
 #pragma once
+#include <algorithm>
 #include "board.h"
 #include "ai.h"
 
@@ -16,7 +17,8 @@ public:
 
 private:
     void gameLoop();
-    std::tuple<bool, Move> trySelect(int pos, Move move);
+    std::tuple<bool, Move> trySelect(int row, int col, Move move);
     void reset();
     int parseMove(const std::string &notation);
+    std::tuple<bool, Move> returnIfOnlyMove(const Move &move);
 };

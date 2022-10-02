@@ -7,19 +7,31 @@
 #include "board.h"
 
 Piece::Piece(){};
-Piece::Piece(int piece, int color, int row, int col) : piece(piece), color(color), row(row), col(col){};
+Piece::Piece(int piece, int color, int row, int col) : piece(piece), color(color), row(row), col(col){getDirection();};
 void Piece::getDirection() { direction = (piece == 1 && color == 1 || piece == 2 && color == -1) ? 1 : -1; };
 void Piece::changeType()
 {
     piece = (piece == 2) ? 1 : 2;
     getDirection();
 };
+bool Piece::operator<(const Piece &other) const
+{
+    return col < other.col && row < other.row && color < other.color && piece < other.piece;
+};
+bool Piece::operator==(const Piece &other) const
+{
+    return col == other.col && row == other.row && color == other.color && piece == other.piece;
+};
 
 Move::Move(){};
-Move::Move(Piece from, Piece to, Piece remove = Piece(0, 0, -1, -1)) : from(from), to(to), remove(remove){};
-bool Move::validMove() const
+Move::Move(Piece from, Piece to = Piece(0, 0, -1, -1), Piece remove = Piece(0, 0, -1, -1)) : from(from), to(to), remove(remove){};
+bool Move::operator<(const Move &other) const
 {
-    return from.col >= -1 && to.col >= -1 && remove.col >= -1;
+    return from < other.from && to < other.to && remove < other.remove;
+};
+bool Move::operator==(const Move &other) const
+{
+    return from == other.from && to == other.to && remove == other.remove;
 };
 
 namespace std
@@ -289,14 +301,18 @@ PieceSet Board::checkSingles(const Piece &piece) const
 };
 void Board::addPieceDiagonals(const Piece &piece)
 {
-    int i = piece.direction;
     // to cover for left and right search
     for (int sign = 0; sign < 2; sign++)
     {
-        while (i + piece.row < 8 && piece.row - i >= 0)
+        int i = piece.direction;
+        while (i + piece.row < 8 && piece.row + i >= 0)
         {
             int row = piece.row + i;
-            int col = piece.col + i*(-1)^sign;
+            int col = piece.col + i*pow(-1, sign);
+            if (col < 0 || col > 7)
+            {
+                break;
+            };
             // transpose
             if ((i == 1 || i == -1) && piece.piece == 2 && piecemap.count(row) > 0 && piecemap.at(row).count(col) > 0 && piecemap.at(row).at(col).piece == 1)
             {

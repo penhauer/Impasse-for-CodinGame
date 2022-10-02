@@ -3,8 +3,7 @@
 #include <unordered_map>
 #include <set>
 #include <vector>
-
-typedef std::set<Piece> PieceSet;
+#include<math.h>
 
 class Piece
 {
@@ -18,6 +17,8 @@ public:
     Piece(int piece, int color, int col, int row);
     void getDirection();
     void changeType();
+    bool operator<(const Piece &other) const;
+    bool operator==(const Piece &other) const;
 };
 
 struct Move
@@ -27,17 +28,19 @@ struct Move
     Piece remove;
     Move();
     Move(Piece from, Piece to, Piece remove);
-    // valid if from.pos exist
-    bool validMove() const;
-    bool operator<(const Move &other) const
-    {
-        return from.col < other.from.col && from.row < other.from.row && to.col < other.to.col && to.row < other.to.row && remove.col < other.remove.col && remove.row < other.remove.row;
-    };
+    bool operator<(const Move &other) const;
+    bool operator==(const Move &other) const;
 };
+
+typedef std::set<Piece> PieceSet;
+
+typedef std::map<int, std::map<int, Piece>> PieceMap;
+
+typedef std::map<int, Piece> PieceToCrown;
 
 typedef std::set<Move> MoveSet;
 
-typedef std::map<int, Piece> PieceToCrown;
+typedef std::vector<PieceMap> BoardHistory;
 
 struct PieceCount
 {
@@ -46,10 +49,6 @@ struct PieceCount
     int blackSingles;
     int blackDoubles;
 };
-
-typedef std::vector<PieceMap> BoardHistory;
-
-typedef std::unordered_map<int, std::unordered_map<int, Piece>> PieceMap;
 
 class Board
 {
