@@ -43,10 +43,10 @@ typedef std::set<Move> MoveSet;
 
 struct PieceCount
 {
-    int whiteSingles;
-    int whiteDoubles;
-    int blackSingles;
-    int blackDoubles;
+    int whiteSingles = 0;
+    int whiteDoubles = 0;
+    int blackSingles = 0;
+    int blackDoubles = 0;
 };
 
 class Board
@@ -66,7 +66,7 @@ public:
     Board();
     Board(bool paused);
     void resetBoard(bool paused);
-    void restoreLast(const Board &b);
+    void restoreLast();
     void saveBoard() const;
     void loadBoard();
     void deleteBoard() const;
@@ -74,7 +74,7 @@ public:
     void printMoves() const;
     void createMoveSet();
     void doMove(const Move &move);
-    int evaluate() const;
+    float evaluate() const;
 
 private:
     void updateMoveSet(const Move &move);
@@ -85,6 +85,6 @@ private:
     void addPieceDiagonals(const Piece &p);
     void crownIf(const Piece &p);
     void addImpassable();
-    void initBoard(bool paused);
+    void initBoard();
     void getPieceCount();
 };

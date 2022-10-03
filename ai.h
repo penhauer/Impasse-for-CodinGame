@@ -14,5 +14,5 @@ public:
 private:
     Move randomMove(const Board &board) const;
     void orderMoves();
-    int negamax(Board board, int depth, int color);
+    float negamax(Board board, int depth, int color);
 };

@@ -3,14 +3,6 @@
 #include <chrono>
 #include "game.h"
 
-void Game::undoMove(){
-    if (boardhistory->size() > 1){
-        board = boardhistory->back();
-        boardhistory->pop_back();
-        std::cout << "Last player move undone" << std::endl;
-    };
-};
-
 Game::Game()
 {
     std::cout << "Game started" << std::endl;
@@ -88,6 +80,11 @@ void Game::gameLoop()
                     std::cout << "Game restarted" << std::endl;
                     reset();
                 }
+                else if (notation == "restore")
+                {
+                    board.loadBoard();
+                    std::cout << "Board restored" << std::endl;
+                }
                 else if (notation == "quit")
                 {
                     board.state == -99;
@@ -118,6 +115,13 @@ void Game::gameLoop()
             Move move = ai.getMove(board);
             board.doMove(move);
         };
+    };
+};
+void Game::undoMove(){
+    if (boardhistory->size() > 1){
+        board = boardhistory->back();
+        boardhistory->pop_back();
+        std::cout << "Last player move undone" << std::endl;
     };
 };
 std::tuple<bool, Move> Game::returnIfOnlyMove(const Move &move)

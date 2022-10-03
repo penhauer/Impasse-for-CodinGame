@@ -8,7 +8,8 @@ Ai::Ai(int color) : color(color){};
 Move Ai::getMove(Board board)
 {
     Move bestMove = Move();
-    int bestScore = negamax(&board, 3, color);
+    //int bestScore = negamax(&board, 3, color);
+    bestMove = randomMove(board);
     return bestMove;
 };
 Move Ai::randomMove(const Board &board) const
@@ -23,7 +24,7 @@ void Ai::orderMoves()
 {
     MoveSet orderedMoves;
 };
-int Ai::negamax(Board board, int depth, int color)
+float Ai::negamax(Board board, int depth, int color)
 {
     if (depth == 0 || board.state != 0)
     {

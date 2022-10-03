@@ -69,14 +69,11 @@ void Board::resetBoard(bool paused)
 {
     turn = 1;
     state = 0;
-    initBoard(paused);
+    initBoard();
     getPieceCount();
     boolPieceToCrown = false;
     piecetocrown.clear();
     createMoveSet();
-};
-void Board::restoreLast(const Board &b){
-    // TODO
 };
 void Board::saveBoard() const
 {
@@ -107,10 +104,18 @@ void Board::loadBoard()
     };
     newfile.close();
 };
+//If saved board exists, delete it
 void Board::deleteBoard() const
 {
-    std::remove("boardstate.txt");
+    std::ifstream newfile;
+    newfile.open("boardstate.txt", std::ios::in);
+    if (newfile.is_open())
+    {
+        newfile.close();
+        std::remove("boardstate.txt");
+    };
 };
+//Print board to console
 void Board::printBoard() const
 {
     for (int row = 7; row >= 0; row--)
@@ -156,6 +161,7 @@ void Board::printBoard() const
     };
     std::cout << "  A B C D E F G H" << std::endl;
 };
+//Print current valid moves to console
 void Board::printMoves() const
 {
     for (const auto &move : moveset)
@@ -172,6 +178,7 @@ void Board::printMoves() const
         std::cout << std::endl;
     };
 };
+//Create current valid moves
 void Board::createMoveSet()
 {
     moveset.clear();
@@ -195,19 +202,22 @@ void Board::createMoveSet()
         addImpassable();
     };
 };
+//Remove no longer valid moves, add new possible moves WIP
 void Board::updateMoveSet(const Move &move)
 {
     const Piece &from = move.from;
     const Piece &to = move.to;
     const Piece &remove = move.remove;
-    // TODO remove moves of the previous sols, add moves of the new sols
+    // TODO
 };
-int Board::evaluate() const
+//Evaluate heuristic value of current board
+float Board::evaluate() const
 {
-    int score = turn * (piececount.blackSingles + piececount.blackDoubles - piececount.whiteSingles - piececount.whiteDoubles);
+    float score = turn * (1.5 * (piececount.blackSingles + piececount.blackDoubles) - piececount.whiteSingles - piececount.whiteDoubles);
     return score;
     // TODO add average number of available moves per piece
 };
+//Update board state with selected move
 void Board::doMove(const Move &move)
 {
     // Impasse
@@ -245,20 +255,24 @@ void Board::doMove(const Move &move)
             boolPieceToCrown = true;
         }
     };
-    Piece from = piecemap.at(move.from.row).at(move.from.col);
+    Piece tempfrom = piecemap.at(move.from.row).at(move.from.col);
+    tempfrom.row = move.to.row;
+    tempfrom.col = move.to.col;
     if (move.to.piece > 0)
     {
-        piecemap[move.from.row][move.from.col] = piecemap.at(move.to.row).at(move.to.col);
+        piecemap.at(move.to.row).at(move.to.col).row = piecemap.at(move.from.row).at(move.from.col).row;
+        piecemap.at(move.to.row).at(move.to.col).col = piecemap.at(move.from.row).at(move.from.col).col;
+        piecemap.at(move.from.row).at(move.from.col) = piecemap.at(move.to.row).at(move.to.col);
     }
     else
     {
         piecemap.at(move.from.row).erase(move.from.col);
     }
-    piecemap[move.to.row][move.to.col] = from;
-    // boardhistory.push_back(move); TODO
+    piecemap[move.to.row][move.to.col] = tempfrom;
     turn = turn * -1;
     createMoveSet();
 };
+//Crown piece
 void Board::crown(const Piece &p)
 {
     Piece &piece = piecemap.at(p.row).at(p.col);
@@ -276,6 +290,7 @@ void Board::crown(const Piece &p)
     piece.piece = 2;
     piece.getDirection();
 };
+//Bear-off piece
 void Board::bearOff(const Piece &p)
 {
     Piece &piece = piecemap.at(p.row).at(p.col);
@@ -293,7 +308,7 @@ void Board::bearOff(const Piece &p)
     piece.piece = 1;
     piece.getDirection();
 };
-// For impasse / bear-off
+//Remove / bear-off piece based on type after impasse
 void Board::remove(const Piece &p)
 {
     switch (p.piece)
@@ -316,7 +331,7 @@ void Board::remove(const Piece &p)
         bearOff(p);
         break;
     };
-    // chickendinner
+    // Chickendinner
     if (piececount.whiteSingles + piececount.whiteDoubles == 0)
     {
         state = 1;
@@ -326,6 +341,7 @@ void Board::remove(const Piece &p)
         state = -1;
     };
 };
+//Create set of current color singles
 PieceSet Board::checkSingles(const Piece &piece) const
 {
     PieceSet singles;
@@ -448,39 +464,32 @@ void Board::addImpassable()
         }
     }
 };
-void Board::initBoard(bool paused)
+void Board::initBoard()
 {
-    if (paused)
+    piecemap.clear();
+    // deleteBoard(); TODO
+    for (int row = 0; row < 8; row++)
     {
-        void loadBoard();
-    }
-    else
-    {
-        piecemap.clear();
-        // deleteBoard(); TODO
-        for (int row = 0; row < 8; row++)
+        for (int col = 0; col < 8; col++)
         {
-            for (int col = 0; col < 8; col++)
+            int pos = row * 8 + col;
+            if (pos == 0 || pos == 4 || pos == 11 || pos == 15)
             {
-                int pos = row * 8 + col;
-                if (pos == 0 || pos == 4 || pos == 11 || pos == 15)
-                {
-                    piecemap[row][col] = Piece(1, 1, row, col);
-                }
-                else if (pos == 50 || pos == 54 || pos == 57 || pos == 61)
-                {
-                    piecemap[row][col] = Piece(2, 1, row, col);
-                }
-                else if (pos == 48 || pos == 52 || pos == 59 || pos == 63)
-                {
-                    piecemap[row][col] = Piece(1, -1, row, col);
-                }
-                else if (pos == 2 || pos == 6 || pos == 9 || pos == 13)
-                {
-                    piecemap[row][col] = Piece(2, -1, row, col);
-                }
+                piecemap[row][col] = Piece(1, 1, row, col);
             }
-        };
+            else if (pos == 50 || pos == 54 || pos == 57 || pos == 61)
+            {
+                piecemap[row][col] = Piece(2, 1, row, col);
+            }
+            else if (pos == 48 || pos == 52 || pos == 59 || pos == 63)
+            {
+                piecemap[row][col] = Piece(1, -1, row, col);
+            }
+            else if (pos == 2 || pos == 6 || pos == 9 || pos == 13)
+            {
+                piecemap[row][col] = Piece(2, -1, row, col);
+            }
+        }
     };
 };
 void Board::getPieceCount()
@@ -502,6 +511,7 @@ void Board::getPieceCount()
                     piececount.blackSingles++;
                     break;
                 };
+                break;
             case 2:
                 switch (piece.color)
                 {
