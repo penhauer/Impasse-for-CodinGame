@@ -71,7 +71,7 @@ public:
     void loadBoard();
     void deleteBoard() const;
     void printBoard() const;
-    void printMoves() const;
+    void printMove(const Move &move) const;
     void createMoveSet();
     void doMove(const Move &move);
     float evaluate() const;

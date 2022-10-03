@@ -162,21 +162,18 @@ void Board::printBoard() const
     std::cout << "  A B C D E F G H" << std::endl;
 };
 //Print current valid moves to console
-void Board::printMoves() const
+void Board::printMove(const Move &move) const
 {
-    for (const auto &move : moveset)
+    std::cout << "From " << reverseParseMove(move.from.row, move.from.col);
+    if (move.to.col != -1 && move.to.row != -1)
     {
-        std::cout << "From " << reverseParseMove(move.from.row, move.from.col);
-        if (move.to.col != -1 && move.to.row != -1)
-        {
-            std::cout << " to " << reverseParseMove(move.to.row, move.to.col);
-        };
-        if (move.remove.col != -1 && move.remove.row != -1)
-        {
-            std::cout << " removing " << reverseParseMove(move.remove.row, move.remove.col);
-        };
-        std::cout << std::endl;
+        std::cout << " to " << reverseParseMove(move.to.row, move.to.col);
     };
+    if (move.remove.col != -1 && move.remove.row != -1)
+    {
+        std::cout << " removing " << reverseParseMove(move.remove.row, move.remove.col);
+    };
+    std::cout << std::endl;
 };
 //Create current valid moves
 void Board::createMoveSet()

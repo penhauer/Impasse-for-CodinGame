@@ -48,10 +48,14 @@ void Game::gameLoop()
                 else if (notation == "undo")
                 {
                     undoMove();
+                    board.printBoard();
                 }
                 else if (notation == "moves")
                 {
-                    board.printMoves();
+                    for (const auto &move : board.moveset)
+                    {
+                        board.printMove(move);
+                    }
                 }
                 else if (notation == "board")
                 {
@@ -113,6 +117,7 @@ void Game::gameLoop()
         {
             std::cout << "AI turn" << std::endl;
             Move move = ai.getMove(board);
+            board.printMove(move);
             board.doMove(move);
         };
     };
@@ -122,6 +127,9 @@ void Game::undoMove(){
         board = boardhistory->back();
         boardhistory->pop_back();
         std::cout << "Last player move undone" << std::endl;
+    }
+    else{
+        std::cout << "No moves to undo" << std::endl;
     };
 };
 std::tuple<bool, Move> Game::returnIfOnlyMove(const Move &move)
