@@ -1,8 +1,15 @@
-#include <string>
 #include <iostream>
 #include <thread>
 #include <chrono>
 #include "game.h"
+
+void Game::undoMove(){
+    if (boardhistory->size() > 1){
+        board = boardhistory->back();
+        boardhistory->pop_back();
+        std::cout << "Last player move undone" << std::endl;
+    };
+};
 
 Game::Game()
 {
@@ -15,9 +22,9 @@ Game::Game()
 };
 Game::~Game()
 {
+    delete boardhistory;
     std::cout << "Thanks for playing!" << std::endl;
     std::this_thread::sleep_for(std::chrono::milliseconds(1500));
-    // board.deleteBoard();
 };
 void Game::gameLoop()
 {
@@ -48,7 +55,7 @@ void Game::gameLoop()
                 }
                 else if (notation == "undo")
                 {
-                    board.undoMove();
+                    undoMove();
                 }
                 else if (notation == "moves")
                 {
@@ -62,23 +69,23 @@ void Game::gameLoop()
                 {
                     const char *text =
                         "---RULES---\n\n"
-                        "Object: First to remove all of their own pieces wins.\n\n"
-                        "Each player starts with 4-4 single and double pieces.\n\n"
-                        "Singles can be moved away from the owner, while doubles towards.\n"
-                        "Pieces move diagonally along any number of consecutive unoccupied squares.\n"
-                        "A single and a double can transpose if they are adjacent diagonally.\n\n"
+                        "White vs Black player, remove all of your own pieces to win.\n\n"
+                        "Both players start with 4-4 singles and doubles.\n\n"
+                        "Singles can only be moved away from the owner, doubles towards.\n"
+                        "Pieces can move diagonally along any number of consecutive unoccupied squares.\n"
+                        "A single and a double can transpose if they are diagonally adjacent.\n\n"
                         "Doubles become singles once they get to their last row.\n"
-                        "Singles turn into doubles once they get to their last row\n"
-                        "if another single piece is available, and the single gets removed.\n"
-                        "If there are no other singles available, they stay singles until there are,\n"
-                        "after which they get turned into doubles.\n\n"
-                        "If there are no moves available, the player has to remove a single\n"
-                        "or turn a double into a single.\n"
-                        "The game ends with a lone single with no moves available.";
+                        "Singles become doubles once they get to their last row,\n"
+                        "assuming that another single is available, which single gets removed.\n"
+                        "If there isn't, they stay single until one becomes available.\n"
+                        "If no moves are available, a single has to be removed,\n"
+                        "or a double turned into a single.\n"
+                        "The player wins with one single left and no moves available.";
                     std::cout << text << std::endl;
                 }
                 else if (notation == "restart")
                 {
+                    std::cout << "Game restarted" << std::endl;
                     reset();
                 }
                 else if (notation == "quit")
@@ -101,6 +108,7 @@ void Game::gameLoop()
                     }
                 }
             };
+            boardhistory->push_back(board);
             board.doMove(move);
             ;
         }
@@ -196,22 +204,4 @@ std::tuple<bool, Move> Game::trySelect(int row, int col, Move move)
 void Game::reset()
 {
     board.resetBoard(false);
-};
-// concert from chess notation to position
-int Game::parseMove(const std::string &notation)
-{
-    if (notation.size() != 2)
-    {
-        return -1;
-    };
-    char letter = tolower(notation[0]);
-    int row = notation[1] - '1';
-    int col = (int)letter - 97;
-    row = (int)row;
-    int pos = col + 8 * row;
-    if (pos < 0 || pos > 63)
-    {
-        return -1;
-    };
-    return pos;
 };

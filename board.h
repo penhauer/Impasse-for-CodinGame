@@ -3,7 +3,8 @@
 #include <unordered_map>
 #include <set>
 #include <vector>
-#include<math.h>
+#include <math.h>
+#include "common.h"
 
 class Piece
 {
@@ -40,8 +41,6 @@ typedef std::map<int, Piece> PieceToCrown;
 
 typedef std::set<Move> MoveSet;
 
-typedef std::vector<PieceMap> BoardHistory;
-
 struct PieceCount
 {
     int whiteSingles;
@@ -55,13 +54,12 @@ class Board
 public:
     int turn;
     int state;
-    PieceMap piecemap;
     PieceCount piececount;
     MoveSet moveset;
-    bool boolPieceToCrown;
 
 private:
-    BoardHistory *boardhistory;
+    PieceMap piecemap;
+    bool boolPieceToCrown;
     PieceToCrown piecetocrown;
 
 public:
@@ -70,15 +68,16 @@ public:
     void resetBoard(bool paused);
     void restoreLast(const Board &b);
     void saveBoard() const;
+    void loadBoard();
     void deleteBoard() const;
     void printBoard() const;
     void printMoves() const;
     void createMoveSet();
-    void updateMoveSet(const Move &move);
     void doMove(const Move &move);
-    void undoMove();
+    int evaluate() const;
 
 private:
+    void updateMoveSet(const Move &move);
     void crown(const Piece &p);
     void bearOff(const Piece &p);
     void remove(const Piece &p);

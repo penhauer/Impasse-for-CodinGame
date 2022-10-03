@@ -84,14 +84,28 @@ void Board::saveBoard() const
     newfile.open("boardstate.txt", std::ios::out);
     if (newfile.is_open())
     {
-        for (int i = 0; i < 64; i++)
-        {
-            int col = i % 8;
-            int row = i / 8;
-            // newfile << piecemap.at(col).at(row) << std::endl; TODO
-        }
-        newfile.close();
+        newfile << turn << std::endl;
+        newfile << state << std::endl;
+        newfile << boolPieceToCrown << std::endl;
+        newfile << piecetocrown.size() << std::endl;
+        //TODO add piecetocrown and pieceset
     };
+    newfile.close();
+};
+void Board::loadBoard()
+{
+    std::ifstream newfile;
+    newfile.open("boardstate.txt", std::ios::in);
+    if (newfile.is_open())
+    {
+        newfile >> turn;
+        newfile >> state;
+        newfile >> boolPieceToCrown;
+        int size;
+        newfile >> size;
+        //TODO add piecetocrown and pieceset
+    };
+    newfile.close();
 };
 void Board::deleteBoard() const
 {
@@ -146,8 +160,17 @@ void Board::printMoves() const
 {
     for (const auto &move : moveset)
     {
-        std::cout << "From: (" << move.from.col << "," << move.from.row << "), to: (" << move.to.col << "," << move.to.row << "), remove: (" << move.remove.col << "," << move.remove.row << ")" << std::endl;
-    }
+        std::cout << "From " << reverseParseMove(move.from.row, move.from.col);
+        if (move.to.col != -1 && move.to.row != -1)
+        {
+            std::cout << " to " << reverseParseMove(move.to.row, move.to.col);
+        };
+        if (move.remove.col != -1 && move.remove.row != -1)
+        {
+            std::cout << " removing " << reverseParseMove(move.remove.row, move.remove.col);
+        };
+        std::cout << std::endl;
+    };
 };
 void Board::createMoveSet()
 {
@@ -178,7 +201,13 @@ void Board::updateMoveSet(const Move &move)
     const Piece &to = move.to;
     const Piece &remove = move.remove;
     // TODO remove moves of the previous sols, add moves of the new sols
-}
+};
+int Board::evaluate() const
+{
+    int score = turn * (piececount.blackSingles + piececount.blackDoubles - piececount.whiteSingles - piececount.whiteDoubles);
+    return score;
+    // TODO add average number of available moves per piece
+};
 void Board::doMove(const Move &move)
 {
     // Impasse
@@ -229,10 +258,6 @@ void Board::doMove(const Move &move)
     // boardhistory.push_back(move); TODO
     turn = turn * -1;
     createMoveSet();
-};
-void Board::undoMove(){
-    // Move move = boardhistory.back();
-    // boardhistory.pop_back();
 };
 void Board::crown(const Piece &p)
 {
@@ -427,27 +452,7 @@ void Board::initBoard(bool paused)
 {
     if (paused)
     {
-        std::ifstream newfile;
-        std::string line;
-        newfile.open("boardstate.txt", std::ios::in);
-        if (newfile.is_open())
-        {
-            std::string tp;
-            for (int i = 0; i < 64; i++)
-            {
-                int col = i % 8;
-                int row = i / 8;
-                getline(newfile, tp);
-                int piece = std::stoi(tp);
-                getline(newfile, tp);
-                int color = std::stoi(tp);
-                if (piece != 0)
-                {
-                    piecemap[row][col] = Piece(piece, color, row, col);
-                }
-            }
-            newfile.close();
-        };
+        void loadBoard();
     }
     else
     {

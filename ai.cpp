@@ -5,26 +5,19 @@
 
 Ai::Ai(){};
 Ai::Ai(int color) : color(color){};
-Move Ai::getMove(const Board &board)
+Move Ai::getMove(Board board)
 {
-    // int score = negamax(board, 3, color);
-    // return bestMove;
-    return randomMove(board);
+    Move bestMove = Move();
+    int bestScore = negamax(&board, 3, color);
+    return bestMove;
 };
 Move Ai::randomMove(const Board &board) const
 {
     const MoveSet &moves = board.moveset;
     int r = rand() % moves.size();
     auto it = std::begin(moves);
-    // 'advance' the iterator n times
     std::advance(it, r);
     return *it;
-};
-int Ai::evaluateBoard(Board board) const
-{
-    const PieceCount &piececount = board.piececount;
-    return color * (piececount.whiteSingles + piececount.whiteDoubles - piececount.blackSingles - piececount.blackDoubles);
-    // TODO add control, number of available moves, etc.
 };
 void Ai::orderMoves()
 {
@@ -32,28 +25,22 @@ void Ai::orderMoves()
 };
 int Ai::negamax(Board board, int depth, int color)
 {
-    /*if (depth == 0 || board.state != 0)
+    if (depth == 0 || board.state != 0)
     {
-        return evaluateBoard(board);
+        return board.evaluate();
     };
-    int best_score = -1000000;
-    Board bestMoveBoard;
-    for (auto const &[from, toset] : currentMoves)
+    int bestscore = -1000000;
+    for (const Move &move : board.moveset)
     {
-        for (auto const &to : toset)
+        board.doMove(move);
+        int score = -negamax(board, depth - 1, -color);
+        if (score > bestscore)
         {
-            Move move = Move(from, to);
-            board.doMove(move);
-            int score = -negamax(board, depth - 1, -color);
-            if (score > best_score)
-            {
-                best_score = score;
-                bestMove = move;
-            }
-            board.undoMove();
-        }
-    };*/
-    return 0;
+            bestscore = score;
+            bestMove = move;
+        };
+    };
+    return bestscore;
 };
 /*void Ai::transPositionTable() {
     // TODO
