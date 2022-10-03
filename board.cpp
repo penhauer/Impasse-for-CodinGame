@@ -26,7 +26,7 @@ bool Piece::operator<(const Piece &other) const
 };
 bool Piece::operator==(const Piece &other) const
 {
-    return std::tie(col, row, color, piece) == std::tie(other.col, other.row, other.color, other.piece);
+    return std::tie(row, col, color, piece) == std::tie(other.row, other.col, other.color, other.piece);
 };
 
 Move::Move()
@@ -234,7 +234,7 @@ void Board::doMove(const Move &move)
         };
     }
     // bear off and crown
-    else if (move.to.row == 0 || move.to.row == 8)
+    else if (move.to.row == 0 || move.to.row == 7)
     {
         // bear-off
         if (move.from.piece == 2)
@@ -354,11 +354,19 @@ PieceSet Board::checkSingles(const Piece &piece) const
             Piece p = y.second;
             if (p.piece == 1 && p.color == turn && (p.col != piece.col && p.row != piece.row))
             {
-                singles.insert(piece);
+                singles.insert(p);
             };
         };
     };
     return singles;
+};
+bool Board::ifTransposable(const Piece &piece, const int &i, const int &row, const int &col) const
+{
+    return ((i == 1 || i == -1) && piecemap.count(row) > 0 && piecemap.at(row).count(col) > 0 && piecemap.at(row).at(col).color == turn && piece.piece + piecemap.at(row).at(col).piece == 3);
+};
+bool Board::ifEmptySquare(const Piece &piece, const int &row, const int &col) const
+{
+    return (piecemap.count(row) == 0 || (piecemap.count(row) > 0 && piecemap.at(row).count(col) == 0));
 };
 void Board::addPieceDiagonals(const Piece &piece)
 {
@@ -374,66 +382,48 @@ void Board::addPieceDiagonals(const Piece &piece)
             {
                 break;
             };
-            // transpose
-            if ((i == 1 || i == -1) && piece.piece == 2 && piecemap.count(row) > 0 && piecemap.at(row).count(col) > 0 && piecemap.at(row).at(col).piece == 1 && piecemap.at(row).at(col).color == turn)
+            //slide or transpose
+            bool transposable = ifTransposable(piece, i, row, col);
+            bool emptysquare = ifEmptySquare(piece, row, col);
+            if (emptysquare || transposable)
             {
-                const Piece &newpiece = piecemap.at(row).at(col);
+                Piece square = transposable ? piecemap.at(row).at(col) : Piece(0, 0, row, col);
                 // crown
-                if (row == 0 || row == 8)
+                if ((row == 0 || row == 7) && piece.piece == 1)
                 {
-                    // at least one single is guaranteed to be available, since the double transposes with one
                     PieceSet singles = checkSingles(piece);
-                    for (auto removepiece : singles)
+                    // if other single available
+                    if (singles.size() > 0)
                     {
-                        moveset.insert(Move(piece, newpiece, removepiece));
-                    }
-                }
-                // bear-off
-                else
-                {
-                    moveset.insert(Move(piece, newpiece));
-                }
-                break;
-            };
-            // slide
-            if (piecemap.count(row) == 0 || (piecemap.count(row) > 0 && piecemap.at(row).count(col) == 0))
-            {
-                if (row == 0 || row == 8)
-                {
-                    // crown
-                    if (piece.piece == 1)
-                    {
-                        PieceSet singles = checkSingles(piece);
-                        // if other single available
-                        if (singles.size() > 0)
+                        for (auto removepiece : singles)
                         {
-                            for (auto removepiece : singles)
-                            {
-                                moveset.insert(Move(piece, Piece(1, piece.color, col, row), removepiece));
-                            }
-                        }
-                        else
-                        {
-                            // if no other singles available, just add as normal slide, and add to crownstack
-                            moveset.insert(Move(piece, Piece(1, piece.color, col, row)));
+                            moveset.insert(Move(piece, square, removepiece));
                         }
                     }
-                    // bear-off
+                    // if no other singles available, just add as normal slide (and add to crownstack)
                     else
                     {
-                        moveset.insert(Move(piece, Piece(0, 0, row, col)));
+                        moveset.insert(Move(piece, square));
                     }
                 }
+                // bear-off / simple slide
                 else
                 {
-                    moveset.insert(Move(piece, Piece(0, 0, row, col)));
+                    moveset.insert(Move(piece, square));
                 };
-                i = i + piece.direction;
+                //if it was a transpose, break
+                if (transposable)
+                {
+                    break;
+                };
             }
+            //if the square was not empty or transposable, break
             else
             {
                 break;
             };
+            //otherwise increment i and continue loop
+            i = i + piece.direction;
         };
     };
 };
@@ -466,8 +456,8 @@ void Board::addImpassable()
 };
 void Board::initBoard()
 {
+    deleteBoard();
     piecemap.clear();
-    // deleteBoard(); TODO
     for (int row = 0; row < 8; row++)
     {
         for (int col = 0; col < 8; col++)

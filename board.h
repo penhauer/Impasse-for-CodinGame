@@ -87,4 +87,6 @@ private:
     void addImpassable();
     void initBoard();
     void getPieceCount();
+    bool ifTransposable(const Piece &piece, const int &i, const int &row, const int &col) const;
+    bool ifEmptySquare(const Piece &piece, const int &row, const int &col) const;
 };
