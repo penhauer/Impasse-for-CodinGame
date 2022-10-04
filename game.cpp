@@ -135,19 +135,19 @@ void Game::undoMove(){
 // Returns true if the selected from piece or from-to pieces make up an only single valid move, false otherwise
 std::tuple<bool, bool, Move> Game::returnIfOnlyMove(const Move &move)
 {
-    std::set<Move> onlymoves;
-    std::copy_if(board.moveset.begin(), board.moveset.end(), std::inserter(onlymoves, onlymoves.end()), [&](const Move &m) { return m.from == move.from;});
-    if (onlymoves.size() == 1)
+    std::set<Move> onlymoves_from;
+    std::copy_if(board.moveset.begin(), board.moveset.end(), std::inserter(onlymoves_from, onlymoves_from.end()), [&](const Move &m) { return m.from == move.from;});
+    if (onlymoves_from.size() == 1)
     {
-        return std::make_tuple(true, true, *(onlymoves.begin()));
+        return std::make_tuple(true, true, *(onlymoves_from.begin()));
     }
-    else if (onlymoves.size() > 1)
+    else if (onlymoves_from.size() > 1)
     {
-        onlymoves.clear();
-        std::copy_if(board.moveset.begin(), board.moveset.end(), std::inserter(onlymoves, onlymoves.end()), [&](const Move &m) { return std::tie(m.from, m.to) == std::tie(move.from, move.to);});
-        if (onlymoves.size() == 1)
+        std::set<Move> onlymoves_to;
+        std::copy_if(board.moveset.begin(), board.moveset.end(), std::inserter(onlymoves_to, onlymoves_to.end()), [&](const Move &m) { return m.to == move.to;});
+        if (onlymoves_to.size() == 1)
         {
-            return std::make_tuple(true, true, *(onlymoves.begin()));
+            return std::make_tuple(true, true, *(onlymoves_to.begin()));
         }
         else
         {
@@ -156,34 +156,48 @@ std::tuple<bool, bool, Move> Game::returnIfOnlyMove(const Move &move)
     }
     else
     {
-        return std::make_tuple(false, false, Move());
+        return std::make_tuple(false, false, move);
     };
 };
 std::tuple<bool, Move> Game::trySelect(int row, int col, Move move)
 {
     // look through moveset, check if there exists a move with from position
     MoveSet::iterator itr;
-    if (move.from.row == -1 || move.to.row == -1)
+    for (itr = board.moveset.begin(); itr != board.moveset.end(); itr++)
     {
-        bool validmove, onlymove;
-        std::tie(validmove, onlymove, move) = returnIfOnlyMove(move);
-        if (validmove)
+        if (move.from.row == -1)
         {
-            return std::make_tuple(onlymove, move);
-        };
-    }
-    else if (move.remove.row == -1)
-    {
-        for (itr = board.moveset.begin(); itr != board.moveset.end(); itr++)
-        {
-            if (itr->from == move.from && itr->to == move.to && itr->remove.row == row && itr->remove.col == col)
+            if (itr->from.row == row && itr->from.col == col)
             {
-                return std::make_tuple(true, *itr);
+                move.from = itr->from;
+            };
+        }
+        else if (move.to.row == -1)
+        {
+            if (itr->to.row == row && itr->to.col == col)
+            {
+                move.to = itr->to;
+            };
+        }
+        else if (move.remove.row == -1)
+        {
+            if (itr->remove.row == row && itr->remove.col == col)
+            {
+                move.remove = itr->remove;
             };
         };
     };
-    std::cout << "Invalid move, enter 'help' for help" << std::endl;
-    return std::make_tuple(false, move);
+    bool validmove, onlymove;
+    std::tie(validmove, onlymove, move) = returnIfOnlyMove(move);
+    if (validmove)
+    {
+        return std::make_tuple(onlymove, move);
+    }
+    else
+    {
+        std::cout << "No legal move available for selected position.\nEnter 'help' for help or 'moves' for valid moves" << std::endl;
+        return std::make_tuple(false, Move());
+    };
 };
 void Game::reset()
 {
