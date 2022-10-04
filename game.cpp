@@ -14,12 +14,17 @@ Game::Game()
 };
 Game::~Game()
 {
+    if (board.state == 1)
+    {
+        
+    }
     delete boardhistory;
     std::cout << "Thanks for playing!" << std::endl;
     std::this_thread::sleep_for(std::chrono::milliseconds(1500));
 };
 void Game::gameLoop()
 {
+loop:
     while (board.state == 0)
     {
         if (player == board.turn)
@@ -41,6 +46,7 @@ void Game::gameLoop()
                         "moves: show possible moves\n"
                         "board: show board\n"
                         "rules: show game rules\n"
+                        "restore: restore game from save\n"
                         "restart: restart game\n"
                         "quit: quit program\n";
                     std::cout << text;
@@ -83,16 +89,16 @@ void Game::gameLoop()
                 {
                     std::cout << "Game restarted" << std::endl;
                     reset();
+                    board.printBoard();
                 }
                 else if (notation == "restore")
                 {
-                    board.loadBoard();
-                    std::cout << "Board restored" << std::endl;
+                    //board.loadBoard();
                 }
                 else if (notation == "quit")
                 {
-                    board.state == -99;
-                    break;
+                    board.state = -99;
+                    goto loop;
                 }
                 else
                 {
@@ -111,7 +117,6 @@ void Game::gameLoop()
             };
             boardhistory->push_back(board);
             board.doMove(move);
-            ;
         }
         else
         {
@@ -122,36 +127,35 @@ void Game::gameLoop()
         };
     };
 };
-void Game::undoMove(){
-    if (boardhistory->size() > 1){
+void Game::undoMove()
+{
+    if (boardhistory->size() > 0)
+    {
         board = boardhistory->back();
         boardhistory->pop_back();
         std::cout << "Last player move undone" << std::endl;
     }
-    else{
+    else
+    {
         std::cout << "No moves to undo" << std::endl;
     };
 };
 std::tuple<bool, Move> Game::returnIfOnlyMove(const Move &move)
 {
-    std::set<Move> onlymoves;
-    std::copy_if(board.moveset.begin(), board.moveset.end(), std::inserter(onlymoves, onlymoves.end()), [&](const Move &m) { return m.from == move.from;});
-    if (onlymoves.size() == 1)
+    std::set<Move> onlymoves_from;
+    std::copy_if(board.moveset.begin(), board.moveset.end(), std::inserter(onlymoves_from, onlymoves_from.end()), [&](const Move &m){ return m.from == move.from; });
+    if (onlymoves_from.size() == 1)
     {
-        return std::make_tuple(true, *(onlymoves.begin()));
+        return std::make_tuple(true, *(onlymoves_from.begin()));
     }
-    else if (onlymoves.size() > 1)
+    else if (onlymoves_from.size() > 1)
     {
-        onlymoves.clear();
-        std::copy_if(board.moveset.begin(), board.moveset.end(), std::inserter(onlymoves, onlymoves.end()), [&](const Move &m) { return std::tie(m.from, m.to) == std::tie(move.from, move.to);});
-        if (onlymoves.size() == 1)
+        std::set<Move> onlymoves_to;
+        std::copy_if(onlymoves_from.begin(), onlymoves_from.end(), std::inserter(onlymoves_to, onlymoves_to.end()), [&](const Move &m) { return m.to == move.to; });
+        if (onlymoves_to.size() == 1)
         {
-            return std::make_tuple(true, *(onlymoves.begin()));
-        }
-        else
-        {
-            return std::make_tuple(false, move);
-        }
+            return std::make_tuple(true, *(onlymoves_to.begin()));
+        };
     };
     return std::make_tuple(false, move);
 };
@@ -166,17 +170,7 @@ std::tuple<bool, Move> Game::trySelect(int row, int col, Move move)
             if (itr->from.row == row && itr->from.col == col)
             {
                 move.from = itr->from;
-                bool ifonlymove;
-                Move onlymove;
-                std::tie(ifonlymove, onlymove) = returnIfOnlyMove(move);
-                if (ifonlymove)
-                {
-                    return std::make_tuple(true, onlymove);
-                }
-                else
-                {
-                    return std::make_tuple(false, move);
-                };
+                return returnIfOnlyMove(move);
             };
         };
     }
@@ -187,16 +181,7 @@ std::tuple<bool, Move> Game::trySelect(int row, int col, Move move)
             if (itr->from == move.from && itr->to.row == row && itr->to.col == col)
             {
                 move.to = itr->to;
-                bool ifonlymove;
-                std::tie(ifonlymove, move) = returnIfOnlyMove(move);
-                if (ifonlymove)
-                {
-                    return std::make_tuple(true, move);
-                }
-                else
-                {
-                    return std::make_tuple(false, move);
-                };
+                return returnIfOnlyMove(move);
             };
         };
     }
@@ -210,7 +195,7 @@ std::tuple<bool, Move> Game::trySelect(int row, int col, Move move)
             };
         };
     };
-    std::cout << "Invalid move, enter 'help' for help" << std::endl;
+    std::cout << "No legal move available for selected position.\nEnter 'help' for help or 'moves' for valid moves" << std::endl;
     return std::make_tuple(false, Move());
 };
 void Game::reset()

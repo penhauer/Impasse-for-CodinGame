@@ -10,10 +10,12 @@ typedef std::vector<Board> BoardHistory;
 
 class Game
 {
+public:
+    Board board;
+
 private:
     int player; // 1 = White vs Ai, -1 = Black vs Ai
     int gui;    // 0 = no gui, 1 = gui
-    Board board;
     BoardHistory *boardhistory = new BoardHistory();
     Ai ai;
 

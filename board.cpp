@@ -71,7 +71,6 @@ void Board::resetBoard(bool paused)
     state = 0;
     initBoard();
     getPieceCount();
-    boolPieceToCrown = false;
     piecetocrown.clear();
     createMoveSet();
 };
@@ -83,26 +82,22 @@ void Board::saveBoard() const
     {
         newfile << turn << std::endl;
         newfile << state << std::endl;
-        newfile << boolPieceToCrown << std::endl;
         newfile << piecetocrown.size() << std::endl;
         //TODO add piecetocrown and pieceset
     };
     newfile.close();
 };
-void Board::loadBoard()
+void Board::loadBoard(int turn, PieceToCrown piecetocrown, PieceSet pieceset)
 {
-    std::ifstream newfile;
-    newfile.open("boardstate.txt", std::ios::in);
-    if (newfile.is_open())
+    state = 0;
+    this->turn = turn;
+    this->piecetocrown = piecetocrown;
+    for (Piece piece : pieceset)
     {
-        newfile >> turn;
-        newfile >> state;
-        newfile >> boolPieceToCrown;
-        int size;
-        newfile >> size;
-        //TODO add piecetocrown and pieceset
+        piecemap[piece.row][piece.col] = piece;
     };
-    newfile.close();
+    getPieceCount();
+    createMoveSet();
 };
 //If saved board exists, delete it
 void Board::deleteBoard() const
@@ -120,9 +115,11 @@ void Board::printBoard() const
 {
     for (int row = 7; row >= 0; row--)
     {
+        std::cout << "  +---+---+---+---+---+---+---+---+" << std::endl;
         std::cout << row + 1 << " ";
         for (int col = 0; col < 8; col++)
         {
+            std::cout << "| ";
             if (piecemap.count(row) > 0 && piecemap.at(row).count(col) > 0)
             {
                 const Piece &piece = piecemap.at(row).at(col);
@@ -150,16 +147,17 @@ void Board::printBoard() const
                         break;
                     }
                     break;
-                }
+                };
             }
             else
             {
                 std::cout << "  ";
-            }
+            };
         };
-        std::cout << std::endl;
+        std::cout << "|" << std::endl;
     };
-    std::cout << "  A B C D E F G H" << std::endl;
+    std::cout << "  +---+---+---+---+---+---+---+---+" << std::endl;
+    std::cout << "    A   B   C   D   E   F   G   H " << std::endl;
 };
 //Print current valid moves to console
 void Board::printMove(const Move &move) const
@@ -223,7 +221,7 @@ void Board::doMove(const Move &move)
         if (move.remove.piece == 2)
         {
             remove(move.from);
-            crownIf(Piece(1, move.from.color, move.from.col, move.from.row));
+            crownIf(move.from);
         }
         else
         {
@@ -248,24 +246,28 @@ void Board::doMove(const Move &move)
         // otherwise put crownable to stack
         else
         {
-            piecetocrown[turn] = move.to;
-            boolPieceToCrown = true;
+            piecetocrown[turn] = Piece(1, turn, move.to.row, move.to.col);
         }
     };
-    Piece tempfrom = piecemap.at(move.from.row).at(move.from.col);
-    tempfrom.row = move.to.row;
-    tempfrom.col = move.to.col;
-    if (move.to.piece > 0)
+    //needed because in case of impasse or bear-off+piecetocrown move.from gets removed before the move could happen
+    //but since in both cases from and to are also 0,0, it doesn't matter
+    if (piecemap.count(move.from.row) > 0 && piecemap.at(move.from.row).count(move.from.col) > 0)
     {
-        piecemap.at(move.to.row).at(move.to.col).row = piecemap.at(move.from.row).at(move.from.col).row;
-        piecemap.at(move.to.row).at(move.to.col).col = piecemap.at(move.from.row).at(move.from.col).col;
-        piecemap.at(move.from.row).at(move.from.col) = piecemap.at(move.to.row).at(move.to.col);
-    }
-    else
-    {
-        piecemap.at(move.from.row).erase(move.from.col);
-    }
-    piecemap[move.to.row][move.to.col] = tempfrom;
+        Piece tempfrom = piecemap.at(move.from.row).at(move.from.col);
+        tempfrom.row = move.to.row;
+        tempfrom.col = move.to.col;
+        if (move.to.piece > 0)
+        {
+            piecemap.at(move.to.row).at(move.to.col).row = piecemap.at(move.from.row).at(move.from.col).row;
+            piecemap.at(move.to.row).at(move.to.col).col = piecemap.at(move.from.row).at(move.from.col).col;
+            piecemap.at(move.from.row).at(move.from.col) = piecemap.at(move.to.row).at(move.to.col);
+        }
+        else
+        {
+            piecemap.at(move.from.row).erase(move.from.col);
+        };
+        piecemap[move.to.row][move.to.col] = tempfrom;
+    };
     turn = turn * -1;
     createMoveSet();
 };
@@ -291,7 +293,7 @@ void Board::crown(const Piece &p)
 void Board::bearOff(const Piece &p)
 {
     Piece &piece = piecemap.at(p.row).at(p.col);
-    switch (p.color)
+    switch (piece.color)
     {
     case 1:
         piececount.whiteDoubles--;
@@ -359,7 +361,7 @@ PieceSet Board::checkSingles(const Piece &piece) const
 };
 bool Board::ifTransposable(const Piece &piece, const int &i, const int &row, const int &col) const
 {
-    return ((i == 1 || i == -1) && piecemap.count(row) > 0 && piecemap.at(row).count(col) > 0 && piecemap.at(row).at(col).color == turn && piece.piece + piecemap.at(row).at(col).piece == 3);
+    return (piece.row < 7 && piece.row > 0 && (i == 1 || i == -1) && piecemap.count(row) > 0 && piecemap.at(row).count(col) > 0 && piecemap.at(row).at(col).color == turn && piece.piece + piecemap.at(row).at(col).piece == 3);
 };
 bool Board::ifEmptySquare(const Piece &piece, const int &row, const int &col) const
 {
@@ -426,13 +428,13 @@ void Board::addPieceDiagonals(const Piece &piece)
 };
 void Board::crownIf(const Piece &p)
 {
-    if (boolPieceToCrown)
+    const Piece &removepiece = piecemap.at(p.row).at(p.col);
+    if (piecetocrown.count(turn) > 0)
     {
-        const Piece &piece = piecetocrown[turn];
-        crown(piece);
+        const Piece &crownpiece = piecetocrown.at(turn);
+        crown(crownpiece);
         piecetocrown.erase(turn);
-        boolPieceToCrown = false;
-        remove(p);
+        remove(removepiece);
     }
 };
 void Board::addImpassable()
@@ -444,7 +446,7 @@ void Board::addImpassable()
         {
             int col = y.first;
             Piece piece = y.second;
-            if (piece.piece * turn > 0)
+            if (piece.color == turn)
             {
                 moveset.insert(Move(piece, Piece(0, 0, -1, -1), piece));
             };

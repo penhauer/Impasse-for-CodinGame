@@ -59,7 +59,6 @@ public:
 
 private:
     PieceMap piecemap;
-    bool boolPieceToCrown;
     PieceToCrown piecetocrown;
 
 public:
@@ -68,7 +67,7 @@ public:
     void resetBoard(bool paused);
     void restoreLast();
     void saveBoard() const;
-    void loadBoard();
+    void loadBoard(int turn, PieceToCrown piecetocrown, PieceSet pieceset);
     void deleteBoard() const;
     void printBoard() const;
     void printMove(const Move &move) const;
