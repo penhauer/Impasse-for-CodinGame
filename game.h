@@ -26,5 +26,5 @@ private:
     void undoMove();
     std::tuple<bool, Move> trySelect(int row, int col, Move move);
     void reset();
-    std::tuple<bool, Move> returnIfOnlyMove(const Move &move);
+    std::tuple<bool, bool, Move> returnIfOnlyMove(const Move &move);
 };
