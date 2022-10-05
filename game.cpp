@@ -1,13 +1,10 @@
 #include <iostream>
-#include <thread>
-#include <chrono>
 #include "game.h"
 
-Game::Game()
+Game::Game(int player)
 {
+    this->player = player;
     std::cout << "Game started" << std::endl;
-    std::cout << "Choose your color (1 = White, -1 = Black): ";
-    std::cin >> player;
     board = Board(false);
     ai = Ai(player * -1);
     gameLoop();
@@ -19,8 +16,6 @@ Game::~Game()
         
     }
     delete boardhistory;
-    std::cout << "Thanks for playing!" << std::endl;
-    std::this_thread::sleep_for(std::chrono::milliseconds(1500));
 };
 void Game::gameLoop()
 {
@@ -125,6 +120,14 @@ loop:
             board.printMove(move);
             board.doMove(move);
         };
+    };
+    if (board.state == player)
+    {
+        std::cout << "🎉🎉🎉 Congratulations, you won the game! 🎉🎉🎉" << std::endl;
+    }
+    else if (board.state == -1)
+    {
+        std::cout << "Unfortunately you lost, better luck next time!" << std::endl;
     };
 };
 void Game::undoMove()

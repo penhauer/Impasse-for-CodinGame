@@ -40,6 +40,7 @@ float Ai::negamax(Board board, int depth, int color)
             bestscore = score;
             bestMove = move;
         };
+        //board.undoMove();
     };
     return bestscore;
 };

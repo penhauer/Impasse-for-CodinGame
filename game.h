@@ -15,12 +15,11 @@ public:
 
 private:
     int player; // 1 = White vs Ai, -1 = Black vs Ai
-    int gui;    // 0 = no gui, 1 = gui
     BoardHistory *boardhistory = new BoardHistory();
     Ai ai;
 
 public:
-    Game();
+    Game(int player);
     ~Game();
 
 private:
