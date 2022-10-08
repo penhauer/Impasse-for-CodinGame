@@ -71,8 +71,8 @@ void Board::resetBoard(bool paused)
     state = 0;
     initBoard();
     getPieceCount();
-    piecetocrown.clear();
-    createMoveSet();
+    pieceboard.piecetocrown.clear();
+    createPossibleBoards();
 };
 void Board::saveBoard() const
 {
@@ -82,7 +82,7 @@ void Board::saveBoard() const
     {
         newfile << turn << std::endl;
         newfile << state << std::endl;
-        newfile << piecetocrown.size() << std::endl;
+        newfile << pieceboard.piecetocrown.size() << std::endl;
         //TODO add piecetocrown and pieceset
     };
     newfile.close();
@@ -91,13 +91,13 @@ void Board::loadBoard(int turn, PieceToCrown piecetocrown, PieceSet pieceset)
 {
     state = 0;
     this->turn = turn;
-    this->piecetocrown = piecetocrown;
+    this->pieceboard.piecetocrown = piecetocrown;
     for (Piece piece : pieceset)
     {
-        piecemap[piece.row][piece.col] = piece;
+        pieceboard.piecemap[piece.row][piece.col] = piece;
     };
     getPieceCount();
-    createMoveSet();
+    createPossibleBoards();
 };
 //If saved board exists, delete it
 void Board::deleteBoard() const
@@ -120,9 +120,9 @@ void Board::printBoard() const
         for (int col = 0; col < 8; col++)
         {
             std::cout << "| ";
-            if (piecemap.count(row) > 0 && piecemap.at(row).count(col) > 0)
+            if (pieceboard.piecemap.count(row) > 0 && pieceboard.piecemap.at(row).count(col) > 0)
             {
-                const Piece &piece = piecemap.at(row).at(col);
+                const Piece &piece = pieceboard.piecemap.at(row).at(col);
                 switch (piece.piece)
                 {
                 case 1:
@@ -174,11 +174,11 @@ void Board::printMove(const Move &move) const
     std::cout << std::endl;
 };
 //Create current valid moves
-void Board::createMoveSet()
+void Board::createPossibleBoards()
 {
-    moveset.clear();
+    possibleboards.clear();
     // return array of possible moves
-    for (auto x : piecemap)
+    for (auto x : pieceboard.piecemap)
     {
         const int &row = x.first;
         for (auto y : x.second)
@@ -187,128 +187,74 @@ void Board::createMoveSet()
             const Piece &piece = y.second;
             if (piece.color == turn)
             {
-                addPieceDiagonals(piece);
+                addPieceMoves(piece);
             }
         };
     };
     // if no move, impasse
-    if (moveset.size() == 0)
+    if (possibleboards.size() == 0)
     {
         addImpassable();
     };
 };
-//Remove no longer valid moves, add new possible moves WIP
-void Board::updateMoveSet(const Move &move)
-{
-    const Piece &from = move.from;
-    const Piece &to = move.to;
-    const Piece &remove = move.remove;
-    // TODO
-};
 //Evaluate heuristic value of current board
 float Board::evaluate() const
 {
-    float score = turn * (1.5 * (piececount.blackSingles + piececount.blackDoubles) - piececount.whiteSingles - piececount.whiteDoubles);
+    float score = turn * (1.5 * (pieceboard.piececount.blackSingles + pieceboard.piececount.blackDoubles) - pieceboard.piececount.whiteSingles - pieceboard.piececount.whiteDoubles);
     return score;
     // TODO add average number of available moves per piece
 };
 //Update board state with selected move
-void Board::doMove(const Move &move)
+void Board::doMove(const PieceBoard &new_pieceboard)
 {
-    // Impasse
-    if (move.from == move.remove)
-    {
-        if (move.remove.piece == 2)
-        {
-            remove(move.from);
-            crownIf(move.from);
-        }
-        else
-        {
-            remove(move.from);
-        };
-    }
-    // bear off and crown
-    else if (move.to.row == 0 || move.to.row == 7)
-    {
-        // bear-off
-        if (move.from.piece == 2)
-        {
-            bearOff(move.from);
-            crownIf(move.from);
-        }
-        // crown if single was available
-        else if (move.remove.piece == 1)
-        {
-            crown(move.from);
-            remove(move.remove);
-        }
-        // otherwise put crownable to stack
-        else
-        {
-            piecetocrown[turn] = Piece(1, turn, move.to.row, move.to.col);
-        }
-    };
-    //needed because in case of impasse or bear-off+piecetocrown move.from gets removed before the move could happen
-    //but since in both cases from and to are also 0,0, it doesn't matter
-    if (piecemap.count(move.from.row) > 0 && piecemap.at(move.from.row).count(move.from.col) > 0)
-    {
-        Piece tempfrom = piecemap.at(move.from.row).at(move.from.col);
-        tempfrom.row = move.to.row;
-        tempfrom.col = move.to.col;
-        if (move.to.piece > 0)
-        {
-            piecemap.at(move.to.row).at(move.to.col).row = piecemap.at(move.from.row).at(move.from.col).row;
-            piecemap.at(move.to.row).at(move.to.col).col = piecemap.at(move.from.row).at(move.from.col).col;
-            piecemap.at(move.from.row).at(move.from.col) = piecemap.at(move.to.row).at(move.to.col);
-        }
-        else
-        {
-            piecemap.at(move.from.row).erase(move.from.col);
-        };
-        piecemap[move.to.row][move.to.col] = tempfrom;
-    };
+    pieceboard = new_pieceboard;
     turn = turn * -1;
-    createMoveSet();
+    createPossibleBoards();
+};
+void Board::undoMove()
+{
+    //use board history
+    turn = turn * -1;
+    createPossibleBoards();
 };
 //Crown piece
-void Board::crown(const Piece &p)
+void Board::crown(PieceBoard &pieceboard, const Piece &p)
 {
-    Piece &piece = piecemap.at(p.row).at(p.col);
+    Piece &piece = pieceboard.piecemap.at(p.row).at(p.col);
     switch (piece.color)
     {
     case 1:
-        piececount.whiteDoubles++;
-        piececount.whiteSingles--;
+        pieceboard.piececount.whiteDoubles++;
+        pieceboard.piececount.whiteSingles--;
         break;
     case -1:
-        piececount.blackDoubles++;
-        piececount.blackSingles--;
+        pieceboard.piececount.blackDoubles++;
+        pieceboard.piececount.blackSingles--;
         break;
     };
     piece.piece = 2;
     piece.getDirection();
 };
 //Bear-off piece
-void Board::bearOff(const Piece &p)
+void Board::bearOff(PieceBoard &pieceboard, const Piece &p)
 {
-    Piece &piece = piecemap.at(p.row).at(p.col);
+    Piece &piece = pieceboard.piecemap.at(p.row).at(p.col);
     switch (piece.color)
     {
     case 1:
-        piececount.whiteDoubles--;
-        piececount.whiteSingles++;
+        pieceboard.piececount.whiteDoubles--;
+        pieceboard.piececount.whiteSingles++;
         break;
     case -1:
-        piececount.blackDoubles--;
-        piececount.blackSingles++;
+        pieceboard.piececount.blackDoubles--;
+        pieceboard.piececount.blackSingles++;
         break;
     };
     piece.piece = 1;
     piece.getDirection();
 };
 //Remove / bear-off piece based on type after impasse
-void Board::remove(const Piece &p)
+void Board::remove(PieceBoard &pieceboard, const Piece &p)
 {
     switch (p.piece)
     {
@@ -316,35 +262,35 @@ void Board::remove(const Piece &p)
         switch (p.color)
         {
         case 1:
-            piececount.whiteSingles--;
+            pieceboard.piececount.whiteSingles--;
             break;
         case -1:
-            piececount.blackSingles--;
+            pieceboard.piececount.blackSingles--;
             break;
         };
-        piecemap.at(p.row).erase(p.col);
+        pieceboard.piecemap.at(p.row).erase(p.col);
         break;
     // bear-off
     case 2:
         //bearoff
-        bearOff(p);
+        bearOff(pieceboard, p);
         break;
     };
     // Chickendinner
-    if (piececount.whiteSingles + piececount.whiteDoubles == 0)
+    if (pieceboard.piececount.whiteSingles + pieceboard.piececount.whiteDoubles == 0)
     {
         state = 1;
     }
-    else if (piececount.blackSingles + piececount.blackDoubles == 0)
+    else if (pieceboard.piececount.blackSingles + pieceboard.piececount.blackDoubles == 0)
     {
         state = -1;
     };
 };
 //Create set of current color singles
-PieceSet Board::checkSingles(const Piece &piece) const
+PieceSet Board::checkSingles(PieceBoard &pieceboard, const Piece &piece) const
 {
     PieceSet singles;
-    for (auto x : piecemap)
+    for (auto x : pieceboard.piecemap)
     {
         const int &row = x.first;
         for (auto y : x.second)
@@ -361,14 +307,15 @@ PieceSet Board::checkSingles(const Piece &piece) const
 };
 bool Board::ifTransposable(const Piece &piece, const int &i, const int &row, const int &col) const
 {
-    return (piece.row < 7 && piece.row > 0 && (i == 1 || i == -1) && piecemap.count(row) > 0 && piecemap.at(row).count(col) > 0 && piecemap.at(row).at(col).color == turn && piece.piece + piecemap.at(row).at(col).piece == 3);
+    return (piece.row < 7 && piece.row > 0 && (i == 1 || i == -1) && pieceboard.piecemap.count(row) > 0 && pieceboard.piecemap.at(row).count(col) > 0 && pieceboard.piecemap.at(row).at(col).color == turn && piece.piece + pieceboard.piecemap.at(row).at(col).piece == 3);
 };
 bool Board::ifEmptySquare(const Piece &piece, const int &row, const int &col) const
 {
-    return (piecemap.count(row) == 0 || (piecemap.count(row) > 0 && piecemap.at(row).count(col) == 0));
+    return (pieceboard.piecemap.count(row) == 0 || (pieceboard.piecemap.count(row) > 0 && pieceboard.piecemap.at(row).count(col) == 0));
 };
-void Board::addPieceDiagonals(const Piece &piece)
+void Board::addPieceMoves(const Piece &piece)
 {
+    PieceMap new_piecemap = pieceboard.piecemap;
     // to cover for left and right search
     for (int sign = 0; sign < 2; sign++)
     {
@@ -386,31 +333,49 @@ void Board::addPieceDiagonals(const Piece &piece)
             bool emptysquare = ifEmptySquare(piece, row, col);
             if (emptysquare || transposable)
             {
-                Piece square = transposable ? piecemap.at(row).at(col) : Piece(0, 0, row, col);
+                Piece square = transposable ? pieceboard.piecemap.at(row).at(col) : Piece(0, 0, row, col);
                 // crown
-                if ((row == 0 || row == 7) && piece.piece == 1)
+                if (row == 0 || row == 7)
                 {
-                    PieceSet singles = checkSingles(piece);
-                    // if other single available
-                    if (singles.size() > 0)
+                    if (piece.piece == 1)
                     {
-                        for (auto removepiece : singles)
+                        PieceSet singles = checkSingles(pieceboard, piece);
+                        // if other single available
+                        if (singles.size() > 0)
                         {
-                            moveset.insert(Move(piece, square, removepiece));
+                            for (auto removepiece : singles)
+                            {
+                                crown(pieceboard, piece);
+                                move(pieceboard, piece, square);
+                                remove(pieceboard, removepiece);
+                                possibleboards.push_back(pieceboard);
+                            }
+                        }
+                        // if no other singles available, just add as normal slide (and add to crownstack)
+                        else
+                        {
+                            move(pieceboard, piece, square);
+                            pieceboard.piecetocrown[turn] = Piece(1, turn, square.row, square.col);
+                            possibleboards.push_back(pieceboard);
                         }
                     }
-                    // if no other singles available, just add as normal slide (and add to crownstack)
                     else
                     {
-                        moveset.insert(Move(piece, square));
+                        bearOff(pieceboard, piece);
+                        bool crowned = crownIf(pieceboard, piece);
+                        if (!crowned)
+                        {
+                            move(pieceboard, piece, square);
+                        };
+                        possibleboards.push_back(pieceboard);
                     }
                 }
-                // bear-off / simple slide
                 else
                 {
-                    moveset.insert(Move(piece, square));
+                    move(pieceboard, piece, square);
+                    possibleboards.push_back(pieceboard);
                 };
-                //if it was a transpose, break
+                //if it was a transpose, break loop with current sign
                 if (transposable)
                 {
                     break;
@@ -426,20 +391,41 @@ void Board::addPieceDiagonals(const Piece &piece)
         };
     };
 };
-void Board::crownIf(const Piece &p)
+void Board::move(PieceBoard &pieceboard, Piece piece, Piece square)
 {
-    const Piece &removepiece = piecemap.at(p.row).at(p.col);
-    if (piecetocrown.count(turn) > 0)
+    Piece oldpiece = piece;
+    piece.row = square.row;
+    piece.col = square.col;
+    square.row = oldpiece.row;
+    square.col = oldpiece.col;
+    pieceboard.piecemap.at(square.row).at(square.col) = piece;
+    if (square.piece > 0)
     {
-        const Piece &crownpiece = piecetocrown.at(turn);
-        crown(crownpiece);
-        piecetocrown.erase(turn);
-        remove(removepiece);
+        pieceboard.piecemap.at(piece.row).at(piece.col) = square;
     }
+    else
+    {
+        pieceboard.piecemap.at(piece.row).erase(piece.col);
+    };
+};
+bool Board::crownIf(PieceBoard &pieceboard, const Piece &p)
+{
+    const Piece &removepiece = pieceboard.piecemap.at(p.row).at(p.col);
+    bool crowned = false;
+    if (pieceboard.piecetocrown.count(turn) > 0)
+    {
+        const Piece &crownpiece = pieceboard.piecetocrown.at(turn);
+        crown(pieceboard, crownpiece);
+        pieceboard.piecetocrown.erase(turn);
+        remove(pieceboard, removepiece);
+        crowned = true;
+    }
+    return crowned;
 };
 void Board::addImpassable()
 {
-    for (auto x : piecemap)
+    PieceBoard new_pieceboard = pieceboard;
+    for (auto x : new_pieceboard.piecemap)
     {
         int row = x.first;
         for (auto y : x.second)
@@ -448,7 +434,16 @@ void Board::addImpassable()
             Piece piece = y.second;
             if (piece.color == turn)
             {
-                moveset.insert(Move(piece, Piece(0, 0, -1, -1), piece));
+                if (piece.piece == 2)
+                {
+                    remove(new_pieceboard, piece);
+                    crownIf(new_pieceboard, piece);
+                }
+                else
+                {
+                    remove(new_pieceboard, piece);
+                };
+                possibleboards.push_back(new_pieceboard);
             };
         }
     }
@@ -456,7 +451,7 @@ void Board::addImpassable()
 void Board::initBoard()
 {
     deleteBoard();
-    piecemap.clear();
+    pieceboard.piecemap.clear();
     for (int row = 0; row < 8; row++)
     {
         for (int col = 0; col < 8; col++)
@@ -464,26 +459,26 @@ void Board::initBoard()
             int pos = row * 8 + col;
             if (pos == 0 || pos == 4 || pos == 11 || pos == 15)
             {
-                piecemap[row][col] = Piece(1, 1, row, col);
+                pieceboard.piecemap[row][col] = Piece(1, 1, row, col);
             }
             else if (pos == 50 || pos == 54 || pos == 57 || pos == 61)
             {
-                piecemap[row][col] = Piece(2, 1, row, col);
+                pieceboard.piecemap[row][col] = Piece(2, 1, row, col);
             }
             else if (pos == 48 || pos == 52 || pos == 59 || pos == 63)
             {
-                piecemap[row][col] = Piece(1, -1, row, col);
+                pieceboard.piecemap[row][col] = Piece(1, -1, row, col);
             }
             else if (pos == 2 || pos == 6 || pos == 9 || pos == 13)
             {
-                piecemap[row][col] = Piece(2, -1, row, col);
+                pieceboard.piecemap[row][col] = Piece(2, -1, row, col);
             }
         }
     };
 };
 void Board::getPieceCount()
 {
-    for (auto x : piecemap)
+    for (auto x : pieceboard.piecemap)
     {
         for (auto y : x.second)
         {
@@ -494,10 +489,10 @@ void Board::getPieceCount()
                 switch (piece.color)
                 {
                 case 1:
-                    piececount.whiteSingles++;
+                    pieceboard.piececount.whiteSingles++;
                     break;
                 case -1:
-                    piececount.blackSingles++;
+                    pieceboard.piececount.blackSingles++;
                     break;
                 };
                 break;
@@ -505,10 +500,10 @@ void Board::getPieceCount()
                 switch (piece.color)
                 {
                 case 1:
-                    piececount.whiteDoubles++;
+                    pieceboard.piececount.whiteDoubles++;
                     break;
                 case -1:
-                    piececount.blackDoubles++;
+                    pieceboard.piececount.blackDoubles++;
                     break;
                 };
                 break;

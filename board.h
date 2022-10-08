@@ -39,8 +39,6 @@ typedef std::map<int, std::map<int, Piece>> PieceMap;
 
 typedef std::map<int, Piece> PieceToCrown;
 
-typedef std::set<Move> MoveSet;
-
 struct PieceCount
 {
     int whiteSingles = 0;
@@ -49,17 +47,25 @@ struct PieceCount
     int blackDoubles = 0;
 };
 
+struct PieceBoard
+{
+    PieceCount piececount;
+    PieceMap piecemap;
+    PieceToCrown piecetocrown;
+    Move lastmove;
+};
+
+typedef std::vector<PieceBoard> PieceBoardVector;
+
 class Board
 {
 public:
     int turn;
     int state;
-    PieceCount piececount;
-    MoveSet moveset;
+    PieceBoardVector possibleboards;
 
 private:
-    PieceMap piecemap;
-    PieceToCrown piecetocrown;
+    PieceBoard pieceboard;
 
 public:
     Board();
@@ -71,18 +77,20 @@ public:
     void deleteBoard() const;
     void printBoard() const;
     void printMove(const Move &move) const;
-    void createMoveSet();
-    void doMove(const Move &move);
+    void createPossibleBoards();
+    void move(PieceBoard &pieceboard, Piece piece, Piece square);
+    void doMove(const PieceBoard &new_pieceboard);
+    void undoMove();
     float evaluate() const;
 
 private:
     void updateMoveSet(const Move &move);
-    void crown(const Piece &p);
-    void bearOff(const Piece &p);
-    void remove(const Piece &p);
-    PieceSet checkSingles(const Piece &piece) const;
-    void addPieceDiagonals(const Piece &p);
-    void crownIf(const Piece &p);
+    bool crownIf(PieceBoard &pieceboard, const Piece &p);
+    void crown(PieceBoard &pieceboard, const Piece &p);
+    void bearOff(PieceBoard &pieceboard, const Piece &p);
+    void remove(PieceBoard &pieceboard, const Piece &p);
+    PieceSet checkSingles(PieceBoard &pieceboard, const Piece &piece) const;
+    void addPieceMoves(const Piece &piece);
     void addImpassable();
     void initBoard();
     void getPieceCount();

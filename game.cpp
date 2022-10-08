@@ -53,10 +53,10 @@ loop:
                 }
                 else if (notation == "moves")
                 {
-                    for (const auto &move : board.moveset)
+                    /*for (const auto &move : board.moveset)
                     {
                         board.printMove(move);
-                    }
+                    }*/
                 }
                 else if (notation == "board")
                 {
@@ -106,12 +106,12 @@ loop:
                     {
                         int col = pos % 8;
                         int row = pos / 8;
-                        std::tie(turnEnd, move) = trySelect(row, col, move);
+                        std::tie(turnEnd, pieceboard) = trySelect(row, col, move);
                     }
                 }
             };
             boardhistory->push_back(board);
-            board.doMove(move);
+            board.doMove(pieceboard);
         }
         else
         {
@@ -146,7 +146,7 @@ void Game::undoMove()
 std::tuple<bool, Move> Game::returnIfOnlyMove(const Move &move)
 {
     std::set<Move> onlymoves_from;
-    std::copy_if(board.moveset.begin(), board.moveset.end(), std::inserter(onlymoves_from, onlymoves_from.end()), [&](const Move &m){ return m.from == move.from; });
+    std::copy_if(board.possibleboards.begin(), board.possibleboards.end(), std::inserter(onlymoves_from, onlymoves_from.end()), [&](const Move &m){ return m.from == move.from; });
     if (onlymoves_from.size() == 1)
     {
         return std::make_tuple(true, *(onlymoves_from.begin()));
