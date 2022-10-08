@@ -17,8 +17,10 @@ int parseMove(const std::string &notation)
     };
     return pos;
 };
-std::string reverseParseMove(int row, int col)
+std::string reverseParseMove(int pos)
 {
+    int col = pos % 8;
+    int row = pos / 8;
     char letter = toupper((char)(col + 97));
     char number = (char)(row + 49);
     std::string notation = "";

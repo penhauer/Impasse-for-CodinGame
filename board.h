@@ -24,13 +24,11 @@ public:
 
 struct Move
 {
-    Piece from;
-    Piece to;
-    Piece remove;
-    Move();
-    Move(Piece from, Piece to, Piece remove);
-    bool operator<(const Move &other) const;
-    bool operator==(const Move &other) const;
+    int from;
+    int to;
+    int remove;
+    //Move();
+    Move(int from, int to, int remove);
 };
 
 typedef std::set<Piece> PieceSet;
@@ -53,6 +51,7 @@ struct PieceBoard
     PieceMap piecemap;
     PieceToCrown piecetocrown;
     Move lastmove;
+    PieceBoard();
 };
 
 typedef std::vector<PieceBoard> PieceBoardVector;
@@ -62,7 +61,8 @@ class Board
 public:
     int turn;
     int state;
-    PieceBoardVector possibleboards;
+    PieceBoardVector possiblepieceboards;
+    PieceBoardVector pieceboardhistory;
 
 private:
     PieceBoard pieceboard;
@@ -84,7 +84,6 @@ public:
     float evaluate() const;
 
 private:
-    void updateMoveSet(const Move &move);
     bool crownIf(PieceBoard &pieceboard, const Piece &p);
     void crown(PieceBoard &pieceboard, const Piece &p);
     void bearOff(PieceBoard &pieceboard, const Piece &p);

@@ -6,8 +6,6 @@
 #include "ai.h"
 #include "common.h"
 
-typedef std::vector<Board> BoardHistory;
-
 class Game
 {
 public:
@@ -15,7 +13,6 @@ public:
 
 private:
     int player; // 1 = White vs Ai, -1 = Black vs Ai
-    BoardHistory *boardhistory = new BoardHistory();
     Ai ai;
 
 public:
@@ -25,7 +22,7 @@ public:
 private:
     void gameLoop();
     void undoMove();
-    std::tuple<bool, Move> trySelect(int row, int col, Move move);
     void reset();
-    std::tuple<bool, Move> returnIfOnlyMove(const Move &move);
+    std::tuple<bool, PieceBoard> trySelect(int pos, PieceBoard pb);
+    std::tuple<bool, PieceBoard> returnIfOnlyBoard(const PieceBoard &pb);
 };

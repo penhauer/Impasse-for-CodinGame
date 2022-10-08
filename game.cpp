@@ -15,7 +15,7 @@ Game::~Game()
     {
         
     }
-    delete boardhistory;
+    //delete boardhistory;
 };
 void Game::gameLoop()
 {
@@ -27,7 +27,7 @@ loop:
             board.printBoard();
             std::cout << "Your turn" << std::endl;
             bool turnEnd = false;
-            Move move = Move();
+            PieceBoard pieceboard;
             while (turnEnd == false)
             {
                 std::cout << "Select position: ";
@@ -53,10 +53,10 @@ loop:
                 }
                 else if (notation == "moves")
                 {
-                    /*for (const auto &move : board.moveset)
+                    for (const auto pieceboard : board.possiblepieceboards)
                     {
-                        board.printMove(move);
-                    }*/
+                        board.printMove(pieceboard.lastmove);
+                    }
                 }
                 else if (notation == "board")
                 {
@@ -104,21 +104,18 @@ loop:
                     }
                     else
                     {
-                        int col = pos % 8;
-                        int row = pos / 8;
-                        std::tie(turnEnd, pieceboard) = trySelect(row, col, move);
+                        std::tie(turnEnd, pieceboard) = trySelect(pos, pieceboard);
                     }
                 }
             };
-            boardhistory->push_back(board);
             board.doMove(pieceboard);
         }
         else
         {
             std::cout << "AI turn" << std::endl;
-            Move move = ai.getMove(board);
-            board.printMove(move);
-            board.doMove(move);
+            PieceBoard pieceboard = ai.getMove(board);
+            board.printMove(pieceboard.lastmove);
+            board.doMove(pieceboard);
         };
     };
     if (board.state == player)
@@ -132,10 +129,10 @@ loop:
 };
 void Game::undoMove()
 {
-    if (boardhistory->size() > 0)
+    if (board.pieceboardhistory.size() > 0)
     {
-        board = boardhistory->back();
-        boardhistory->pop_back();
+        board.undoMove();
+        board.undoMove();
         std::cout << "Last player move undone" << std::endl;
     }
     else
@@ -143,63 +140,49 @@ void Game::undoMove()
         std::cout << "No moves to undo" << std::endl;
     };
 };
-std::tuple<bool, Move> Game::returnIfOnlyMove(const Move &move)
-{
-    std::set<Move> onlymoves_from;
-    std::copy_if(board.possibleboards.begin(), board.possibleboards.end(), std::inserter(onlymoves_from, onlymoves_from.end()), [&](const Move &m){ return m.from == move.from; });
-    if (onlymoves_from.size() == 1)
-    {
-        return std::make_tuple(true, *(onlymoves_from.begin()));
-    }
-    else if (onlymoves_from.size() > 1)
-    {
-        std::set<Move> onlymoves_to;
-        std::copy_if(onlymoves_from.begin(), onlymoves_from.end(), std::inserter(onlymoves_to, onlymoves_to.end()), [&](const Move &m) { return m.to == move.to; });
-        if (onlymoves_to.size() == 1)
-        {
-            return std::make_tuple(true, *(onlymoves_to.begin()));
-        };
-    };
-    return std::make_tuple(false, move);
-};
-std::tuple<bool, Move> Game::trySelect(int row, int col, Move move)
+std::tuple<bool, PieceBoard> Game::trySelect(int pos, PieceBoard pb)
 {
     // look through moveset, check if there exists a move with from position
-    MoveSet::iterator itr;
-    if (move.from.row == -1)
+    PieceBoardVector onlymoves;
+    if (pb.lastmove.from == -1)
     {
-        for (itr = board.moveset.begin(); itr != board.moveset.end(); itr++)
+        std::copy_if(board.possiblepieceboards.begin(), board.possiblepieceboards.end(), std::inserter(onlymoves, onlymoves.end()), [&](const PieceBoard &pieceboard){ return pieceboard.lastmove.from == pos; });
+        if (onlymoves.size() == 1)
         {
-            if (itr->from.row == row && itr->from.col == col)
-            {
-                move.from = itr->from;
-                return returnIfOnlyMove(move);
-            };
+            return std::make_tuple(true, onlymoves.back());
+        }
+        else if (onlymoves.size() > 1)
+        {
+            pb.lastmove.from = pos;
+            return std::make_tuple(false, pb);
         };
     }
-    else if (move.to.row == -1)
+    else if (pb.lastmove.to == -1)
     {
-        for (itr = board.moveset.begin(); itr != board.moveset.end(); itr++)
+        PieceBoardVector onlymoves;
+        std::copy_if(board.possiblepieceboards.begin(), board.possiblepieceboards.end(), std::inserter(onlymoves, onlymoves.end()), [&](const PieceBoard &pieceboard) { return pieceboard.lastmove.from == pb.lastmove.from && pieceboard.lastmove.to == pos; });
+        if (onlymoves.size() == 1)
         {
-            if (itr->from == move.from && itr->to.row == row && itr->to.col == col)
-            {
-                move.to = itr->to;
-                return returnIfOnlyMove(move);
-            };
+            return std::make_tuple(true, onlymoves.back());
+        }
+        else if (onlymoves.size() > 1)
+        {
+            pb.lastmove.to = pos;
+            return std::make_tuple(false, pb);
         };
     }
-    else if (move.remove.row == -1)
+    else if (pb.lastmove.remove == -1)
     {
-        for (itr = board.moveset.begin(); itr != board.moveset.end(); itr++)
+        for (PieceBoard pieceboard : board.possiblepieceboards)
         {
-            if (itr->from == move.from && itr->to == move.to && itr->remove.row == row && itr->remove.col == col)
+            if (pb.lastmove.from = pieceboard.lastmove.from && pb.lastmove.to == pieceboard.lastmove.to && pieceboard.lastmove.remove == pos)
             {
-                return std::make_tuple(true, *itr);
+                return std::make_tuple(true, pieceboard);
             };
         };
     };
     std::cout << "No legal move available for selected position.\nEnter 'help' for help or 'moves' for valid moves" << std::endl;
-    return std::make_tuple(false, Move());
+    return std::make_tuple(false, PieceBoard());
 };
 void Game::reset()
 {

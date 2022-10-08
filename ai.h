@@ -4,7 +4,7 @@ class Ai
 {
 private:
     int color;
-    Move bestBoard;
+    PieceBoard bestPieceBoard;
 
 public:
     Ai();

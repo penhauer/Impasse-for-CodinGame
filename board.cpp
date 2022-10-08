@@ -28,37 +28,9 @@ bool Piece::operator==(const Piece &other) const
 {
     return std::tie(row, col, color, piece) == std::tie(other.row, other.col, other.color, other.piece);
 };
+Move::Move(int from = -1, int to = -1, int remove = -1) : from(from), to(to), remove(remove){};
 
-Move::Move()
-{
-    from = Piece();
-    to = Piece();
-    remove = Piece();
-};
-Move::Move(Piece from, Piece to = Piece(0, 0, -1, -1), Piece remove = Piece(0, 0, -1, -1)) : from(from), to(to), remove(remove){};
-bool Move::operator<(const Move &other) const
-{
-    return std::tie(from, to, remove) < std::tie(other.from, other.to, other.remove);
-};
-bool Move::operator==(const Move &other) const
-{
-    return from == other.from && to == other.to && remove == other.remove;
-};
-
-namespace std
-{
-    template <>
-    struct hash<Move>
-    {
-        std::size_t operator()(const Move &k) const
-        {
-            using std::hash;
-            using std::size_t;
-            using std::string;
-            return ((hash<int>()(k.from.piece) ^ (hash<int>()(k.from.color) << 1)) >> 1) ^ ((hash<int>()(k.to.piece) ^ (hash<int>()(k.to.color) << 1)) >> 1) ^ ((hash<int>()(k.remove.piece) ^ (hash<int>()(k.remove.color) << 1)) >> 1);
-        }
-    };
-};
+PieceBoard::PieceBoard() {};
 
 Board::Board(){};
 Board::Board(bool paused)
@@ -162,21 +134,21 @@ void Board::printBoard() const
 //Print current valid moves to console
 void Board::printMove(const Move &move) const
 {
-    std::cout << "From " << reverseParseMove(move.from.row, move.from.col);
-    if (move.to.col != -1 && move.to.row != -1)
+    std::cout << "From " << reverseParseMove(move.from);
+    if (move.to != -1)
     {
-        std::cout << " to " << reverseParseMove(move.to.row, move.to.col);
+        std::cout << " to " << reverseParseMove(move.to);
     };
-    if (move.remove.col != -1 && move.remove.row != -1)
+    if (move.remove != -1)
     {
-        std::cout << " removing " << reverseParseMove(move.remove.row, move.remove.col);
+        std::cout << " removing " << reverseParseMove(move.remove);
     };
     std::cout << std::endl;
 };
 //Create current valid moves
 void Board::createPossibleBoards()
 {
-    possibleboards.clear();
+    possiblepieceboards.clear();
     // return array of possible moves
     for (auto x : pieceboard.piecemap)
     {
@@ -191,9 +163,9 @@ void Board::createPossibleBoards()
             }
         };
     };
-    // if no move, impasse
-    if (possibleboards.size() == 0)
+    if (possiblepieceboards.size() == 0)
     {
+    // if no move, impasse
         addImpassable();
     };
 };
@@ -207,13 +179,15 @@ float Board::evaluate() const
 //Update board state with selected move
 void Board::doMove(const PieceBoard &new_pieceboard)
 {
+    pieceboardhistory.push_back(pieceboard);
     pieceboard = new_pieceboard;
     turn = turn * -1;
     createPossibleBoards();
 };
 void Board::undoMove()
 {
-    //use board history
+    pieceboard = pieceboardhistory.back();
+    pieceboardhistory.pop_back();
     turn = turn * -1;
     createPossibleBoards();
 };
@@ -315,13 +289,13 @@ bool Board::ifEmptySquare(const Piece &piece, const int &row, const int &col) co
 };
 void Board::addPieceMoves(const Piece &piece)
 {
-    PieceMap new_piecemap = pieceboard.piecemap;
     // to cover for left and right search
     for (int sign = 0; sign < 2; sign++)
     {
         int i = piece.direction;
         while (i + piece.row < 8 && piece.row + i >= 0)
         {
+            PieceBoard new_pieceboard = pieceboard;
             int row = piece.row + i;
             int col = piece.col + i*pow(-1, sign);
             if (col < 0 || col > 7)
@@ -333,47 +307,55 @@ void Board::addPieceMoves(const Piece &piece)
             bool emptysquare = ifEmptySquare(piece, row, col);
             if (emptysquare || transposable)
             {
-                Piece square = transposable ? pieceboard.piecemap.at(row).at(col) : Piece(0, 0, row, col);
+                Piece square = transposable ? new_pieceboard.piecemap.at(row).at(col) : Piece(0, 0, row, col);
                 // crown
                 if (row == 0 || row == 7)
                 {
                     if (piece.piece == 1)
                     {
-                        PieceSet singles = checkSingles(pieceboard, piece);
+                        PieceSet singles = checkSingles(new_pieceboard, piece);
                         // if other single available
                         if (singles.size() > 0)
                         {
                             for (auto removepiece : singles)
                             {
-                                crown(pieceboard, piece);
-                                move(pieceboard, piece, square);
-                                remove(pieceboard, removepiece);
-                                possibleboards.push_back(pieceboard);
+                                new_pieceboard.lastmove = Move(piece.row*8+piece.col, row*8+col, removepiece.row*8+removepiece.col);
+                                crown(new_pieceboard, piece);
+                                move(new_pieceboard, piece, square);
+                                remove(new_pieceboard, removepiece);
+                                possiblepieceboards.push_back(new_pieceboard);
                             }
                         }
                         // if no other singles available, just add as normal slide (and add to crownstack)
                         else
                         {
-                            move(pieceboard, piece, square);
-                            pieceboard.piecetocrown[turn] = Piece(1, turn, square.row, square.col);
-                            possibleboards.push_back(pieceboard);
+                            new_pieceboard.lastmove = Move(piece.row*8+piece.col, row*8+col);
+                            move(new_pieceboard, piece, square);
+                            new_pieceboard.piecetocrown[turn] = Piece(1, turn, square.row, square.col);
+                            possiblepieceboards.push_back(new_pieceboard);
                         }
                     }
                     else
                     {
-                        bearOff(pieceboard, piece);
-                        bool crowned = crownIf(pieceboard, piece);
+                        bearOff(new_pieceboard, piece);
+                        bool crowned = crownIf(new_pieceboard, piece);
                         if (!crowned)
                         {
-                            move(pieceboard, piece, square);
+                            new_pieceboard.lastmove = Move(piece.row*8+piece.col, row*8+col, piece.row*8+piece.col);
+                            move(new_pieceboard, piece, square);
+                        }
+                        else
+                        {
+                            new_pieceboard.lastmove = Move(piece.row*8+piece.col, row*8+col);
                         };
-                        possibleboards.push_back(pieceboard);
+                        possiblepieceboards.push_back(new_pieceboard);
                     }
                 }
                 else
                 {
-                    move(pieceboard, piece, square);
-                    possibleboards.push_back(pieceboard);
+                    new_pieceboard.lastmove = Move(piece.row*8+piece.col, row*8+col);
+                    move(new_pieceboard, piece, square);
+                    possiblepieceboards.push_back(new_pieceboard);
                 };
                 //if it was a transpose, break loop with current sign
                 if (transposable)
@@ -396,24 +378,24 @@ void Board::move(PieceBoard &pieceboard, Piece piece, Piece square)
     Piece oldpiece = piece;
     piece.row = square.row;
     piece.col = square.col;
-    square.row = oldpiece.row;
-    square.col = oldpiece.col;
-    pieceboard.piecemap.at(square.row).at(square.col) = piece;
+    pieceboard.piecemap[piece.row][piece.col] = piece;
     if (square.piece > 0)
     {
-        pieceboard.piecemap.at(piece.row).at(piece.col) = square;
+        square.row = oldpiece.row;
+        square.col = oldpiece.col;
+        pieceboard.piecemap[oldpiece.row][oldpiece.col] = square;
     }
     else
     {
-        pieceboard.piecemap.at(piece.row).erase(piece.col);
+        pieceboard.piecemap.at(oldpiece.row).erase(oldpiece.col);
     };
 };
 bool Board::crownIf(PieceBoard &pieceboard, const Piece &p)
 {
-    const Piece &removepiece = pieceboard.piecemap.at(p.row).at(p.col);
     bool crowned = false;
     if (pieceboard.piecetocrown.count(turn) > 0)
     {
+        const Piece &removepiece = pieceboard.piecemap.at(p.row).at(p.col);
         const Piece &crownpiece = pieceboard.piecetocrown.at(turn);
         crown(pieceboard, crownpiece);
         pieceboard.piecetocrown.erase(turn);
@@ -425,7 +407,8 @@ bool Board::crownIf(PieceBoard &pieceboard, const Piece &p)
 void Board::addImpassable()
 {
     PieceBoard new_pieceboard = pieceboard;
-    for (auto x : new_pieceboard.piecemap)
+    
+    for (auto x : pieceboard.piecemap)
     {
         int row = x.first;
         for (auto y : x.second)
@@ -434,6 +417,7 @@ void Board::addImpassable()
             Piece piece = y.second;
             if (piece.color == turn)
             {
+                PieceBoard new_pieceboard = pieceboard;
                 if (piece.piece == 2)
                 {
                     remove(new_pieceboard, piece);
@@ -443,11 +427,11 @@ void Board::addImpassable()
                 {
                     remove(new_pieceboard, piece);
                 };
-                possibleboards.push_back(new_pieceboard);
+                possiblepieceboards.push_back(new_pieceboard);
             };
-        }
-    }
-};
+        };
+    };
+}
 void Board::initBoard()
 {
     deleteBoard();

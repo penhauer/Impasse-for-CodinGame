@@ -7,14 +7,14 @@ Ai::Ai(){};
 Ai::Ai(int color) : color(color){};
 PieceBoard Ai::getMove(Board board)
 {
-    PieceBoard bestBoard = PieceBoard();
+    PieceBoard bestPieceBoard;
     //int bestScore = negamax(&board, 3, color);
-    bestBoard = randomMove(board);
-    return bestBoard;
+    bestPieceBoard = randomMove(board);
+    return bestPieceBoard;
 };
 PieceBoard Ai::randomMove(const Board &board) const
 {
-    const PieceBoardVector &moves = board.possibleboards;
+    const PieceBoardVector &moves = board.possiblepieceboards;
     int random = rand() % moves.size();
     return moves[random];
 };
@@ -29,14 +29,14 @@ float Ai::negamax(Board board, int depth, int color)
         return board.evaluate();
     };
     int bestscore = -1000000;
-    for (const PieceBoard &pieceboard : board.possibleboards)
+    for (const PieceBoard &pieceboard : board.possiblepieceboards)
     {
         board.doMove(pieceboard);
         int score = -negamax(board, depth - 1, -color);
         if (score > bestscore)
         {
             bestscore = score;
-            bestBoard = pieceboard;
+            bestPieceBoard = pieceboard;
         };
         board.undoMove();
     };
