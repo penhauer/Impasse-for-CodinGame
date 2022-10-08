@@ -24,13 +24,11 @@ public:
 
 struct Move
 {
-    Piece from;
-    Piece to;
-    Piece remove;
-    Move();
-    Move(Piece from, Piece to, Piece remove);
-    bool operator<(const Move &other) const;
-    bool operator==(const Move &other) const;
+    int from;
+    int to;
+    int remove;
+    //Move();
+    Move(int from, int to, int remove);
 };
 
 typedef std::set<Piece> PieceSet;
@@ -38,8 +36,6 @@ typedef std::set<Piece> PieceSet;
 typedef std::map<int, std::map<int, Piece>> PieceMap;
 
 typedef std::map<int, Piece> PieceToCrown;
-
-typedef std::set<Move> MoveSet;
 
 struct PieceCount
 {
@@ -49,17 +45,27 @@ struct PieceCount
     int blackDoubles = 0;
 };
 
+struct PieceBoard
+{
+    PieceCount piececount;
+    PieceMap piecemap;
+    PieceToCrown piecetocrown;
+    Move lastmove;
+    PieceBoard();
+};
+
+typedef std::vector<PieceBoard> PieceBoardVector;
+
 class Board
 {
 public:
     int turn;
     int state;
-    PieceCount piececount;
-    MoveSet moveset;
+    PieceBoardVector possiblepieceboards;
+    PieceBoardVector pieceboardhistory;
 
 private:
-    PieceMap piecemap;
-    PieceToCrown piecetocrown;
+    PieceBoard pieceboard;
 
 public:
     Board();
@@ -71,18 +77,19 @@ public:
     void deleteBoard() const;
     void printBoard() const;
     void printMove(const Move &move) const;
-    void createMoveSet();
-    void doMove(const Move &move);
+    void createPossibleBoards();
+    void move(PieceBoard &pieceboard, Piece piece, Piece square);
+    void doMove(const PieceBoard &new_pieceboard);
+    void undoMove();
     float evaluate() const;
 
 private:
-    void updateMoveSet(const Move &move);
-    void crown(const Piece &p);
-    void bearOff(const Piece &p);
-    void remove(const Piece &p);
-    PieceSet checkSingles(const Piece &piece) const;
-    void addPieceDiagonals(const Piece &p);
-    void crownIf(const Piece &p);
+    bool crownIf(PieceBoard &pieceboard, const Piece &p);
+    void crown(PieceBoard &pieceboard, const Piece &p);
+    void bearOff(PieceBoard &pieceboard, const Piece &p);
+    void remove(PieceBoard &pieceboard, const Piece &p);
+    PieceSet checkSingles(PieceBoard &pieceboard, const Piece &piece) const;
+    void addPieceMoves(const Piece &piece);
     void addImpassable();
     void initBoard();
     void getPieceCount();

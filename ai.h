@@ -4,15 +4,14 @@ class Ai
 {
 private:
     int color;
-    Move bestMove;
+    PieceBoard bestPieceBoard;
 
 public:
     Ai();
     Ai(int color);
-    Move getMove(Board board);
-
+    PieceBoard getMove(Board board);
 private:
-    Move randomMove(const Board &board) const;
+    PieceBoard randomMove(const Board &board) const;
     void orderMoves();
     float negamax(Board board, int depth, int color);
 };
