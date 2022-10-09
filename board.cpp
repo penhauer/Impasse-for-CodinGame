@@ -91,7 +91,7 @@ void Board::printBoard() const
         std::cout << row + 1 << " ";
         for (int col = 0; col < 8; col++)
         {
-            std::cout << "| ";
+            std::cout << "|";
             if (pieceboard.piecemap.count(row) > 0 && pieceboard.piecemap.at(row).count(col) > 0)
             {
                 const Piece &piece = pieceboard.piecemap.at(row).at(col);
@@ -101,10 +101,10 @@ void Board::printBoard() const
                     switch (piece.color)
                     {
                     case 1:
-                        std::cout << "○ ";
+                        std::cout << " ○ ";
                         break;
                     case -1:
-                        std::cout << "● ";
+                        std::cout << " ● ";
                         break;
                     }
                     break;
@@ -112,18 +112,22 @@ void Board::printBoard() const
                     switch (piece.color)
                     {
                     case 1:
-                        std::cout << "◇ ";
+                        std::cout << " ◇ ";
                         break;
                     case -1:
-                        std::cout << "◆ ";
+                        std::cout << " ◆ ";
                         break;
                     }
                     break;
                 };
             }
+            else if ((row + col) % 2 != 0)
+            {
+                std::cout << " / ";
+            }
             else
             {
-                std::cout << "  ";
+                std::cout << "   ";
             };
         };
         std::cout << "|" << std::endl;
@@ -375,7 +379,8 @@ void Board::addPieceMoves(const Piece &piece)
 };
 void Board::move(PieceBoard &pieceboard, Piece piece, Piece square)
 {
-    Piece oldpiece = piece;
+    Piece oldpiece = pieceboard.piecemap.at(piece.row).at(piece.col);
+    piece = oldpiece;
     piece.row = square.row;
     piece.col = square.col;
     pieceboard.piecemap[piece.row][piece.col] = piece;
