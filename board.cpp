@@ -420,12 +420,24 @@ void Board::addImpassable()
                 PieceBoard new_pieceboard = pieceboard;
                 if (piece.piece == 2)
                 {
+                    if ((row == 0 || row == 7) && pieceboard.piecetocrown.count(turn) > 0)
+                    {
+                        Piece &toremove = pieceboard.piecetocrown[turn];
+                        remove(new_pieceboard, toremove);
+                        new_pieceboard.piecetocrown.erase(turn);
+                        crown(new_pieceboard, piece);
+                        new_pieceboard.lastmove = Move(piece.row*8+piece.col, -1, toremove.row*8+toremove.col);
+                        possiblepieceboards.push_back(new_pieceboard);
+                        new_pieceboard = pieceboard;
+                    };
                     remove(new_pieceboard, piece);
                     crownIf(new_pieceboard, piece);
+                    new_pieceboard.lastmove = Move(piece.row*8+piece.col, -1, piece.row*8+piece.col);
                 }
                 else
                 {
                     remove(new_pieceboard, piece);
+                    new_pieceboard.lastmove = Move(piece.row*8+piece.col, -1, piece.row*8+piece.col);
                 };
                 possiblepieceboards.push_back(new_pieceboard);
             };
