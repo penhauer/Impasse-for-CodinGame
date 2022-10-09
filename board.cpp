@@ -176,7 +176,11 @@ void Board::createPossibleBoards()
 //Evaluate heuristic value of current board
 float Board::evaluate() const
 {
-    float score = turn * (1.5 * (pieceboard.piececount.blackSingles + pieceboard.piececount.blackDoubles) - pieceboard.piececount.whiteSingles - pieceboard.piececount.whiteDoubles);
+    float score = 1.5*(pieceboard.piececount.blackDoubles-pieceboard.piececount.whiteDoubles)+pieceboard.piececount.blackSingles-pieceboard.piececount.whiteSingles;
+    if (score > 0)
+    {
+        return score;
+    }
     return score;
     // TODO add average number of available moves per piece
 };
@@ -265,7 +269,7 @@ void Board::remove(PieceBoard &pieceboard, const Piece &p)
     };
 };
 //Create set of current color singles
-PieceSet Board::checkSingles(PieceBoard &pieceboard, const Piece &piece) const
+PieceSet Board::checkSingles(const Piece &piece) const
 {
     PieceSet singles;
     for (auto x : pieceboard.piecemap)
@@ -299,7 +303,6 @@ void Board::addPieceMoves(const Piece &piece)
         int i = piece.direction;
         while (i + piece.row < 8 && piece.row + i >= 0)
         {
-            PieceBoard new_pieceboard = pieceboard;
             int row = piece.row + i;
             int col = piece.col + i*pow(-1, sign);
             if (col < 0 || col > 7)
@@ -311,18 +314,19 @@ void Board::addPieceMoves(const Piece &piece)
             bool emptysquare = ifEmptySquare(piece, row, col);
             if (emptysquare || transposable)
             {
-                Piece square = transposable ? new_pieceboard.piecemap.at(row).at(col) : Piece(0, 0, row, col);
+                Piece square = transposable ? pieceboard.piecemap.at(row).at(col) : Piece(0, 0, row, col);
                 // crown
                 if (row == 0 || row == 7)
                 {
                     if (piece.piece == 1)
                     {
-                        PieceSet singles = checkSingles(new_pieceboard, piece);
+                        PieceSet singles = checkSingles(piece);
                         // if other single available
                         if (singles.size() > 0)
                         {
                             for (auto removepiece : singles)
                             {
+                                PieceBoard new_pieceboard = pieceboard;
                                 new_pieceboard.lastmove = Move(piece.row*8+piece.col, row*8+col, removepiece.row*8+removepiece.col);
                                 crown(new_pieceboard, piece);
                                 move(new_pieceboard, piece, square);
@@ -333,6 +337,7 @@ void Board::addPieceMoves(const Piece &piece)
                         // if no other singles available, just add as normal slide (and add to crownstack)
                         else
                         {
+                            PieceBoard new_pieceboard = pieceboard;
                             new_pieceboard.lastmove = Move(piece.row*8+piece.col, row*8+col);
                             move(new_pieceboard, piece, square);
                             new_pieceboard.piecetocrown[turn] = Piece(1, turn, square.row, square.col);
@@ -341,6 +346,7 @@ void Board::addPieceMoves(const Piece &piece)
                     }
                     else
                     {
+                        PieceBoard new_pieceboard = pieceboard;
                         bearOff(new_pieceboard, piece);
                         bool crowned = crownIf(new_pieceboard, piece);
                         if (!crowned)
@@ -357,6 +363,7 @@ void Board::addPieceMoves(const Piece &piece)
                 }
                 else
                 {
+                    PieceBoard new_pieceboard = pieceboard;
                     new_pieceboard.lastmove = Move(piece.row*8+piece.col, row*8+col);
                     move(new_pieceboard, piece, square);
                     possiblepieceboards.push_back(new_pieceboard);
@@ -388,7 +395,7 @@ void Board::move(PieceBoard &pieceboard, Piece piece, Piece square)
     {
         square.row = oldpiece.row;
         square.col = oldpiece.col;
-        pieceboard.piecemap[oldpiece.row][oldpiece.col] = square;
+        pieceboard.piecemap[square.row][square.col] = square;
     }
     else
     {
@@ -411,8 +418,6 @@ bool Board::crownIf(PieceBoard &pieceboard, const Piece &p)
 };
 void Board::addImpassable()
 {
-    PieceBoard new_pieceboard = pieceboard;
-    
     for (auto x : pieceboard.piecemap)
     {
         int row = x.first;

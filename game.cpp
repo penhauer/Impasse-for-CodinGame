@@ -129,7 +129,7 @@ loop:
 };
 void Game::undoMove()
 {
-    if (board.pieceboardhistory.size() > 0)
+    if (board.pieceboardhistory.size() > 1)
     {
         board.undoMove();
         board.undoMove();
@@ -137,7 +137,7 @@ void Game::undoMove()
     }
     else
     {
-        std::cout << "No moves to undo" << std::endl;
+        std::cout << "No player moves to undo" << std::endl;
     };
 };
 std::tuple<bool, PieceBoard> Game::trySelect(int pos, PieceBoard pb)

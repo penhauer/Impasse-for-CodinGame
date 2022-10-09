@@ -88,7 +88,7 @@ private:
     void crown(PieceBoard &pieceboard, const Piece &p);
     void bearOff(PieceBoard &pieceboard, const Piece &p);
     void remove(PieceBoard &pieceboard, const Piece &p);
-    PieceSet checkSingles(PieceBoard &pieceboard, const Piece &piece) const;
+    PieceSet checkSingles(const Piece &piece) const;
     void addPieceMoves(const Piece &piece);
     void addImpassable();
     void initBoard();
