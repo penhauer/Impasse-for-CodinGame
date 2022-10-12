@@ -174,35 +174,29 @@ void Board::createPossibleBoards()
     };
 };
 //Evaluate heuristic value of current board
-float Board::evaluate() const
+int Board::evaluate(int color) const
 {
-    float score = 1.5*(pieceboard.piececount.blackDoubles-pieceboard.piececount.whiteDoubles)+pieceboard.piececount.blackSingles-pieceboard.piececount.whiteSingles;
-    if (score > 0)
-    {
-        return score;
-    }
-    return score;
+    //return color * (3*(float)(pieceboard.piececount.blackDoubles-pieceboard.piececount.whiteDoubles) +2*(pieceboard.piececount.blackSingles-pieceboard.piececount.whiteSingles));
     // TODO add average number of available moves per piece
+    return color * (3*(pieceboard.piececount.blackDoubles-pieceboard.piececount.whiteDoubles) - 2*(pieceboard.piececount.blackSingles-pieceboard.piececount.whiteSingles));
 };
 //Update board state with selected move
-void Board::doMove(const PieceBoard &new_pieceboard)
+void Board::doMove(const PieceBoard new_pieceboard)
 {
     pieceboardhistory.push_back(pieceboard);
     pieceboard = new_pieceboard;
     turn = turn * -1;
-    createPossibleBoards();
 };
 void Board::undoMove()
 {
     pieceboard = pieceboardhistory.back();
     pieceboardhistory.pop_back();
     turn = turn * -1;
-    createPossibleBoards();
 };
 //Crown piece
 void Board::crown(PieceBoard &pieceboard, const Piece &p)
 {
-    Piece &piece = pieceboard.piecemap.at(p.row).at(p.col);
+    Piece &piece = pieceboard.piecemap[p.row][p.col];
     switch (piece.color)
     {
     case 1:
@@ -220,7 +214,7 @@ void Board::crown(PieceBoard &pieceboard, const Piece &p)
 //Bear-off piece
 void Board::bearOff(PieceBoard &pieceboard, const Piece &p)
 {
-    Piece &piece = pieceboard.piecemap.at(p.row).at(p.col);
+    Piece &piece = pieceboard.piecemap[p.row][p.col];
     switch (piece.color)
     {
     case 1:
@@ -453,7 +447,7 @@ void Board::addImpassable()
             };
         };
     };
-}
+};
 void Board::initBoard()
 {
     deleteBoard();

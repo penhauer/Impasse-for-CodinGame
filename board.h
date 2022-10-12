@@ -79,9 +79,9 @@ public:
     void printMove(const Move &move) const;
     void createPossibleBoards();
     void move(PieceBoard &pieceboard, Piece piece, Piece square);
-    void doMove(const PieceBoard &new_pieceboard);
+    void doMove(const PieceBoard new_pieceboard);
     void undoMove();
-    float evaluate() const;
+    int evaluate(int color) const;
 
 private:
     bool crownIf(PieceBoard &pieceboard, const Piece &p);

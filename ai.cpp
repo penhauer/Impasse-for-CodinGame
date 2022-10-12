@@ -8,9 +8,13 @@ Ai::Ai(){};
 Ai::Ai(int color) : color(color){};
 PieceBoard Ai::getMove(Board board)
 {
+    leafnodes = 0;
     //Board new_board = board;
-    float bestScore = negamax(board, 3, color);
-    //float bestScore = alphaBetaNegaMax(board, 15, color, -100000, 100000);
+    //bool maxplayer = 1 ? color == 1 : 0;
+    //int bestScore = miniMax(board, 3, maxplayer);
+    int score = negamax(board, searchdepth, color);
+    std::cout << "Search depth: " << searchdepth << ", leaf nodes considered: " << leafnodes << ", score: " << score << std::endl;
+    //int bestScore = alphaBetaNegaMax(board, 15, color, -100000, 100000);
     // bestPieceBoard = randomMove(board);
     return bestPieceBoard;
 };
@@ -24,44 +28,49 @@ void Ai::orderMoves()
 {
     PieceBoardVector orderedMoves;
 };
-float Ai::negamax(Board &board, int depth, int color)
+int Ai::negamax(Board &board, int depth, int color)
 {
-    PieceBoard bestpieceboard;
     if (depth == 0 || board.state != 0)
     {
-        return board.evaluate();
+        leafnodes += 1;
+        return board.evaluate(color);
     };
-    float bestscore = -1000000.0;
-    PieceBoardVector possiblepieceboards = board.possiblepieceboards;
-    for (PieceBoard pieceboard : possiblepieceboards)
+    int bestscore = -1000000;
+    board.createPossibleBoards();
+    PieceBoardVector childnodes = board.possiblepieceboards;
+    for (PieceBoard child : childnodes)
     {
-        board.doMove(pieceboard);
-        //float score;
-        //PieceBoard pieceboardchild;
-        float score = -negamax(board, depth - 1, -color);
+        if (child.lastmove.from == 52 && child.lastmove.to == 16)
+        {
+            int a = 1;
+        }
+        board.doMove(child);
+        int score = -negamax(board, depth - 1, -color);
         if (score > bestscore)
         {
             bestscore = score;
-            bestpieceboard = pieceboard;
+            if (depth == searchdepth)
+            {
+                bestPieceBoard = child;
+            };
         };
         board.undoMove();
     };
-    bestPieceBoard = bestpieceboard;
     return bestscore;
 };
-float Ai::alphaBetaNegaMax(Board &board, int depth, float alpha, float beta, int color)
+int Ai::alphaBetaNegaMax(Board &board, int depth, int alpha, int beta, int color)
 {
     PieceBoard bestpieceboard;
     if (depth == 0 || board.state != 0)
     {
-        return board.evaluate();
+        return board.evaluate(color);
     };
     int bestscore = -1000000;
     PieceBoardVector possiblepieceboards = board.possiblepieceboards;
     for (PieceBoard &pieceboard : possiblepieceboards)
     {
         board.doMove(pieceboard);
-        float score = -alphaBetaNegaMax(board, depth - 1, -beta, -alpha, -color);
+        int score = alphaBetaNegaMax(board, depth - 1, -beta, -alpha, -color);
         if (score > bestscore)
         {
             bestscore = score;

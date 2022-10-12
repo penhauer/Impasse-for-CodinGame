@@ -5,6 +5,8 @@ class Ai
 private:
     int color;
     PieceBoard bestPieceBoard;
+    int leafnodes = 0;
+    int searchdepth = 3;
 
 public:
     Ai();
@@ -13,6 +15,7 @@ public:
 private:
     PieceBoard randomMove(const Board &board) const;
     void orderMoves();
-    float negamax(Board &board, int depth, int color);
-    float alphaBetaNegaMax(Board &board, int depth, float alpha, float beta, int color);
+    int miniMax(Board &board, int depth, bool maxplayer);
+    int negamax(Board &board, int depth, int color);
+    int alphaBetaNegaMax(Board &board, int depth, int alpha, int beta, int color);
 };

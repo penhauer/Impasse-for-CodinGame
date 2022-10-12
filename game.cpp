@@ -49,6 +49,7 @@ loop:
                 else if (notation == "undo")
                 {
                     undoMove();
+                    board.createPossibleBoards();
                     board.printBoard();
                 }
                 else if (notation == "moves")
@@ -109,6 +110,7 @@ loop:
                 }
             };
             board.doMove(pieceboard);
+            board.createPossibleBoards();
         }
         else
         {
@@ -116,6 +118,7 @@ loop:
             PieceBoard pieceboard = ai.getMove(board);
             board.printMove(pieceboard.lastmove);
             board.doMove(pieceboard);
+            board.createPossibleBoards();
         };
     };
     if (board.state == player)
@@ -133,6 +136,7 @@ void Game::undoMove()
     {
         board.undoMove();
         board.undoMove();
+        board.createPossibleBoards();
         std::cout << "Last player move undone" << std::endl;
     }
     else
