@@ -17,7 +17,6 @@ private:
 
 public:
     Game(int player);
-    ~Game();
 
 private:
     void gameLoop();

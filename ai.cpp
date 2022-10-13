@@ -40,10 +40,6 @@ int Ai::negamax(Board &board, int depth, int color)
     PieceBoardVector childnodes = board.possiblepieceboards;
     for (PieceBoard child : childnodes)
     {
-        if (child.lastmove.from == 52 && child.lastmove.to == 16)
-        {
-            int a = 1;
-        }
         board.doMove(child);
         int score = -negamax(board, depth - 1, -color);
         if (score > bestscore)

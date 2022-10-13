@@ -9,14 +9,6 @@ Game::Game(int player)
     ai = Ai(player * -1);
     gameLoop();
 };
-Game::~Game()
-{
-    if (board.state == 1)
-    {
-        
-    }
-    //delete boardhistory;
-};
 void Game::gameLoop()
 {
 loop:
@@ -125,7 +117,7 @@ loop:
     {
         std::cout << "🎉🎉🎉 Congratulations, you won the game! 🎉🎉🎉" << std::endl;
     }
-    else if (board.state == -1)
+    else if (board.state == -1*player)
     {
         std::cout << "Unfortunately you lost, better luck next time!" << std::endl;
     };
