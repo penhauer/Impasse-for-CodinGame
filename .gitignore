@@ -7,6 +7,11 @@
 .vscode/
 .idea/
 
+# CMakes
+CMakeLists.txt
+cmake-build-debug/
+build/
+
 # Prerequisites
 *.d
 

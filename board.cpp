@@ -5,6 +5,7 @@
 #include <iostream>
 #include <fstream>
 #include "board.h"
+#include <chrono>
 
 Piece::Piece()
 {
@@ -13,7 +14,7 @@ Piece::Piece()
     row = -1;
     col = -1;
 };
-Piece::Piece(int piece, int color, int row, int col) : piece(piece), color(color), row(row), col(col){getDirection();};
+Piece::Piece(int piece, int color, int row, int col) : piece(piece), color(color), row(row), col(col) { getDirection(); };
 void Piece::getDirection() { direction = (piece == 1 && color == 1 || piece == 2 && color == -1) ? 1 : -1; };
 void Piece::changeType()
 {
@@ -30,7 +31,7 @@ bool Piece::operator==(const Piece &other) const
 };
 Move::Move(int from = -1, int to = -1, int remove = -1) : from(from), to(to), remove(remove){};
 
-PieceBoard::PieceBoard() {};
+PieceBoard::PieceBoard(){};
 
 Board::Board(){};
 Board::Board(bool paused)
@@ -44,7 +45,12 @@ void Board::resetBoard(bool paused)
     initBoard();
     getPieceCount();
     pieceboard.piecetocrown.clear();
+    std::chrono::time_point<std::chrono::system_clock> start, end;
+    start = std::chrono::system_clock::now();
     createPossibleBoards();
+    end = std::chrono::system_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+    std::cout << "Time to create possible boards: " << duration.count() << " microseconds" << std::endl;
 };
 void Board::saveBoard() const
 {
@@ -55,7 +61,7 @@ void Board::saveBoard() const
         newfile << turn << std::endl;
         newfile << state << std::endl;
         newfile << pieceboard.piecetocrown.size() << std::endl;
-        //TODO add piecetocrown and pieceset
+        // TODO add piecetocrown and pieceset
     };
     newfile.close();
 };
@@ -71,7 +77,7 @@ void Board::loadBoard(int turn, PieceToCrown piecetocrown, PieceSet pieceset)
     getPieceCount();
     createPossibleBoards();
 };
-//If saved board exists, delete it
+// If saved board exists, delete it
 void Board::deleteBoard() const
 {
     std::ifstream newfile;
@@ -82,7 +88,7 @@ void Board::deleteBoard() const
         std::remove("boardstate.txt");
     };
 };
-//Print board to console
+// Print board to console
 void Board::printBoard() const
 {
     for (int row = 7; row >= 0; row--)
@@ -135,7 +141,7 @@ void Board::printBoard() const
     std::cout << "  +---+---+---+---+---+---+---+---+" << std::endl;
     std::cout << "    A   B   C   D   E   F   G   H " << std::endl;
 };
-//Print current valid moves to console
+// Print current valid moves to console
 void Board::printMove(const Move &move) const
 {
     std::cout << "From " << reverseParseMove(move.from);
@@ -149,7 +155,7 @@ void Board::printMove(const Move &move) const
     };
     std::cout << std::endl;
 };
-//Create current valid moves
+// Create current valid moves
 void Board::createPossibleBoards()
 {
     possiblepieceboards.clear();
@@ -169,18 +175,18 @@ void Board::createPossibleBoards()
     };
     if (possiblepieceboards.size() == 0)
     {
-    // if no move, impasse
+        // if no move, impasse
         addImpassable();
     };
 };
-//Evaluate heuristic value of current board
+// Evaluate heuristic value of current board
 int Board::evaluate(int color) const
 {
-    //return color * (3*(float)(pieceboard.piececount.blackDoubles-pieceboard.piececount.whiteDoubles) +2*(pieceboard.piececount.blackSingles-pieceboard.piececount.whiteSingles));
-    // TODO add average number of available moves per piece
-    return color * (3*(pieceboard.piececount.blackDoubles-pieceboard.piececount.whiteDoubles) - 2*(pieceboard.piececount.blackSingles-pieceboard.piececount.whiteSingles));
+    // return color * (3*(float)(pieceboard.piececount.blackDoubles-pieceboard.piececount.whiteDoubles) +2*(pieceboard.piececount.blackSingles-pieceboard.piececount.whiteSingles));
+    //  TODO add average number of available moves per piece
+    return color * (2 * pieceboard.piececount.blackSingles + 3 * pieceboard.piececount.blackDoubles - 2 * pieceboard.piececount.whiteSingles - 3 * pieceboard.piececount.whiteDoubles);
 };
-//Update board state with selected move
+// Update board state with selected move
 void Board::doMove(const PieceBoard new_pieceboard)
 {
     pieceboardhistory.push_back(pieceboard);
@@ -193,7 +199,7 @@ void Board::undoMove()
     pieceboardhistory.pop_back();
     turn = turn * -1;
 };
-//Crown piece
+// Crown piece
 void Board::crown(PieceBoard &pieceboard, const Piece &p)
 {
     Piece &piece = pieceboard.piecemap[p.row][p.col];
@@ -211,7 +217,7 @@ void Board::crown(PieceBoard &pieceboard, const Piece &p)
     piece.piece = 2;
     piece.getDirection();
 };
-//Bear-off piece
+// Bear-off piece
 void Board::bearOff(PieceBoard &pieceboard, const Piece &p)
 {
     Piece &piece = pieceboard.piecemap[p.row][p.col];
@@ -229,7 +235,7 @@ void Board::bearOff(PieceBoard &pieceboard, const Piece &p)
     piece.piece = 1;
     piece.getDirection();
 };
-//Remove / bear-off piece based on type after impasse
+// Remove / bear-off piece based on type after impasse
 void Board::remove(PieceBoard &pieceboard, const Piece &p)
 {
     switch (p.piece)
@@ -248,7 +254,7 @@ void Board::remove(PieceBoard &pieceboard, const Piece &p)
         break;
     // bear-off
     case 2:
-        //bearoff
+        // bearoff
         bearOff(pieceboard, p);
         break;
     };
@@ -262,7 +268,7 @@ void Board::remove(PieceBoard &pieceboard, const Piece &p)
         state = -1;
     };
 };
-//Create set of current color singles
+// Create set of current color singles
 PieceSet Board::checkSingles(const Piece &piece) const
 {
     PieceSet singles;
@@ -298,12 +304,12 @@ void Board::addPieceMoves(const Piece &piece)
         while (i + piece.row < 8 && piece.row + i >= 0)
         {
             int row = piece.row + i;
-            int col = piece.col + i*pow(-1, sign);
+            int col = piece.col + i * pow(-1, sign);
             if (col < 0 || col > 7)
             {
                 break;
             };
-            //slide or transpose
+            // slide or transpose
             bool transposable = ifTransposable(piece, i, row, col);
             bool emptysquare = ifEmptySquare(piece, row, col);
             if (emptysquare || transposable)
@@ -321,7 +327,7 @@ void Board::addPieceMoves(const Piece &piece)
                             for (auto removepiece : singles)
                             {
                                 PieceBoard new_pieceboard = pieceboard;
-                                new_pieceboard.lastmove = Move(piece.row*8+piece.col, row*8+col, removepiece.row*8+removepiece.col);
+                                new_pieceboard.lastmove = Move(piece.row * 8 + piece.col, row * 8 + col, removepiece.row * 8 + removepiece.col);
                                 crown(new_pieceboard, piece);
                                 move(new_pieceboard, piece, square);
                                 remove(new_pieceboard, removepiece);
@@ -332,7 +338,7 @@ void Board::addPieceMoves(const Piece &piece)
                         else
                         {
                             PieceBoard new_pieceboard = pieceboard;
-                            new_pieceboard.lastmove = Move(piece.row*8+piece.col, row*8+col);
+                            new_pieceboard.lastmove = Move(piece.row * 8 + piece.col, row * 8 + col);
                             move(new_pieceboard, piece, square);
                             new_pieceboard.piecetocrown[turn] = Piece(1, turn, square.row, square.col);
                             possiblepieceboards.push_back(new_pieceboard);
@@ -345,12 +351,12 @@ void Board::addPieceMoves(const Piece &piece)
                         bool crowned = crownIf(new_pieceboard, piece);
                         if (!crowned)
                         {
-                            new_pieceboard.lastmove = Move(piece.row*8+piece.col, row*8+col, piece.row*8+piece.col);
+                            new_pieceboard.lastmove = Move(piece.row * 8 + piece.col, row * 8 + col, piece.row * 8 + piece.col);
                             move(new_pieceboard, piece, square);
                         }
                         else
                         {
-                            new_pieceboard.lastmove = Move(piece.row*8+piece.col, row*8+col);
+                            new_pieceboard.lastmove = Move(piece.row * 8 + piece.col, row * 8 + col);
                         };
                         possiblepieceboards.push_back(new_pieceboard);
                     }
@@ -358,22 +364,22 @@ void Board::addPieceMoves(const Piece &piece)
                 else
                 {
                     PieceBoard new_pieceboard = pieceboard;
-                    new_pieceboard.lastmove = Move(piece.row*8+piece.col, row*8+col);
+                    new_pieceboard.lastmove = Move(piece.row * 8 + piece.col, row * 8 + col);
                     move(new_pieceboard, piece, square);
                     possiblepieceboards.push_back(new_pieceboard);
                 };
-                //if it was a transpose, break loop with current sign
+                // if it was a transpose, break loop with current sign
                 if (transposable)
                 {
                     break;
                 };
             }
-            //if the square was not empty or transposable, break
+            // if the square was not empty or transposable, break
             else
             {
                 break;
             };
-            //otherwise increment i and continue loop
+            // otherwise increment i and continue loop
             i = i + piece.direction;
         };
     };
@@ -430,18 +436,18 @@ void Board::addImpassable()
                         remove(new_pieceboard, toremove);
                         new_pieceboard.piecetocrown.erase(turn);
                         crown(new_pieceboard, piece);
-                        new_pieceboard.lastmove = Move(piece.row*8+piece.col, -1, toremove.row*8+toremove.col);
+                        new_pieceboard.lastmove = Move(piece.row * 8 + piece.col, -1, toremove.row * 8 + toremove.col);
                         possiblepieceboards.push_back(new_pieceboard);
                         new_pieceboard = pieceboard;
                     };
                     remove(new_pieceboard, piece);
                     crownIf(new_pieceboard, piece);
-                    new_pieceboard.lastmove = Move(piece.row*8+piece.col, -1, piece.row*8+piece.col);
+                    new_pieceboard.lastmove = Move(piece.row * 8 + piece.col, -1, piece.row * 8 + piece.col);
                 }
                 else
                 {
                     remove(new_pieceboard, piece);
-                    new_pieceboard.lastmove = Move(piece.row*8+piece.col, -1, piece.row*8+piece.col);
+                    new_pieceboard.lastmove = Move(piece.row * 8 + piece.col, -1, piece.row * 8 + piece.col);
                 };
                 possiblepieceboards.push_back(new_pieceboard);
             };
