@@ -5,7 +5,8 @@ class Ai
 private:
     int color;
     PieceBoard bestPieceBoard;
-    int leafnodes = 0;
+    int leafnodes;
+    int cutoffs;
     int searchdepth = 5;
 
 public:

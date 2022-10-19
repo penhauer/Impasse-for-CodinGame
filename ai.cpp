@@ -4,11 +4,16 @@
 #include <set>
 #include <iostream>
 #include <vector>
+#include <chrono>
 
 Ai::Ai(){};
 Ai::Ai(int color) : color(color){};
 PieceBoard Ai::getMove(Board board)
 {
+    std::chrono::time_point<std::chrono::system_clock> start, end;
+    start = std::chrono::system_clock::now();
+    
+    cutoffs = 0;
     leafnodes = 0;
     PieceBoardVector childnodes = board.possiblepieceboards;
     int bestscore = -100000;
@@ -24,8 +29,10 @@ PieceBoard Ai::getMove(Board board)
         }
         board.undoMove();
     };
+    end = std::chrono::system_clock::now();
+    float duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count()/1000.0;
+    std::cout << searchdepth << " ply deep search returned best move (with score " << bestscore<< ") after " << duration << "s.\nIt considered " << leafnodes << " leaf nodes, and made " << cutoffs << " cutoffs." << std::endl;
     int maxIndex = std::distance(scores.begin(), std::max_element(scores.begin(), scores.end()));
-    std::cout << "Search depth: " << searchdepth << ", leaf nodes considered: " << leafnodes << ", score: " << bestscore << std::endl;
     return childnodes[maxIndex];
 };
 PieceBoard Ai::randomMove(const Board &board) const
@@ -66,6 +73,7 @@ int Ai::alphaBetaNegaMax(Board board, int depth, int color, int alpha, int beta)
     PieceBoard bestpieceboard;
     if (depth == 0 || board.state != 0)
     {
+        leafnodes += 1;
         return board.evaluate(color);
     };
     int bestscore = -10000;
@@ -85,6 +93,7 @@ int Ai::alphaBetaNegaMax(Board board, int depth, int color, int alpha, int beta)
         };
         if (bestscore >= beta)
         {
+            cutoffs += 1;
             break;
         };
         board.undoMove();
