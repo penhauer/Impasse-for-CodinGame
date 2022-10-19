@@ -28,7 +28,7 @@ int main()
                 std::cout << "Invalid answer" << std::endl;
             };
         };
-        Game game = Game(player);
+        Game game = Game(player, 5);
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
         std::cout << "Would you like to play again? (yes/no): ";
         std::cin >> answer;

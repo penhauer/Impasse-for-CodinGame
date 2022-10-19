@@ -1,12 +1,14 @@
 #include <iostream>
+#include <chrono>
 #include "game.h"
 
-Game::Game(int player)
+Game::Game(int player, int timemin)
 {
     this->player = player;
     std::cout << "Game started" << std::endl;
     board = Board(false);
     ai = Ai(player * -1);
+    timer = std::make_tuple(timemin * 60 * 1000, timemin * 60 * 1000);
     gameLoop();
 };
 void Game::gameLoop()
@@ -16,6 +18,8 @@ loop:
     {
         if (player == board.turn)
         {
+            //std::chrono::time_point<std::chrono::system_clock> start, end;
+            auto start = std::chrono::system_clock::now();
             board.printBoard();
             std::cout << "Your turn" << std::endl;
             bool turnEnd = false;
@@ -102,17 +106,44 @@ loop:
                     }
                 }
             };
-            board.doMove(pieceboard);
-            board.printBoard();
-            board.createPossibleBoards();
+            auto end = std::chrono::system_clock::now();
+            auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+            timer = std::make_tuple(std::get<0>(timer) - duration.count(), std::get<1>(timer));
+            if (std::get<0>(timer) < 0)
+            {
+                std::cout << "Your time is up!" << std::endl;
+                board.state = -1 * player;
+            }
+            else
+            {
+                int timeleft = std::get<0>(timer) / 1000;
+                std::cout << "Time left: " << timeleft/60 << "m " << timeleft % 60 << "s" << std::endl;
+                board.doMove(pieceboard);
+                board.printBoard();
+                board.createPossibleBoards();
+            };
         }
         else
         {
+            auto start = std::chrono::system_clock::now();
             std::cout << "AI turn" << std::endl;
             PieceBoard pieceboard = ai.getMove(board);
-            board.printMove(pieceboard.lastmove);
-            board.doMove(pieceboard);
-            board.createPossibleBoards();
+            auto end = std::chrono::system_clock::now();
+            auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+            timer = std::make_tuple(std::get<0>(timer), std::get<1>(timer) - duration.count());
+            if (std::get<1>(timer) < 0)
+            {
+                std::cout << "AI's time is up!" << std::endl;
+                board.state = player;
+            }
+            else
+            {
+                int timeleft = std::get<1>(timer) / 1000;
+                std::cout << "Time left for AI: " << timeleft/60 << "m " << timeleft % 60 << "s" << std::endl;
+                board.printMove(pieceboard.lastmove);
+                board.doMove(pieceboard);
+                board.createPossibleBoards();
+            };
         };
     };
     if (board.state == player)

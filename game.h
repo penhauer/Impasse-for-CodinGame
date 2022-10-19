@@ -14,9 +14,10 @@ public:
 private:
     int player; // 1 = White vs Ai, -1 = Black vs Ai
     Ai ai;
+    std::tuple<int, int> timer;
 
 public:
-    Game(int player);
+    Game(int player, int timemin);
 
 private:
     void gameLoop();
