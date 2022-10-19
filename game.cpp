@@ -58,7 +58,7 @@ loop:
                 else if (notation == "rules")
                 {
                     const char *text =
-                        "---RULES---\n\n"
+                        "----------------------------GAME RULES----------------------------\n"
                         "White vs Black player, remove all of your own pieces to win.\n\n"
                         "Both players start with 4-4 singles and doubles.\n\n"
                         "Singles can only be moved away from the owner, doubles towards.\n"
@@ -67,10 +67,11 @@ loop:
                         "Doubles become singles once they get to their last row.\n"
                         "Singles become doubles once they get to their last row,\n"
                         "assuming that another single is available, which single gets removed.\n"
-                        "If there isn't, they stay single until one becomes available.\n"
+                        "If there isn't, they stay singles until another single becomes available.\n"
                         "If no moves are available, a single has to be removed,\n"
                         "or a double turned into a single.\n"
-                        "The player wins with one single left and no moves available.";
+                        "The player with one single left and no moves available wins.\n"
+                        "----------------------------GAME RULES----------------------------";
                     std::cout << text << std::endl;
                 }
                 else if (notation == "restart")
@@ -102,6 +103,7 @@ loop:
                 }
             };
             board.doMove(pieceboard);
+            board.printBoard();
             board.createPossibleBoards();
         }
         else

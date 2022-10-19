@@ -90,6 +90,22 @@ void Board::printBoard() const
         {
             std::cout << "|";
             int pos = row * 8 + col;
+            if (pos == pieceboard.lastmove.from)
+            {
+                std::cout << ">";
+            }
+            else if (pos == pieceboard.lastmove.to)
+            {
+                std::cout << "<";
+            }
+            else if (pos == pieceboard.lastmove.remove)
+            {
+                std::cout << "x";
+            }
+            else
+            {
+                std::cout << " ";
+            };
             if (pieceboard.piecemap.count(pos) > 0)
             {
                 const Piece &piece = pieceboard.piecemap.at(pos);
@@ -99,10 +115,10 @@ void Board::printBoard() const
                     switch (piece.color)
                     {
                     case 1:
-                        std::cout << " ○ ";
+                        std::cout << "○";
                         break;
                     case -1:
-                        std::cout << " ● ";
+                        std::cout << "●";
                         break;
                     }
                     break;
@@ -110,10 +126,10 @@ void Board::printBoard() const
                     switch (piece.color)
                     {
                     case 1:
-                        std::cout << " ◇ ";
+                        std::cout << "◇";
                         break;
                     case -1:
-                        std::cout << " ◆ ";
+                        std::cout << "◆";
                         break;
                     }
                     break;
@@ -121,12 +137,28 @@ void Board::printBoard() const
             }
             else if ((row + col) % 2 != 0)
             {
-                std::cout << " / ";
+                std::cout << "/";
             }
             else
             {
-                std::cout << "   ";
+                std::cout << " ";
             };
+            if (pos == pieceboard.lastmove.from)
+            {
+                std::cout << "<";
+            }
+            else if (pos == pieceboard.lastmove.to)
+            {
+                std::cout << ">";
+            }
+            else if (pos == pieceboard.lastmove.remove)
+            {
+                std::cout << "x";
+            }
+            else
+            {
+                std::cout << " ";
+            }
         };
         std::cout << "|" << std::endl;
     };
