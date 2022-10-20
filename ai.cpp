@@ -7,85 +7,75 @@
 #include <chrono>
 
 Ai::Ai(){};
-Ai::Ai(int color) : color(color){};
+Ai::Ai(int color) : color(color){ initZobristTable(); };
 PieceBoard Ai::getMove(Board board)
 {
-    std::chrono::time_point<std::chrono::system_clock> start, end;
-    start = std::chrono::system_clock::now();
-    
+    scores.clear();
     cutoffs = 0;
     leafnodes = 0;
-    PieceBoardVector childnodes = board.possiblepieceboards;
-    int bestscore = -100000;
-    std::vector<int> scores;
-    for (auto childnode : childnodes)
-    {
-        board.doMove(childnode);
-        int score = -alphaBetaNegaMax(board, searchdepth-1, -color, -100000, 100000);
-        scores.push_back(score);
-        if (score > bestscore)
-        {
-            bestscore = score;
-        }
-        board.undoMove();
-    };
-    end = std::chrono::system_clock::now();
-    float duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count()/1000.0;
-    std::cout << searchdepth << " ply deep search returned best move (with score " << bestscore<< ") after " << duration << "s.\nIt considered " << leafnodes << " leaf nodes, and made " << cutoffs << " cutoffs." << std::endl;
-    int maxIndex = std::distance(scores.begin(), std::max_element(scores.begin(), scores.end()));
-    return childnodes[maxIndex];
-};
-PieceBoard Ai::randomMove(const Board &board) const
-{
-    const PieceBoardVector &moves = board.possiblepieceboards;
-    int random = rand() % moves.size();
-    return moves[random];
-};
-void Ai::orderMoves()
-{
+    int searchdepth = 1;
+    int score;
+    PieceBoard pieceboard;
     
-
-};
-int Ai::negamax(Board board, int depth, int color)
-{
-    if (depth == 0 || board.state != 0)
+    std::chrono::time_point<std::chrono::system_clock> start, end;
+    auto timelimit = std::chrono::seconds(10);
+    start = std::chrono::system_clock::now();
+    end = std::chrono::system_clock::now();
+    while (end - start < timelimit)
     {
-        leafnodes += 1;
-        return board.evaluate(color);
+        searchdepth += 2;
+        std::tie(score, pieceboard) = alphaBetaNegaMax(board, searchdepth, color, -100000, 100000);
+        end = std::chrono::system_clock::now();
     };
-    int bestscore = -10000;
-    board.createPossibleBoards();
-    PieceBoardVector childnodes = board.possiblepieceboards;
-    for (PieceBoard child : childnodes)
+    int maxIndex = std::distance(scores.begin(), std::max_element(scores.begin(), scores.end()));
+    float duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count()/1000.0;
+    std::cout << searchdepth << " ply deep search returned best move (with score " << score << ") after " << duration << "s.\nIt considered " << leafnodes << " leaf nodes, and made " << cutoffs << " cutoffs." << std::endl;
+    return pieceboard;
+};
+std::tuple<int,PieceBoard> Ai::alphaBetaNegaMax(Board board, int depth, int color, int alpha, int beta)
+{
+    HashValue hash = getHashValue(board.pieceboard, color);
+    if (tt.count(hash) > 0 && tt[hash].depth >= depth)
     {
-        board.doMove(child);
-        int score = -negamax(board, depth - 1, -color);
-        if (score > bestscore)
+        if (tt[hash].type == 0) // exact score
         {
-            bestscore = score;
+            return std::make_tuple(tt[hash].score, board.pieceboard);
+        }
+        else if (tt[hash].type == 1) // lower bound
+        {
+            alpha = std::max(alpha, tt[hash].score);
+        }
+        else if (tt[hash].type == 2) // upper bound
+        {
+            beta = std::min(beta, tt[hash].score);
         };
-        board.undoMove();
+        if (alpha >= beta)
+        {
+            cutoffs++;
+            return std::make_tuple(tt[hash].score, board.pieceboard);
+        };
     };
-    return bestscore;
-};
-int Ai::alphaBetaNegaMax(Board board, int depth, int color, int alpha, int beta)
-{
-    PieceBoard bestpieceboard;
     if (depth == 0 || board.state != 0)
     {
         leafnodes += 1;
-        return board.evaluate(color);
+        return std::make_tuple(board.pieceboard.evaluate(color), board.pieceboard);
     };
     int bestscore = -10000;
+    PieceBoard bestpieceboard;
     board.createPossibleBoards();
     PieceBoardVector childnodes = board.possiblepieceboards;
+    orderMoves(childnodes, color);
     for (PieceBoard child : childnodes)
     {
         board.doMove(child);
-        int score = -alphaBetaNegaMax(board, depth - 1, -color, -beta, -alpha);
+        int score;
+        PieceBoard pb;
+        std::tie(score, pb) = alphaBetaNegaMax(board, depth - 1, -color, -beta, -alpha);
+        score = -score;
         if (score > bestscore)
         {
             bestscore = score;
+            bestpieceboard = child;
         };
         if (bestscore > alpha)
         {
@@ -98,5 +88,83 @@ int Ai::alphaBetaNegaMax(Board board, int depth, int color, int alpha, int beta)
         };
         board.undoMove();
     };
-    return bestscore;
+    return std::make_tuple(bestscore, bestpieceboard);
+};
+PieceBoard Ai::randomMove(const Board &board) const
+{
+    const PieceBoardVector &moves = board.possiblepieceboards;
+    int random = rand() % moves.size();
+    return moves[random];
+};
+void Ai::orderMoves(PieceBoardVector &childnodes, const int &color)
+{
+    for (PieceBoard child : childnodes)
+    {
+        HashValue hash = getHashValue(child, color);
+        if (tt.count(hash) > 0)
+        {
+            int value = tt[hash].score;
+        }
+        else
+        {
+            int value = child.evaluate(color);
+        };
+    };
+};
+HashValue Ai::getHashValue(const PieceBoard &pb, const int &turn)
+{
+    //generate zobrist key from pb and turn
+    HashValue value = 0;
+    for (int i = 0; i < 64; i++)
+    {
+        if (pb.piecemap.count(i) > 0)
+        {
+            Piece p = pb.piecemap.at(i);
+            int piece;
+            switch (p.color)
+            {
+                case 1:
+                    switch (p.piece)
+                    {
+                    case 1:
+                        piece = 1;
+                        break;
+                    case 2:
+                        piece = 2;
+                        break;
+                    };
+                    break;
+                case 2:
+                    switch (p.piece)
+                    {
+                    case 1:
+                        piece = 3;
+                        break;
+                    case 2:
+                        piece = 4;
+                        break;
+                    };
+                    break;
+            };
+            value ^= zobristtable[turn][i][piece];
+        }
+        else
+        {
+            value ^= zobristtable[turn][i][0];
+        };
+    };
+};
+// initialize ZobristTable
+void Ai::initZobristTable()
+{
+    for (int i = 0; i < 2; i++)
+    {
+        for (int j = 0; j < 64; j++)
+        {
+            for (int k = 0; k < 5; k++)
+            {
+                zobristtable[i][j][k] = rand();
+            };
+        };
+    };
 };

@@ -12,10 +12,13 @@ public:
     int piece;
     int color;
     int direction;
+    int distance;
+    int transitions;
     Piece();
-    Piece(int piece, int color);
+    Piece(int piece, int color, int pos);
     void getDirection();
     void changeType();
+    void getDistance(const int &pos);
 };
 
 struct Move
@@ -41,13 +44,15 @@ struct PieceCount
     int blackDoubles = 0;
 };
 
-struct PieceBoard
+class PieceBoard
 {
+public:
     PieceCount piececount;
     PieceMap piecemap;
     PosToCrown postocrown;
     Move lastmove;
     PieceBoard();
+    int evaluate(int color) const;
 };
 
 typedef std::vector<PieceBoard> PieceBoardVector;
@@ -59,11 +64,8 @@ public:
     int state;
     PieceBoardVector possiblepieceboards;
     PieceBoardVector pieceboardhistory;
-
-private:
     PieceBoard pieceboard;
 
-public:
     Board();
     Board(bool paused);
     void resetBoard(bool paused);
@@ -77,7 +79,6 @@ public:
     void move(PieceBoard &pieceboard, int pos, int topos);
     void doMove(const PieceBoard new_pieceboard);
     void undoMove();
-    int evaluate(int color) const;
 
 private:
     bool crownIf(PieceBoard &pieceboard, const Piece &p, const int &pos);
