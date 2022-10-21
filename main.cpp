@@ -37,7 +37,7 @@ int main()
         }
         catch (const std::exception &e)
         {
-            std::cout << "Invalid answer, defaulting to 5 minutes" << std::endl;
+            std::cout << "Invalid answer, defaulting to 10 minutes" << std::endl;
         };
         Game game = Game(player, timemin);
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));

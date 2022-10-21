@@ -1,6 +1,7 @@
 #pragma once
 #include <tuple>
 #include <unordered_map>
+#include <chrono>
 
 struct TranspositionEntry
 {
@@ -27,12 +28,11 @@ private:
 public:
     Ai();
     Ai(int color);
-    PieceBoard getMove(Board board);
+    PieceBoard getMove(Board board, const int &aitime);
 private:
     PieceBoard randomMove(const Board &board) const;
     void orderMoves(PieceBoardVector &childnodes, const int &color);
     void initZobristTable();
     HashValue getHashValue(const PieceBoard &pb, const int &turn);
-    PieceBoard bestMove(const Board &board);
     std::tuple<int,PieceBoard> alphaBetaNegaMax(Board board, int depth, int color, int alpha, int beta);
 };

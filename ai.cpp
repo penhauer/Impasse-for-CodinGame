@@ -4,11 +4,10 @@
 #include <set>
 #include <iostream>
 #include <vector>
-#include <chrono>
 
 Ai::Ai(){};
-Ai::Ai(int color) : color(color){ initZobristTable(); };
-PieceBoard Ai::getMove(Board board)
+Ai::Ai(int color) : color(color) { initZobristTable(); };
+PieceBoard Ai::getMove(Board board, const int &aitime)
 {
     scores.clear();
     cutoffs = 0;
@@ -16,12 +15,14 @@ PieceBoard Ai::getMove(Board board)
     int searchdepth = 1;
     int score;
     PieceBoard pieceboard;
-    
+    int elapsedplys = board.pieceboardhistory.size();
+    int expectedmaxplys = 60;
+    int expectedmovesleft = std::max(10,(expectedmaxplys-elapsedplys)/2); // expected moves left for AI: always assume at least 10 moves left
+    int timelimit = std::min(20000, aitime / expectedmovesleft); // minimum of 20sec and remaining time / expected moves left for AI
     std::chrono::time_point<std::chrono::system_clock> start, end;
-    auto timelimit = std::chrono::seconds(10);
     start = std::chrono::system_clock::now();
     end = std::chrono::system_clock::now();
-    while (end - start < timelimit)
+    while (end - start < std::chrono::milliseconds(timelimit))
     {
         searchdepth += 2;
         std::tie(score, pieceboard) = alphaBetaNegaMax(board, searchdepth, color, -100000, 100000);
@@ -144,10 +145,10 @@ HashValue Ai::getHashValue(const PieceBoard &pb, const int &turn)
                     switch (p.piece)
                     {
                     case 1:
-                        piece = 0;
+                        piece = 1;
                         break;
                     case 2:
-                        piece = 1;
+                        piece = 2;
                         break;
                     };
                     break;
@@ -155,10 +156,10 @@ HashValue Ai::getHashValue(const PieceBoard &pb, const int &turn)
                     switch (p.piece)
                     {
                     case 1:
-                        piece = 2;
+                        piece = 3;
                         break;
                     case 2:
-                        piece = 3;
+                        piece = 4;
                         break;
                     };
                     break;
@@ -179,7 +180,7 @@ void Ai::initZobristTable()
     {
         for (int j = 0; j < 64; j++)
         {
-            for (int k = 0; k < 4; k++)
+            for (int k = 0; k < 5; k++)
             {
                 zobristtable[i][j][k] = rand();
             };

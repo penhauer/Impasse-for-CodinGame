@@ -145,7 +145,7 @@ loop:
         {
             auto start = std::chrono::system_clock::now();
             std::cout << "AI turn" << std::endl;
-            PieceBoard pieceboard = ai.getMove(board);
+            PieceBoard pieceboard = ai.getMove(board, std::get<1>(timer));
             auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - start);
             if (std::get<1>(timer) - duration.count() < 0)
             {
@@ -237,6 +237,6 @@ void Game::reset(int player, int timemin)
     std::cout << "Game started, good luck!" << std::endl;
     std::cout << "Time available: " << timemin << " minutes / player" << std::endl;
     board = Board(false);
-    ai = Ai(player * -1);
     timer = std::make_tuple(timemin * 60 * 1000, timemin * 60 * 1000);
+    ai = Ai(player * -1);
 };
