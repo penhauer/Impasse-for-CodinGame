@@ -28,7 +28,18 @@ int main()
                 std::cout << "Invalid answer" << std::endl;
             };
         };
-        Game game = Game(player, 5);
+        int timemin = 10;
+        std::cout << "Choose time limit per player (minutes): ";
+        std::cin >> answer;
+        try
+        {
+            timemin = std::stoi(answer);
+        }
+        catch (const std::exception &e)
+        {
+            std::cout << "Invalid answer, defaulting to 5 minutes" << std::endl;
+        };
+        Game game = Game(player, timemin);
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
         std::cout << "Would you like to play again? (yes/no): ";
         std::cin >> answer;

@@ -35,6 +35,7 @@ PieceBoard Ai::getMove(Board board)
 std::tuple<int,PieceBoard> Ai::alphaBetaNegaMax(Board board, int depth, int color, int alpha, int beta)
 {
     HashValue hash = getHashValue(board.pieceboard, color);
+    int oldalpha = alpha;
     if (tt.count(hash) > 0 && tt[hash].depth >= depth)
     {
         if (tt[hash].type == 0) // exact score
@@ -64,7 +65,7 @@ std::tuple<int,PieceBoard> Ai::alphaBetaNegaMax(Board board, int depth, int colo
     PieceBoard bestpieceboard;
     board.createPossibleBoards();
     PieceBoardVector childnodes = board.possiblepieceboards;
-    orderMoves(childnodes, color);
+    //orderMoves(childnodes, color);
     for (PieceBoard child : childnodes)
     {
         board.doMove(child);
@@ -88,6 +89,18 @@ std::tuple<int,PieceBoard> Ai::alphaBetaNegaMax(Board board, int depth, int colo
         };
         board.undoMove();
     };
+    if (bestscore <= oldalpha)
+    {
+        tt[hash] = {0, bestscore, depth};
+    }
+    else if (bestscore >= beta)
+    {
+        tt[hash] = {1, bestscore, depth};
+    }
+    else
+    {
+        tt[hash] = {2, bestscore, depth};
+    };
     return std::make_tuple(bestscore, bestpieceboard);
 };
 PieceBoard Ai::randomMove(const Board &board) const
@@ -98,18 +111,22 @@ PieceBoard Ai::randomMove(const Board &board) const
 };
 void Ai::orderMoves(PieceBoardVector &childnodes, const int &color)
 {
+    std::map<Move, int> nodescores;
     for (PieceBoard child : childnodes)
     {
         HashValue hash = getHashValue(child, color);
+        int value = 0;
         if (tt.count(hash) > 0)
         {
-            int value = tt[hash].score;
+            value = tt[hash].score;
         }
         else
         {
-            int value = child.evaluate(color);
+            value = child.evaluate(color);
         };
+        nodescores[child.lastmove] = value;
     };
+    std::sort(begin(childnodes), end(childnodes), [&](PieceBoard &a, PieceBoard &b) { return nodescores[a.lastmove] > nodescores[b.lastmove]; });
 };
 HashValue Ai::getHashValue(const PieceBoard &pb, const int &turn)
 {
@@ -127,10 +144,10 @@ HashValue Ai::getHashValue(const PieceBoard &pb, const int &turn)
                     switch (p.piece)
                     {
                     case 1:
-                        piece = 1;
+                        piece = 0;
                         break;
                     case 2:
-                        piece = 2;
+                        piece = 1;
                         break;
                     };
                     break;
@@ -138,10 +155,10 @@ HashValue Ai::getHashValue(const PieceBoard &pb, const int &turn)
                     switch (p.piece)
                     {
                     case 1:
-                        piece = 3;
+                        piece = 2;
                         break;
                     case 2:
-                        piece = 4;
+                        piece = 3;
                         break;
                     };
                     break;
@@ -153,6 +170,7 @@ HashValue Ai::getHashValue(const PieceBoard &pb, const int &turn)
             value ^= zobristtable[turn][i][0];
         };
     };
+    return value;
 };
 // initialize ZobristTable
 void Ai::initZobristTable()
@@ -161,7 +179,7 @@ void Ai::initZobristTable()
     {
         for (int j = 0; j < 64; j++)
         {
-            for (int k = 0; k < 5; k++)
+            for (int k = 0; k < 4; k++)
             {
                 zobristtable[i][j][k] = rand();
             };

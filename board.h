@@ -28,6 +28,7 @@ struct Move
     int remove;
     //Move();
     Move(int from, int to, int remove);
+    bool operator<(const Move &other) const;
 };
 
 typedef std::set<int> PosSet;

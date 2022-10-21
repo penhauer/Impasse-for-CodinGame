@@ -4,11 +4,7 @@
 
 Game::Game(int player, int timemin)
 {
-    this->player = player;
-    std::cout << "Game started" << std::endl;
-    board = Board(false);
-    ai = Ai(player * -1);
-    timer = std::make_tuple(timemin * 60 * 1000, timemin * 60 * 1000);
+    reset(player, timemin);
     gameLoop();
 };
 void Game::gameLoop()
@@ -22,7 +18,7 @@ loop:
             auto start = std::chrono::system_clock::now();
             std::chrono::milliseconds duration;
             board.printBoard();
-            std::cout << "Your turn" << std::endl;
+            std::cout << "----------------------------YOUR TURN----------------------------" << std::endl;
             bool turnEnd = false;
             PieceBoard pieceboard;
             while (turnEnd == false)
@@ -33,15 +29,16 @@ loop:
                 if (notation == "help")
                 {
                     const char *text =
-                        "Possible options:\n\n"
-                        "undo: undo last move\n"
-                        "moves: show possible moves\n"
+                        "----------------------------HELP----------------------------\n"
+                        "howto: show how to play\n"
                         "board: show board\n"
-                        "rules: show game rules\n"
+                        "moves: show legal moves\n"
+                        "time: show remaining time\n"
+                        "undo: undo last move\n"
                         "restore: restore game from save\n"
                         "restart: restart game\n"
                         "quit: quit program\n";
-                    std::cout << text;
+                    std::cout << text << std::endl;
                 }
                 else if (notation == "undo")
                 {
@@ -51,39 +48,63 @@ loop:
                 }
                 else if (notation == "moves")
                 {
+                    std::cout << "----------------------------LEGAL MOVES----------------------------\n";
                     for (const auto pieceboard : board.possiblepieceboards)
                     {
                         board.printMove(pieceboard.lastmove);
-                    }
+                    };
+                    std::cout << "\n";
                 }
                 else if (notation == "board")
                 {
                     board.printBoard();
+                    std::cout << "\n";
                 }
-                else if (notation == "rules")
+                else if (notation == "time")
+                {
+                    std::cout << "----------------------------REMAINING TIME----------------------------\n";
+                    duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - start);
+                    int playertime = (std::get<0>(timer) - duration.count()) / 1000;
+                    int aitime = std::get<1>(timer) / 1000;
+                    std::cout << "Player: " << playertime / 60 << "m " << playertime % 60 << "s\nAI: " << aitime / 60 << "m " << aitime % 60 << "s\n" << std::endl;
+                }
+                else if (notation == "howto")
                 {
                     const char *text =
-                        "----------------------------GAME RULES----------------------------\n"
+                        "----------------------------HOW TO PLAY----------------------------\n"
                         "White vs Black player, remove all of your own pieces to win.\n\n"
                         "Both players start with 4-4 singles and doubles.\n\n"
                         "Singles can only be moved away from the owner, doubles towards.\n"
                         "Pieces can move diagonally along any number of consecutive unoccupied squares.\n"
-                        "A single and a double can transpose if they are diagonally adjacent.\n\n"
+                        "A single and a double can transpose if they are adjacent (diagonally).\n\n"
                         "Doubles become singles once they get to their last row.\n"
                         "Singles become doubles once they get to their last row,\n"
                         "assuming that another single is available, which single gets removed.\n"
                         "If there isn't, they stay singles until another single becomes available.\n"
                         "If no moves are available, a single has to be removed,\n"
                         "or a double turned into a single.\n"
-                        "The player with one single left and no moves available wins.\n"
-                        "----------------------------GAME RULES----------------------------";
+                        "The player with a lone single left and no moves available wins.\n\n"
+                        "How to move:\n"
+                        "Select the position of the piece you want to move (e.g. input D2 and press enter),\n"
+                        "then select the position you want to move it to. If needed, select piece to remove as well.\n"
+;
                     std::cout << text << std::endl;
                 }
                 else if (notation == "restart")
                 {
-                    std::cout << "Game restarted" << std::endl;
-                    reset();
-                    board.printBoard();
+                    std::cout << "Do you want to switch sides? (yes/no): ";
+                    std::string answer;
+                    std::cin >> answer;
+                    if (answer == "yes")
+                    {
+                        reset(-player, timemin);
+                    }
+                    else
+                    {
+                        reset(player, timemin);
+                    };
+                    std::cout << "Game restarted!" << std::endl;
+                    goto loop;
                 }
                 else if (notation == "restore")
                 {
@@ -113,7 +134,7 @@ loop:
                     board.state = -1 * player;
                 };
             };
-            timer = std::make_tuple(std::get<0>(timer) - duration.count(), std::get<1>(timer));
+            std::get<0>(timer) -= duration.count();
             int timeleft = std::get<0>(timer) / 1000;
             std::cout << "Time left: " << timeleft/60 << "m " << timeleft % 60 << "s" << std::endl;
             board.doMove(pieceboard);
@@ -133,7 +154,7 @@ loop:
             }
             else
             {
-                timer = std::make_tuple(std::get<0>(timer), std::get<1>(timer) - duration.count());
+                std::get<1>(timer) -= duration.count();
                 int timeleft = std::get<1>(timer) / 1000;
                 std::cout << "Time left for AI: " << timeleft/60 << "m " << timeleft % 60 << "s" << std::endl;
                 board.printMove(pieceboard.lastmove);
@@ -209,7 +230,13 @@ std::tuple<bool, PieceBoard> Game::trySelect(int pos, PieceBoard pb)
     std::cout << "No legal move available for selected position.\nEnter 'help' for help or 'moves' for valid moves" << std::endl;
     return std::make_tuple(false, PieceBoard());
 };
-void Game::reset()
+void Game::reset(int player, int timemin)
 {
-    board.resetBoard(false);
+    this->player = player;
+    this->timemin = timemin;
+    std::cout << "Game started, good luck!" << std::endl;
+    std::cout << "Time available: " << timemin << " minutes / player" << std::endl;
+    board = Board(false);
+    ai = Ai(player * -1);
+    timer = std::make_tuple(timemin * 60 * 1000, timemin * 60 * 1000);
 };
