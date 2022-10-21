@@ -16,7 +16,7 @@ PieceBoard Ai::getMove(Board board, const int &aitime)
     int score;
     PieceBoard pieceboard;
     int elapsedplys = board.pieceboardhistory.size();
-    int expectedmaxplys = 60;
+    int expectedmaxplys = 100;
     int expectedmovesleft = std::max(10,(expectedmaxplys-elapsedplys)/2); // expected moves left for AI: always assume at least 10 moves left
     int timelimit = std::min(20000, aitime / expectedmovesleft); // minimum of 20sec and remaining time / expected moves left for AI
     std::chrono::time_point<std::chrono::system_clock> start, end;
