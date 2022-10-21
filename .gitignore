@@ -9,6 +9,11 @@
 cmake-build-debug/
 CMakeLists.txt
 
+# CMakes
+CMakeLists.txt
+cmake-build-debug/
+build/
+
 # Prerequisites
 *.d
 

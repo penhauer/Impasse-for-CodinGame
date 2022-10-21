@@ -11,15 +11,14 @@ class Piece
 public:
     int piece;
     int color;
-    int col;
-    int row;
     int direction;
+    int distance;
+    int transitions;
     Piece();
-    Piece(int piece, int color, int col, int row);
+    Piece(int piece, int color, int pos);
     void getDirection();
     void changeType();
-    bool operator<(const Piece &other) const;
-    bool operator==(const Piece &other) const;
+    void getDistance(const int &pos);
 };
 
 struct Move
@@ -31,11 +30,11 @@ struct Move
     Move(int from, int to, int remove);
 };
 
-typedef std::set<Piece> PieceSet;
+typedef std::set<int> PosSet;
 
-typedef std::map<int, std::map<int, Piece>> PieceMap;
+typedef std::map<int, Piece> PieceMap;
 
-typedef std::map<int, Piece> PieceToCrown;
+typedef std::map<int, int> PosToCrown;
 
 struct PieceCount
 {
@@ -45,13 +44,15 @@ struct PieceCount
     int blackDoubles = 0;
 };
 
-struct PieceBoard
+class PieceBoard
 {
+public:
     PieceCount piececount;
     PieceMap piecemap;
-    PieceToCrown piecetocrown;
+    PosToCrown postocrown;
     Move lastmove;
     PieceBoard();
+    int evaluate(int color) const;
 };
 
 typedef std::vector<PieceBoard> PieceBoardVector;
@@ -63,36 +64,32 @@ public:
     int state;
     PieceBoardVector possiblepieceboards;
     PieceBoardVector pieceboardhistory;
-
-private:
     PieceBoard pieceboard;
 
-public:
     Board();
     Board(bool paused);
     void resetBoard(bool paused);
     void restoreLast();
     void saveBoard() const;
-    void loadBoard(int turn, PieceToCrown piecetocrown, PieceSet pieceset);
+    void loadBoard(int turn, PosToCrown postocrown, PosSet pieceset);
     void deleteBoard() const;
     void printBoard() const;
     void printMove(const Move &move) const;
     void createPossibleBoards();
-    void move(PieceBoard &pieceboard, Piece piece, Piece square);
-    void doMove(const PieceBoard &new_pieceboard);
+    void move(PieceBoard &pieceboard, int pos, int topos);
+    void doMove(const PieceBoard new_pieceboard);
     void undoMove();
-    float evaluate() const;
 
 private:
-    bool crownIf(PieceBoard &pieceboard, const Piece &p);
-    void crown(PieceBoard &pieceboard, const Piece &p);
-    void bearOff(PieceBoard &pieceboard, const Piece &p);
-    void remove(PieceBoard &pieceboard, const Piece &p);
-    PieceSet checkSingles(PieceBoard &pieceboard, const Piece &piece) const;
-    void addPieceMoves(const Piece &piece);
+    bool crownIf(PieceBoard &pieceboard, const Piece &p, const int &pos);
+    void crown(PieceBoard &pieceboard, const Piece &p, const int &pos);
+    void bearOff(PieceBoard &pieceboard, const Piece &p, const int &pos);
+    void remove(PieceBoard &pieceboard, const Piece &p, const int &pos);
+    PosSet checkSingles(const Piece &piece, const int &pos) const;
+    void addPieceMoves(const Piece &piece, const int &pos);
     void addImpassable();
     void initBoard();
     void getPieceCount();
-    bool ifTransposable(const Piece &piece, const int &i, const int &row, const int &col) const;
-    bool ifEmptySquare(const Piece &piece, const int &row, const int &col) const;
+    bool ifTransposable(const Piece &piece, const int &piecerow, const int &i, const int &topos) const;
+    bool ifEmptySquare(const int &pos) const;
 };
