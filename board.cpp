@@ -24,7 +24,7 @@ int PieceBoard::evaluate(int color) const
     // average number of distance from last row for piece
     int distancevalue = 0;
     int transitionvalue = 0;
-    int piececount = 0;
+    int pieceno = 0;
     for (auto x : piecemap)
     {
         const Piece &piece = x.second;
@@ -32,10 +32,10 @@ int PieceBoard::evaluate(int color) const
         {
             distancevalue += piece.distance;
             transitionvalue += piece.transitions;
-            piececount += 1;
+            pieceno += 1;
         }
     };
-    return 3*piecevalue + 100*transitionvalue + distancevalue/piececount;
+    return 3*piecevalue + 5*transitionvalue + distancevalue/pieceno;
 };
 
 Board::Board(){};
