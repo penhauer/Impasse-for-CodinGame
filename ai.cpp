@@ -24,7 +24,7 @@ PieceBoard Ai::getMove(Board board, const int &aitime)
     end = std::chrono::system_clock::now();
     while (end - start < std::chrono::milliseconds(timelimit))
     {
-        searchdepth += 2;
+        searchdepth += 1;
         std::tie(score, pieceboard) = alphaBetaNegaMax(board, searchdepth, color, -100000, 100000);
         end = std::chrono::system_clock::now();
     };
@@ -37,24 +37,24 @@ std::tuple<int,PieceBoard> Ai::alphaBetaNegaMax(Board board, int depth, int colo
 {
     HashValue hash = getHashValue(board.pieceboard, color);
     int oldalpha = alpha;
-    if (tt.count(hash) > 0 && tt[hash].depth >= depth)
+    if (tt.count(hash) > 0 && tt.at(hash).depth >= depth)
     {
-        if (tt[hash].type == 0) // exact score
+        if (tt.at(hash).type == 0) // exact score
         {
-            return std::make_tuple(tt[hash].score, board.pieceboard);
+            return std::make_tuple(tt.at(hash).score, board.pieceboard);
         }
-        else if (tt[hash].type == 1) // lower bound
+        else if (tt.at(hash).type == 1) // lower bound
         {
-            alpha = std::max(alpha, tt[hash].score);
+            alpha = std::max(alpha, tt.at(hash).score);
         }
-        else if (tt[hash].type == 2) // upper bound
+        else if (tt.at(hash).type == 2) // upper bound
         {
-            beta = std::min(beta, tt[hash].score);
+            beta = std::min(beta, tt.at(hash).score);
         };
         if (alpha >= beta)
         {
             cutoffs++;
-            return std::make_tuple(tt[hash].score, board.pieceboard);
+            return std::make_tuple(tt.at(hash).score, board.pieceboard);
         };
     };
     if (depth == 0 || board.state != 0)
@@ -152,7 +152,7 @@ HashValue Ai::getHashValue(const PieceBoard &pb, const int &turn)
                         break;
                     };
                     break;
-                case 2:
+                case -1:
                     switch (p.piece)
                     {
                     case 1:
@@ -164,11 +164,11 @@ HashValue Ai::getHashValue(const PieceBoard &pb, const int &turn)
                     };
                     break;
             };
-            value ^= zobristtable[turn][i][piece];
+            value ^= zobristtable.at(turn).at(i).at(piece);
         }
         else
         {
-            value ^= zobristtable[turn][i][0];
+            value ^= zobristtable.at(turn).at(i).at(0);
         };
     };
     return value;
@@ -176,7 +176,7 @@ HashValue Ai::getHashValue(const PieceBoard &pb, const int &turn)
 // initialize ZobristTable
 void Ai::initZobristTable()
 {
-    for (int i = 0; i < 2; i++)
+    for (int i = -1; i < 2; i+=2)
     {
         for (int j = 0; j < 64; j++)
         {
