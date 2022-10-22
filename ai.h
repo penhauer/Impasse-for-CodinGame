@@ -17,7 +17,7 @@ class Ai
 private:
     int color;
     int leafnodes;
-    int cutoffs;
+    std::map<int,int> cutoffs;
     ZobristTable zobristtable;
     TranspositionTable tt;
 
@@ -31,4 +31,5 @@ private:
     void orderMoves(PieceBoardVector &childnodes, const int &color);
     void initZobristTable();
     HashValue getHashValue(const PieceBoard &pb, const int &turn);
+    void addCutoff(const int &depth);
 };

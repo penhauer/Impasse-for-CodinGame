@@ -12,7 +12,7 @@ int main()
         newfile.open(".savegame", std::ios::in);
         if (newfile.is_open())
         {
-            std::cout << "Do you want to load the last saved game? (yes/no)" << std::endl;
+            std::cout << "Do you want to load the last saved game? (yes/no): ";
             std::cin >> answer;
             if (answer == "yes")
             {

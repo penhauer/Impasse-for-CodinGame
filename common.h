@@ -11,6 +11,7 @@
 #include <map>
 #include <unordered_map>
 #include <math.h>
+#include <numeric>
 
 class Piece
 {

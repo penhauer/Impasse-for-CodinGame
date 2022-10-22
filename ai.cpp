@@ -6,13 +6,13 @@ Ai::Ai(int color) : color(color) { initZobristTable(); };
 // Use dynamic time allocation based on the time left and expected number of moves left.
 PieceBoard Ai::getMove(Board board, const int &aitime)
 {
-    cutoffs = 0;
+    cutoffs.clear();
     leafnodes = 0;
     int searchdepth = 1;
     int score;
     PieceBoard pieceboard;
     int elapsedplys = board.pieceboardhistory.size();
-    int expectedmaxplys = 100;
+    const int expectedmaxplys = 100;
     int expectedmovesleft = std::max(10, (expectedmaxplys - elapsedplys) / 2); // expected moves left for AI: always assume at least 10 moves left
     int timelimit = std::min(20000, aitime / expectedmovesleft);               // minimum of 20sec and remaining time / expected moves left for AI
     std::chrono::time_point<std::chrono::system_clock> start, end;
@@ -25,7 +25,17 @@ PieceBoard Ai::getMove(Board board, const int &aitime)
         end = std::chrono::system_clock::now();
     };
     float duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() / 1000.0;
-    std::cout << searchdepth << " ply deep search returned best move (with score " << score << ") after " << duration << "s.\nIt considered " << leafnodes << " leaf nodes, and made " << cutoffs << " cutoffs." << std::endl;
+    // Approximate pruned nodes based on average branching factor and cutoffs / depth
+    int cutoffsum = std::accumulate(cutoffs.begin(), cutoffs.end(), 0, [](int sum, const std::pair<int, int> &p) { return sum + p.second; });
+    const double avgbf = 19.304347826086957;
+    double multiplier = 1.0;
+    int prunedleafnodes = 0;
+    for (auto iter = cutoffs.rbegin(); iter != cutoffs.rend(); ++iter)
+    {
+        multiplier *= avgbf;
+        prunedleafnodes += (double)iter->second * multiplier;
+    };
+    std::cout << searchdepth << " ply deep search returned best move (with score " << score << ") after " << duration << "s.\nIt evaluated " << leafnodes << " leaf nodes, and made " << cutoffsum << " cutoffs (pruning around ~" << prunedleafnodes << " nodes)." << std::endl;
     return pieceboard;
 };
 // Recursively execute Negamax search algorithm using alpha-beta pruning and transposition tables
@@ -49,7 +59,7 @@ std::tuple<int, PieceBoard> Ai::alphaBetaNegaMax(Board board, int depth, int col
         };
         if (alpha >= beta)
         {
-            cutoffs++;
+            addCutoff(depth);
             return std::make_tuple(tt.at(hash).score, board.pieceboard);
         };
     };
@@ -62,7 +72,10 @@ std::tuple<int, PieceBoard> Ai::alphaBetaNegaMax(Board board, int depth, int col
     PieceBoard bestpieceboard;
     board.generateLegalMoves();
     PieceBoardVector childnodes = board.possiblepieceboards;
-    // orderMoves(childnodes, color);
+    {
+        orderMoves(childnodes, color);
+    };
+    orderMoves(childnodes, color);
     for (PieceBoard child : childnodes)
     {
         board.doMove(child);
@@ -81,7 +94,7 @@ std::tuple<int, PieceBoard> Ai::alphaBetaNegaMax(Board board, int depth, int col
         };
         if (bestscore >= beta)
         {
-            cutoffs += 1;
+            addCutoff(depth);
             break;
         };
         board.undoMove();
@@ -100,6 +113,17 @@ std::tuple<int, PieceBoard> Ai::alphaBetaNegaMax(Board board, int depth, int col
     };
     return std::make_tuple(bestscore, bestpieceboard);
 };
+void Ai::addCutoff(const int &depth)
+{
+    if (cutoffs.count(depth) > 0)
+    {
+        cutoffs[depth] += 1;
+    }
+    else
+    {
+        cutoffs[depth] = 1;
+    };
+};
 // Order moves from best to worst based on transposition table entries and heuristic evaluation
 void Ai::orderMoves(PieceBoardVector &childnodes, const int &color)
 {
@@ -110,7 +134,7 @@ void Ai::orderMoves(PieceBoardVector &childnodes, const int &color)
         int value = 0;
         if (tt.count(hash) > 0)
         {
-            value = tt[hash].score;
+            value = tt.at(hash).score;
         }
         else
         {

@@ -48,7 +48,7 @@ void Board::initBoard()
     generateLegalMoves();
     end = std::chrono::system_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-    std::cout << "Time to create possible boards: " << duration.count() << " microseconds" << std::endl;
+    std::cout << "Time to create legal moves: " << duration.count() << " μs" << std::endl;
 };
 // Print board
 void Board::printBoard() const
@@ -63,11 +63,11 @@ void Board::printBoard() const
             int pos = row * 8 + col;
             if (pos == pieceboard.lastmove.from)
             {
-                std::cout << ">";
+                std::cout << "<";
             }
             else if (pos == pieceboard.lastmove.to)
             {
-                std::cout << "<";
+                std::cout << ">";
             }
             else if (pos == pieceboard.lastmove.remove)
             {
@@ -116,11 +116,11 @@ void Board::printBoard() const
             };
             if (pos == pieceboard.lastmove.from)
             {
-                std::cout << "<";
+                std::cout << ">";
             }
             else if (pos == pieceboard.lastmove.to)
             {
-                std::cout << ">";
+                std::cout << "<";
             }
             else if (pos == pieceboard.lastmove.remove)
             {
