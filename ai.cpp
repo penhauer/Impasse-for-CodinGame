@@ -2,6 +2,8 @@
 
 Ai::Ai(){};
 Ai::Ai(int color) : color(color) { initZobristTable(); };
+// Use iterative deepening to fill transposition table and find the best move by calling alpha-beta search.
+// Use dynamic time allocation based on the time left and expected number of moves left.
 PieceBoard Ai::getMove(Board board, const int &aitime)
 {
     cutoffs = 0;
@@ -11,8 +13,8 @@ PieceBoard Ai::getMove(Board board, const int &aitime)
     PieceBoard pieceboard;
     int elapsedplys = board.pieceboardhistory.size();
     int expectedmaxplys = 100;
-    int expectedmovesleft = std::max(10,(expectedmaxplys-elapsedplys)/2); // expected moves left for AI: always assume at least 10 moves left
-    int timelimit = std::min(20000, aitime / expectedmovesleft); // minimum of 20sec and remaining time / expected moves left for AI
+    int expectedmovesleft = std::max(10, (expectedmaxplys - elapsedplys) / 2); // expected moves left for AI: always assume at least 10 moves left
+    int timelimit = std::min(20000, aitime / expectedmovesleft);               // minimum of 20sec and remaining time / expected moves left for AI
     std::chrono::time_point<std::chrono::system_clock> start, end;
     start = std::chrono::system_clock::now();
     end = std::chrono::system_clock::now();
@@ -22,11 +24,12 @@ PieceBoard Ai::getMove(Board board, const int &aitime)
         std::tie(score, pieceboard) = alphaBetaNegaMax(board, searchdepth, color, -100000, 100000);
         end = std::chrono::system_clock::now();
     };
-    float duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count()/1000.0;
+    float duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() / 1000.0;
     std::cout << searchdepth << " ply deep search returned best move (with score " << score << ") after " << duration << "s.\nIt considered " << leafnodes << " leaf nodes, and made " << cutoffs << " cutoffs." << std::endl;
     return pieceboard;
 };
-std::tuple<int,PieceBoard> Ai::alphaBetaNegaMax(Board board, int depth, int color, int alpha, int beta)
+// Recursively execute Negamax search algorithm using alpha-beta pruning and transposition tables
+std::tuple<int, PieceBoard> Ai::alphaBetaNegaMax(Board board, int depth, int color, int alpha, int beta)
 {
     HashValue hash = getHashValue(board.pieceboard, color);
     int oldalpha = alpha;
@@ -57,9 +60,9 @@ std::tuple<int,PieceBoard> Ai::alphaBetaNegaMax(Board board, int depth, int colo
     };
     int bestscore = -10000;
     PieceBoard bestpieceboard;
-    board.createPossibleBoards();
+    board.generateLegalMoves();
     PieceBoardVector childnodes = board.possiblepieceboards;
-    //orderMoves(childnodes, color);
+    // orderMoves(childnodes, color);
     for (PieceBoard child : childnodes)
     {
         board.doMove(child);
@@ -97,12 +100,7 @@ std::tuple<int,PieceBoard> Ai::alphaBetaNegaMax(Board board, int depth, int colo
     };
     return std::make_tuple(bestscore, bestpieceboard);
 };
-PieceBoard Ai::randomMove(const Board &board) const
-{
-    const PieceBoardVector &moves = board.possiblepieceboards;
-    int random = rand() % moves.size();
-    return moves[random];
-};
+// Order moves from best to worst based on transposition table entries and heuristic evaluation
 void Ai::orderMoves(PieceBoardVector &childnodes, const int &color)
 {
     std::map<Move, int> nodescores;
@@ -120,11 +118,13 @@ void Ai::orderMoves(PieceBoardVector &childnodes, const int &color)
         };
         nodescores[child.lastmove] = value;
     };
-    std::sort(begin(childnodes), end(childnodes), [&](PieceBoard &a, PieceBoard &b) { return nodescores[a.lastmove] > nodescores[b.lastmove]; });
+    std::sort(begin(childnodes), end(childnodes), [&](PieceBoard &a, PieceBoard &b)
+              { return nodescores[a.lastmove] > nodescores[b.lastmove]; });
 };
+// Create a hash value for the given board using the random numbers from the Zobrist table
 HashValue Ai::getHashValue(const PieceBoard &pb, const int &turn)
 {
-    //generate zobrist key from pb and turn
+    // generate zobrist key from pb and turn
     HashValue value = 0;
     for (int i = 0; i < 64; i++)
     {
@@ -134,28 +134,28 @@ HashValue Ai::getHashValue(const PieceBoard &pb, const int &turn)
             int piece;
             switch (p.color)
             {
+            case 1:
+                switch (p.piece)
+                {
                 case 1:
-                    switch (p.piece)
-                    {
-                    case 1:
-                        piece = 1;
-                        break;
-                    case 2:
-                        piece = 2;
-                        break;
-                    };
+                    piece = 1;
                     break;
-                case -1:
-                    switch (p.piece)
-                    {
-                    case 1:
-                        piece = 3;
-                        break;
-                    case 2:
-                        piece = 4;
-                        break;
-                    };
+                case 2:
+                    piece = 2;
                     break;
+                };
+                break;
+            case -1:
+                switch (p.piece)
+                {
+                case 1:
+                    piece = 3;
+                    break;
+                case 2:
+                    piece = 4;
+                    break;
+                };
+                break;
             };
             value ^= zobristtable.at(turn).at(i).at(piece);
         }
@@ -166,10 +166,10 @@ HashValue Ai::getHashValue(const PieceBoard &pb, const int &turn)
     };
     return value;
 };
-// initialize ZobristTable
+// Iint ZobristTable for hashing
 void Ai::initZobristTable()
 {
-    for (int i = -1; i < 2; i+=2)
+    for (int i = -1; i < 2; i += 2)
     {
         for (int j = 0; j < 64; j++)
         {

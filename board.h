@@ -43,7 +43,7 @@ public:
     void reset(Board oldboard);
     void initBoard();
     void printBoard() const;
-    void createPossibleBoards();
+    void generateLegalMoves();
     void doMove(const PieceBoard new_pieceboard);
     void undoMove();
 

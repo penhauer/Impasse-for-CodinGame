@@ -6,6 +6,7 @@ int main()
     bool play = true;
     while (play)
     {
+        // if savegame is available from previous session, ask if user wants to continue
         std::string answer;
         std::ofstream newfile;
         newfile.open(".savegame", std::ios::in);
@@ -19,13 +20,15 @@ int main()
             }
             else
             {
+                // otherwise start a new game
                 goto newgame;
             }
         }
         else
         {
-            newgame:
+        newgame:
             int player = 0;
+            // ask to choose player and time limit
             while (player == 0)
             {
                 std::cout << "Choose your color (white/black): ";

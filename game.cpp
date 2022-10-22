@@ -1,10 +1,12 @@
 #include "game.h"
 
+// Init game if savegame was available
 Game::Game()
 {
     reset(true);
     gameLoop();
 };
+// Init new game
 Game::Game(int player, int timemin)
 {
     this->player = player;
@@ -31,18 +33,21 @@ void Game::reset(bool cont)
 };
 void Game::gameLoop()
 {
-    loop:
+loop:
+    // While game is not over
     while (board.state == 0)
     {
+        // If it's the player's turn
         if (player == board.turn)
         {
-            // std::chrono::time_point<std::chrono::system_clock> start, end;
+            // Keep tract of elapsed time
             auto start = std::chrono::system_clock::now();
             std::chrono::milliseconds duration;
             board.printBoard();
             std::cout << "----------------------------YOUR TURN----------------------------" << std::endl;
             bool turnEnd = false;
             PieceBoard pieceboard;
+            // While player has not made a valid move, keep asking for input
             while (turnEnd == false)
             {
                 std::cout << "Select position: ";
@@ -63,8 +68,8 @@ void Game::gameLoop()
                 }
                 else if (notation == "undo")
                 {
-                    undoMove();
-                    board.createPossibleBoards();
+                    undoPlayerMove();
+                    board.generateLegalMoves();
                     board.printBoard();
                 }
                 else if (notation == "moves")
@@ -87,7 +92,8 @@ void Game::gameLoop()
                     duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - start);
                     int playertime = (std::get<0>(timer) - duration.count()) / 1000;
                     int aitime = std::get<1>(timer) / 1000;
-                    std::cout << "Player: " << playertime / 60 << "m " << playertime % 60 << "s\nAI: " << aitime / 60 << "m " << aitime % 60 << "s\n" << std::endl;
+                    std::cout << "Player: " << playertime / 60 << "m " << playertime % 60 << "s\nAI: " << aitime / 60 << "m " << aitime % 60 << "s\n"
+                              << std::endl;
                 }
                 else if (notation == "howto")
                 {
@@ -134,11 +140,14 @@ void Game::gameLoop()
                 }
                 else
                 {
+                    // Else, try to parse input into a move coordinate
                     int pos = parseMove(notation);
+                    // If not valid position, ask for input again
                     if (pos == -1)
                     {
                         std::cout << "Invalid position, enter 'help' for help" << std::endl;
                     }
+                    // Else try to make a move based on the given inputs
                     else
                     {
                         std::tie(turnEnd, pieceboard) = trySelect(pos, pieceboard);
@@ -157,7 +166,7 @@ void Game::gameLoop()
             std::cout << "Time left: " << timeleft / 60 << "m " << timeleft % 60 << "s" << std::endl;
             board.doMove(pieceboard);
             board.printBoard();
-            board.createPossibleBoards();
+            board.generateLegalMoves();
             save();
         }
         else
@@ -178,7 +187,7 @@ void Game::gameLoop()
                 std::cout << "Time left for AI: " << timeleft / 60 << "m " << timeleft % 60 << "s" << std::endl;
                 printMove(pieceboard.lastmove);
                 board.doMove(pieceboard);
-                board.createPossibleBoards();
+                board.generateLegalMoves();
                 save();
             };
         };
@@ -194,13 +203,16 @@ void Game::gameLoop()
         deleteSave();
     }
 };
+// Check if a move exists among the current legal moves with the selected position
+// If only one move exists, make that move, else ask for the next position
+// If no move exists with the selected position, reset move and ask for input again
 std::tuple<bool, PieceBoard> Game::trySelect(int pos, PieceBoard pb)
 {
-    // look through moveset, check if there exists a move with from position
     PieceBoardVector onlymoves;
     if (pb.lastmove.from == -1)
     {
-        std::copy_if(board.possiblepieceboards.begin(), board.possiblepieceboards.end(), std::inserter(onlymoves, onlymoves.end()), [&](const PieceBoard &pieceboard) { return pieceboard.lastmove.from == pos; });
+        std::copy_if(board.possiblepieceboards.begin(), board.possiblepieceboards.end(), std::inserter(onlymoves, onlymoves.end()), [&](const PieceBoard &pieceboard)
+                     { return pieceboard.lastmove.from == pos; });
         if (onlymoves.size() == 1)
         {
             return std::make_tuple(true, onlymoves.back());
@@ -214,7 +226,8 @@ std::tuple<bool, PieceBoard> Game::trySelect(int pos, PieceBoard pb)
     else if (pb.lastmove.to == -1)
     {
         PieceBoardVector onlymoves;
-        std::copy_if(board.possiblepieceboards.begin(), board.possiblepieceboards.end(), std::inserter(onlymoves, onlymoves.end()), [&](const PieceBoard &pieceboard) { return pieceboard.lastmove.from == pb.lastmove.from && pieceboard.lastmove.to == pos; });
+        std::copy_if(board.possiblepieceboards.begin(), board.possiblepieceboards.end(), std::inserter(onlymoves, onlymoves.end()), [&](const PieceBoard &pieceboard)
+                     { return pieceboard.lastmove.from == pb.lastmove.from && pieceboard.lastmove.to == pos; });
         if (onlymoves.size() == 1)
         {
             return std::make_tuple(true, onlymoves.back());
@@ -238,13 +251,14 @@ std::tuple<bool, PieceBoard> Game::trySelect(int pos, PieceBoard pb)
     std::cout << "No legal move available for selected position.\nEnter 'help' for help or 'moves' for valid moves" << std::endl;
     return std::make_tuple(false, PieceBoard());
 };
-void Game::undoMove()
+// Undo the last AI and player move if possible
+void Game::undoPlayerMove()
 {
     if (board.pieceboardhistory.size() > 1)
     {
         board.undoMove();
         board.undoMove();
-        board.createPossibleBoards();
+        board.generateLegalMoves();
         std::cout << "Last player move undone" << std::endl;
     }
     else
@@ -252,6 +266,7 @@ void Game::undoMove()
         std::cout << "No player moves to undo" << std::endl;
     };
 };
+// Save the current game state to a file
 void Game::save() const
 {
     std::ofstream newfile;
@@ -278,9 +293,10 @@ void Game::save() const
     };
     newfile.close();
 };
+// Restore the game state from a file
 void Game::restoreSave()
 {
-    //if .savegame exist, load variables
+    // if .savegame exist, load variables
     std::ifstream newfile;
     newfile.open(".savegame", std::ios::in);
     if (newfile.is_open())
@@ -323,10 +339,10 @@ void Game::restoreSave()
 void Game::deleteSave() const
 {
     std::ifstream newfile;
-    newfile.open("boardstate.txt", std::ios::in);
+    newfile.open(".savegame", std::ios::in);
     if (newfile.is_open())
     {
         newfile.close();
-        std::remove("boardstate.txt");
+        std::remove(".savegame");
     };
 };

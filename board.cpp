@@ -1,6 +1,7 @@
 #include "board.h"
 
 PieceBoard::PieceBoard(){};
+// Evaluate board position based on piece count, number of transitions, and distances from the pieces' last rows
 int PieceBoard::evaluate(int color) const
 {
     int piecevalue = color * (2 * piececount.blackSingles + 3 * piececount.blackDoubles - 2 * piececount.whiteSingles - 3 * piececount.whiteDoubles);
@@ -17,17 +18,18 @@ int PieceBoard::evaluate(int color) const
             pieceno += 1;
         }
     };
-    return 3*piecevalue + 5*transitionvalue + distancevalue/pieceno;
+    return 3 * piecevalue + 5 * transitionvalue + distancevalue / pieceno;
 };
-
-Board::Board() {};
+Board::Board(){};
+// Load board from file
 void Board::reset(Board savedboard)
 {
     turn = savedboard.turn;
     state = savedboard.state;
     pieceboard = savedboard.pieceboard;
     initBoard();
-}
+};
+// Create new board
 void Board::reset()
 {
     turn = 1;
@@ -36,18 +38,19 @@ void Board::reset()
     newBoard();
     initBoard();
 };
+// Initialize board and legal moves
 void Board::initBoard()
 {
     pieceboardhistory.clear();
     getPieceCount();
     std::chrono::time_point<std::chrono::system_clock> start, end;
     start = std::chrono::system_clock::now();
-    createPossibleBoards();
+    generateLegalMoves();
     end = std::chrono::system_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
     std::cout << "Time to create possible boards: " << duration.count() << " microseconds" << std::endl;
-}
-// Print board to console
+};
+// Print board
 void Board::printBoard() const
 {
     for (int row = 7; row >= 0; row--)
@@ -133,11 +136,10 @@ void Board::printBoard() const
     std::cout << "  +---+---+---+---+---+---+---+---+" << std::endl;
     std::cout << "    A   B   C   D   E   F   G   H " << std::endl;
 };
-// Create current valid moves
-void Board::createPossibleBoards()
+// Generate legal moves for the player in turn
+void Board::generateLegalMoves()
 {
     possiblepieceboards.clear();
-    // return array of possible moves
     for (auto x : pieceboard.piecemap)
     {
         const int &pos = x.first;
@@ -149,7 +151,7 @@ void Board::createPossibleBoards()
     };
     if (possiblepieceboards.size() == 0)
     {
-        // if no move, impasse
+        // If no moves are avilable, add impasse moves
         addImpassable();
     };
 };
@@ -160,13 +162,14 @@ void Board::doMove(const PieceBoard new_pieceboard)
     pieceboard = new_pieceboard;
     turn = turn * -1;
 };
+// Undo last move
 void Board::undoMove()
 {
     pieceboard = pieceboardhistory.back();
     pieceboardhistory.pop_back();
     turn = turn * -1;
 };
-// Crown piece
+// Turn single piece into double
 void Board::crown(PieceBoard &pieceboard, const Piece &p, const int &pos)
 {
     Piece &piece = pieceboard.piecemap[pos];
@@ -185,7 +188,7 @@ void Board::crown(PieceBoard &pieceboard, const Piece &p, const int &pos)
     piece.getDirection();
     piece.transitions += 1;
 };
-// Bear-off piece
+// Turn double piece into single
 void Board::bearOff(PieceBoard &pieceboard, const Piece &p, const int &pos)
 {
     Piece &piece = pieceboard.piecemap[pos];
@@ -204,11 +207,12 @@ void Board::bearOff(PieceBoard &pieceboard, const Piece &p, const int &pos)
     piece.getDirection();
     piece.transitions += 1;
 };
-// Remove / bear-off piece based on type after impasse
+// Remove / bear-off piece based on its type
 void Board::remove(PieceBoard &pieceboard, const Piece &p, const int &pos)
 {
     switch (p.piece)
     {
+    // Remove single
     case 1:
         switch (p.color)
         {
@@ -221,9 +225,8 @@ void Board::remove(PieceBoard &pieceboard, const Piece &p, const int &pos)
         };
         pieceboard.piecemap.erase(pos);
         break;
-    // bear-off
+    // Bear-off double
     case 2:
-        // bearoff
         bearOff(pieceboard, p, pos);
         break;
     };
@@ -237,7 +240,7 @@ void Board::remove(PieceBoard &pieceboard, const Piece &p, const int &pos)
         state = -1;
     };
 };
-// Create set of current color singles
+// Create set of singles color matching the player in turn for crowning
 PosSet Board::checkSingles(const Piece &piece, const int &pos) const
 {
     PosSet singles;
@@ -252,19 +255,22 @@ PosSet Board::checkSingles(const Piece &piece, const int &pos) const
     };
     return singles;
 };
+// Return true if transpose move is legal
 bool Board::ifTransposable(const Piece &piece, const int &piecerow, const int &i, const int &topos) const
 {
     return (piecerow < 7 && piecerow > 0 && (i == 1 || i == -1) && pieceboard.piecemap.count(topos) > 0 && pieceboard.piecemap.at(topos).color == turn && piece.piece + pieceboard.piecemap.at(topos).piece == 3);
 };
+// Return true if position is empty
 bool Board::ifEmptySquare(const int &pos) const
 {
     return pieceboard.piecemap.count(pos) == 0;
 };
+// Add legal moves for a piece
 void Board::addPieceMoves(const Piece &piece, const int &pos)
 {
     int piecerow = pos / 8;
     int piececol = pos % 8;
-    // to cover for left and right search
+    // Separate left and right search
     for (int sign = 0; sign < 2; sign++)
     {
         int i = piece.direction;
@@ -277,18 +283,18 @@ void Board::addPieceMoves(const Piece &piece, const int &pos)
             {
                 break;
             };
-            // slide or transpose
+            // Slide or transpose
             bool transposable = ifTransposable(piece, piecerow, i, topos);
             bool emptysquare = ifEmptySquare(topos);
             if (emptysquare || transposable)
             {
-                // crown
+                // Crowning
                 if (row == 0 || row == 7)
                 {
                     if (piece.piece == 1)
                     {
                         PosSet singles = checkSingles(piece, pos);
-                        // if other single available
+                        // If other single available
                         if (singles.size() > 0)
                         {
                             for (auto removepiecepos : singles)
@@ -342,19 +348,20 @@ void Board::addPieceMoves(const Piece &piece, const int &pos)
                     break;
                 };
             }
-            // if the square was not empty or transposable, break
+            // If the square was not empty or transposable, break the loop
             else
             {
                 break;
             };
-            // otherwise increment i and continue loop
+            // Otherwise increment i and continue loop with next square
             i = i + piece.direction;
         };
     };
 };
+// Move piece by transposing with the target square
 void Board::move(PieceBoard &pieceboard, int pos, int topos)
 {
-
+    // If square is not empty, change places (in case of transpose)
     if (pieceboard.piecemap.count(topos) > 0)
     {
         Piece topiece = pieceboard.piecemap[topos];
@@ -362,14 +369,15 @@ void Board::move(PieceBoard &pieceboard, int pos, int topos)
         pieceboard.piecemap[pos] = topiece;
         pieceboard.piecemap.at(pos).getDistance(pos);
     }
+    // Else just move the piece
     else
     {
         pieceboard.piecemap[topos] = pieceboard.piecemap.at(pos);
         pieceboard.piecemap.erase(pos);
     }
     pieceboard.piecemap.at(topos).getDistance(topos);
-
 };
+// Check if there's a piece waiting to be crowned, and if so, crown it with the current piece
 bool Board::crownIf(PieceBoard &pieceboard, const Piece &p, const int &pos)
 {
     bool crowned = false;
@@ -385,6 +393,7 @@ bool Board::crownIf(PieceBoard &pieceboard, const Piece &p, const int &pos)
     }
     return crowned;
 };
+// Add all legal impasse moves
 void Board::addImpassable()
 {
     for (auto x : pieceboard.piecemap)
@@ -396,6 +405,9 @@ void Board::addImpassable()
         if (piece.color == turn)
         {
             PieceBoard new_pieceboard = pieceboard;
+            // If piece is double, check if it's first row, and a single is waiting to be crowned.
+            // If so, in case of impasse of this double, 2 crownings are made possible.
+            // If not, just add the double as a normal impasse move.
             if (piece.piece == 2)
             {
                 if ((row == 0 || row == 7) && pieceboard.postocrown.count(turn) > 0)
@@ -413,6 +425,7 @@ void Board::addImpassable()
                 crownIf(new_pieceboard, piece, pos);
                 new_pieceboard.lastmove = Move(pos, -1, pos);
             }
+            // If piece is single, no need to check for crowning, since then wouldn't be a single in the first place
             else
             {
                 remove(new_pieceboard, piece, pos);
@@ -422,6 +435,7 @@ void Board::addImpassable()
         };
     };
 };
+// Create new board
 void Board::newBoard()
 {
     pieceboard.piecemap.clear();
@@ -445,6 +459,7 @@ void Board::newBoard()
         }
     };
 };
+// Count the number of pieces
 void Board::getPieceCount()
 {
     for (auto x : pieceboard.piecemap)

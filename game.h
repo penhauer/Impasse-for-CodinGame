@@ -20,7 +20,7 @@ private:
     void reset(bool cont);
     void gameLoop();
     std::tuple<bool, PieceBoard> trySelect(int pos, PieceBoard pb);
-    void undoMove();
+    void undoPlayerMove();
     void save() const;
     void restoreSave();
     void deleteSave() const;

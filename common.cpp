@@ -1,13 +1,30 @@
 #include "common.h"
 
-Piece::Piece() {};
-Piece::Piece(int piece, int color, int pos) : piece(piece), color(color) { transitions = 0; getDirection(); getDistance(pos); };
+Piece::Piece(){};
+Piece::Piece(int piece, int color, int pos) : piece(piece), color(color)
+{
+    transitions = 0;
+    getDirection();
+    getDistance(pos);
+};
+// Update the direction of the piece
 void Piece::getDirection() { direction = (piece == 1 && color == 1 || piece == 2 && color == -1) ? 1 : -1; };
-void Piece::getDistance(const int &pos) { const int row = pos / 8; distance = (direction == 1) ? 7 - row : row; };
-Move::Move() { from = -1; to = -1; remove = -1; };
+// Update the distance of the piece from its last row
+void Piece::getDistance(const int &pos)
+{
+    const int row = pos / 8;
+    distance = (direction == 1) ? 7 - row : row;
+};
+Move::Move()
+{
+    from = -1;
+    to = -1;
+    remove = -1;
+};
 Move::Move(int from, int to, int remove) : from(from), to(to), remove(remove){};
 bool Move::operator<(const Move &other) const { return from < other.from && to < other.to && remove < other.remove; };
 
+// Convert chess notation to board position
 int parseMove(const std::string &notation)
 {
     if (notation.size() != 2)
@@ -25,6 +42,7 @@ int parseMove(const std::string &notation)
     };
     return pos;
 };
+// Convert board position to chess notation
 std::string reverseParseMove(int pos)
 {
     int col = pos % 8;
@@ -36,8 +54,7 @@ std::string reverseParseMove(int pos)
     notation += number;
     return notation;
 };
-
-// Print current valid moves to console
+// Print a single move
 void printMove(const Move &move)
 {
     std::cout << "From " << reverseParseMove(move.from);
