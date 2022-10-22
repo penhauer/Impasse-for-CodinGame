@@ -1,7 +1,5 @@
 #pragma once
-#include <tuple>
-#include <unordered_map>
-#include <chrono>
+#include "board.h"
 
 struct TranspositionEntry
 {
@@ -21,7 +19,6 @@ private:
     int color;
     int leafnodes;
     int cutoffs;
-    std::vector<int> scores;
     ZobristTable zobristtable;
     TranspositionTable tt;
 

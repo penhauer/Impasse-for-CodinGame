@@ -1,20 +1,42 @@
-#include <iostream>
-#include <chrono>
 #include "game.h"
 
+Game::Game()
+{
+    reset(true);
+    gameLoop();
+};
 Game::Game(int player, int timemin)
 {
-    reset(player, timemin);
+    this->player = player;
+    this->timemin = timemin;
+    reset(false);
     gameLoop();
+};
+void Game::reset(bool cont)
+{
+    board = Board();
+    if (cont)
+    {
+        restoreSave();
+        std::cout << "Last game restored from save" << std::endl;
+    }
+    else
+    {
+        board.reset();
+        timer = std::make_tuple(timemin * 60 * 1000, timemin * 60 * 1000);
+    };
+    std::cout << "Game started, good luck!" << std::endl;
+    std::cout << "Time available: " << timemin << " minutes / player" << std::endl;
+    ai = Ai(player * -1);
 };
 void Game::gameLoop()
 {
-loop:
+    loop:
     while (board.state == 0)
     {
         if (player == board.turn)
         {
-            //std::chrono::time_point<std::chrono::system_clock> start, end;
+            // std::chrono::time_point<std::chrono::system_clock> start, end;
             auto start = std::chrono::system_clock::now();
             std::chrono::milliseconds duration;
             board.printBoard();
@@ -35,7 +57,6 @@ loop:
                         "moves: show legal moves\n"
                         "time: show remaining time\n"
                         "undo: undo last move\n"
-                        "restore: restore game from save\n"
                         "restart: restart game\n"
                         "quit: quit program\n";
                     std::cout << text << std::endl;
@@ -51,7 +72,7 @@ loop:
                     std::cout << "----------------------------LEGAL MOVES----------------------------\n";
                     for (const auto pieceboard : board.possiblepieceboards)
                     {
-                        board.printMove(pieceboard.lastmove);
+                        printMove(pieceboard.lastmove);
                     };
                     std::cout << "\n";
                 }
@@ -86,8 +107,7 @@ loop:
                         "The player with a lone single left and no moves available wins.\n\n"
                         "How to move:\n"
                         "Select the position of the piece you want to move (e.g. input D2 and press enter),\n"
-                        "then select the position you want to move it to. If needed, select piece to remove as well.\n"
-;
+                        "then select the position you want to move it to. If needed, select piece to remove as well.\n";
                     std::cout << text << std::endl;
                 }
                 else if (notation == "restart")
@@ -97,18 +117,15 @@ loop:
                     std::cin >> answer;
                     if (answer == "yes")
                     {
-                        reset(-player, timemin);
+                        player *= -1;
+                        reset(false);
                     }
                     else
                     {
-                        reset(player, timemin);
+                        reset(false);
                     };
                     std::cout << "Game restarted!" << std::endl;
                     goto loop;
-                }
-                else if (notation == "restore")
-                {
-                    //board.loadBoard();
                 }
                 else if (notation == "quit")
                 {
@@ -132,14 +149,16 @@ loop:
                 {
                     std::cout << "Your time is up!" << std::endl;
                     board.state = -1 * player;
+                    goto loop;
                 };
             };
             std::get<0>(timer) -= duration.count();
             int timeleft = std::get<0>(timer) / 1000;
-            std::cout << "Time left: " << timeleft/60 << "m " << timeleft % 60 << "s" << std::endl;
+            std::cout << "Time left: " << timeleft / 60 << "m " << timeleft % 60 << "s" << std::endl;
             board.doMove(pieceboard);
             board.printBoard();
             board.createPossibleBoards();
+            save();
         }
         else
         {
@@ -156,35 +175,24 @@ loop:
             {
                 std::get<1>(timer) -= duration.count();
                 int timeleft = std::get<1>(timer) / 1000;
-                std::cout << "Time left for AI: " << timeleft/60 << "m " << timeleft % 60 << "s" << std::endl;
-                board.printMove(pieceboard.lastmove);
+                std::cout << "Time left for AI: " << timeleft / 60 << "m " << timeleft % 60 << "s" << std::endl;
+                printMove(pieceboard.lastmove);
                 board.doMove(pieceboard);
                 board.createPossibleBoards();
+                save();
             };
         };
     };
     if (board.state == player)
     {
         std::cout << "🎉🎉🎉 Congratulations, you won the game! 🎉🎉🎉" << std::endl;
+        deleteSave();
     }
-    else if (board.state == -1*player)
+    else if (board.state == -1 * player)
     {
         std::cout << "Unfortunately you lost, better luck next time!" << std::endl;
-    };
-};
-void Game::undoMove()
-{
-    if (board.pieceboardhistory.size() > 1)
-    {
-        board.undoMove();
-        board.undoMove();
-        board.createPossibleBoards();
-        std::cout << "Last player move undone" << std::endl;
+        deleteSave();
     }
-    else
-    {
-        std::cout << "No player moves to undo" << std::endl;
-    };
 };
 std::tuple<bool, PieceBoard> Game::trySelect(int pos, PieceBoard pb)
 {
@@ -192,7 +200,7 @@ std::tuple<bool, PieceBoard> Game::trySelect(int pos, PieceBoard pb)
     PieceBoardVector onlymoves;
     if (pb.lastmove.from == -1)
     {
-        std::copy_if(board.possiblepieceboards.begin(), board.possiblepieceboards.end(), std::inserter(onlymoves, onlymoves.end()), [&](const PieceBoard &pieceboard){ return pieceboard.lastmove.from == pos; });
+        std::copy_if(board.possiblepieceboards.begin(), board.possiblepieceboards.end(), std::inserter(onlymoves, onlymoves.end()), [&](const PieceBoard &pieceboard) { return pieceboard.lastmove.from == pos; });
         if (onlymoves.size() == 1)
         {
             return std::make_tuple(true, onlymoves.back());
@@ -230,13 +238,95 @@ std::tuple<bool, PieceBoard> Game::trySelect(int pos, PieceBoard pb)
     std::cout << "No legal move available for selected position.\nEnter 'help' for help or 'moves' for valid moves" << std::endl;
     return std::make_tuple(false, PieceBoard());
 };
-void Game::reset(int player, int timemin)
+void Game::undoMove()
 {
-    this->player = player;
-    this->timemin = timemin;
-    std::cout << "Game started, good luck!" << std::endl;
-    std::cout << "Time available: " << timemin << " minutes / player" << std::endl;
-    board = Board(false);
-    timer = std::make_tuple(timemin * 60 * 1000, timemin * 60 * 1000);
-    ai = Ai(player * -1);
+    if (board.pieceboardhistory.size() > 1)
+    {
+        board.undoMove();
+        board.undoMove();
+        board.createPossibleBoards();
+        std::cout << "Last player move undone" << std::endl;
+    }
+    else
+    {
+        std::cout << "No player moves to undo" << std::endl;
+    };
+};
+void Game::save() const
+{
+    std::ofstream newfile;
+    newfile.open(".savegame", std::ios::out);
+    if (newfile.is_open())
+    {
+        newfile << player << std::endl;
+        newfile << timemin << std::endl;
+        newfile << std::get<0>(timer) << std::endl;
+        newfile << std::get<1>(timer) << std::endl;
+        newfile << board.turn << std::endl;
+        newfile << board.state << std::endl;
+        newfile << board.pieceboard.postocrown.size() << std::endl;
+        for (auto x : board.pieceboard.postocrown)
+        {
+            newfile << x.first << " " << x.second << std::endl;
+        };
+        newfile << board.pieceboard.piecemap.size() << std::endl;
+        for (auto x : board.pieceboard.piecemap)
+        {
+            newfile << x.first << " " << x.second.piece << " " << x.second.color << std::endl;
+        };
+        newfile.close();
+    };
+    newfile.close();
+};
+void Game::restoreSave()
+{
+    //if .savegame exist, load variables
+    std::ifstream newfile;
+    newfile.open(".savegame", std::ios::in);
+    if (newfile.is_open())
+    {
+        Board savedboard;
+        newfile >> player;
+        newfile >> timemin;
+        newfile >> std::get<0>(timer);
+        newfile >> std::get<1>(timer);
+        newfile >> savedboard.turn;
+        newfile >> savedboard.state;
+        int postocrownsize;
+        newfile >> postocrownsize;
+        for (int i = 0; i < postocrownsize; i++)
+        {
+            int color;
+            int pos;
+            newfile >> color;
+            newfile >> pos;
+            savedboard.pieceboard.postocrown[color] = pos;
+        };
+        int piecemapsize;
+        newfile >> piecemapsize;
+        for (int i = 0; i < piecemapsize; i++)
+        {
+            int pos;
+            int piece;
+            int color;
+            newfile >> pos;
+            newfile >> piece;
+            newfile >> color;
+            savedboard.pieceboard.piecemap[pos] = Piece(piece, color, pos);
+        };
+        newfile.close();
+        board.reset(savedboard);
+        deleteSave();
+    };
+};
+// If saved board exists, delete it
+void Game::deleteSave() const
+{
+    std::ifstream newfile;
+    newfile.open("boardstate.txt", std::ios::in);
+    if (newfile.is_open())
+    {
+        newfile.close();
+        std::remove("boardstate.txt");
+    };
 };

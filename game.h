@@ -1,10 +1,5 @@
 #pragma once
-#include <algorithm>
-#include <tuple>
-#include <vector>
-#include "board.h"
 #include "ai.h"
-#include "common.h"
 
 class Game
 {
@@ -18,12 +13,15 @@ private:
     std::tuple<int, int> timer;
 
 public:
+    Game();
     Game(int player, int timemin);
 
 private:
+    void reset(bool cont);
     void gameLoop();
-    void undoMove();
-    void reset(int player, int timemin);
     std::tuple<bool, PieceBoard> trySelect(int pos, PieceBoard pb);
-    std::tuple<bool, PieceBoard> returnIfOnlyBoard(const PieceBoard &pb);
+    void undoMove();
+    void save() const;
+    void restoreSave();
+    void deleteSave() const;
 };

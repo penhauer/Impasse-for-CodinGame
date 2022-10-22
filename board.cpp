@@ -1,27 +1,9 @@
-#include <map>
-#include <set>
-#include <string>
-#include <vector>
-#include <iostream>
-#include <fstream>
 #include "board.h"
-#include <chrono>
-
-Piece::Piece() {};
-Piece::Piece(int piece, int color, int pos) : piece(piece), color(color) { transitions = 0; getDirection(); getDistance(pos); };
-void Piece::getDirection() { direction = (piece == 1 && color == 1 || piece == 2 && color == -1) ? 1 : -1; };
-void Piece::getDistance(const int &pos) { const int row = pos / 8; distance = (direction == 1) ? 7 - row : row; };
-Move::Move(int from = -1, int to = -1, int remove = -1) : from(from), to(to), remove(remove){};
-bool Move::operator<(const Move &other) const { return from < other.from && to < other.to && remove < other.remove; };
 
 PieceBoard::PieceBoard(){};
 int PieceBoard::evaluate(int color) const
 {
-    //  TODO add average number of available moves per piece
     int piecevalue = color * (2 * piececount.blackSingles + 3 * piececount.blackDoubles - 2 * piececount.whiteSingles - 3 * piececount.whiteDoubles);
-    // average number of available moves per piece
-    //int movevalue = color * (piececount.blackMoves - piececount.whiteMoves);
-    // average number of distance from last row for piece
     int distancevalue = 0;
     int transitionvalue = 0;
     int pieceno = 0;
@@ -38,63 +20,33 @@ int PieceBoard::evaluate(int color) const
     return 3*piecevalue + 5*transitionvalue + distancevalue/pieceno;
 };
 
-Board::Board(){};
-Board::Board(bool paused)
+Board::Board() {};
+void Board::reset(Board savedboard)
 {
-    resetBoard(paused);
-};
-void Board::resetBoard(bool paused)
+    turn = savedboard.turn;
+    state = savedboard.state;
+    pieceboard = savedboard.pieceboard;
+    initBoard();
+}
+void Board::reset()
 {
     turn = 1;
     state = 0;
-    initBoard();
-    getPieceCount();
-    pieceboardhistory.clear();
     pieceboard.postocrown.clear();
+    newBoard();
+    initBoard();
+};
+void Board::initBoard()
+{
+    pieceboardhistory.clear();
+    getPieceCount();
     std::chrono::time_point<std::chrono::system_clock> start, end;
     start = std::chrono::system_clock::now();
     createPossibleBoards();
     end = std::chrono::system_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
     std::cout << "Time to create possible boards: " << duration.count() << " microseconds" << std::endl;
-};
-void Board::saveBoard() const
-{
-    std::ofstream newfile;
-    newfile.open("boardstate.txt", std::ios::out);
-    if (newfile.is_open())
-    {
-        newfile << turn << std::endl;
-        newfile << state << std::endl;
-        newfile << pieceboard.postocrown.size() << std::endl;
-        // TODO add postocrown and pieceset
-    };
-    newfile.close();
-};
-void Board::loadBoard(int turn, PosToCrown postocrown, PosSet pieceset)
-{
-    state = 0;
-    this->turn = turn;
-    this->pieceboard.postocrown = postocrown;
-    /*for (Piece piece : pieceset)
-    {
-        pieceboard.piecemap[piece.row][piece.col] = piece;
-    };
-    */ //TODO fix
-    getPieceCount();
-    createPossibleBoards();
-};
-// If saved board exists, delete it
-void Board::deleteBoard() const
-{
-    std::ifstream newfile;
-    newfile.open("boardstate.txt", std::ios::in);
-    if (newfile.is_open())
-    {
-        newfile.close();
-        std::remove("boardstate.txt");
-    };
-};
+}
 // Print board to console
 void Board::printBoard() const
 {
@@ -180,20 +132,6 @@ void Board::printBoard() const
     };
     std::cout << "  +---+---+---+---+---+---+---+---+" << std::endl;
     std::cout << "    A   B   C   D   E   F   G   H " << std::endl;
-};
-// Print current valid moves to console
-void Board::printMove(const Move &move) const
-{
-    std::cout << "From " << reverseParseMove(move.from);
-    if (move.to != -1)
-    {
-        std::cout << " to " << reverseParseMove(move.to);
-    };
-    if (move.remove != -1)
-    {
-        std::cout << " removing " << reverseParseMove(move.remove);
-    };
-    std::cout << std::endl;
 };
 // Create current valid moves
 void Board::createPossibleBoards()
@@ -368,7 +306,7 @@ void Board::addPieceMoves(const Piece &piece, const int &pos)
                         else
                         {
                             PieceBoard new_pieceboard = pieceboard;
-                            new_pieceboard.lastmove = Move(pos, topos);
+                            new_pieceboard.lastmove = Move(pos, topos, -1);
                             move(new_pieceboard, pos, topos);
                             new_pieceboard.postocrown[turn] = topos;
                             possiblepieceboards.push_back(new_pieceboard);
@@ -484,9 +422,8 @@ void Board::addImpassable()
         };
     };
 };
-void Board::initBoard()
+void Board::newBoard()
 {
-    deleteBoard();
     pieceboard.piecemap.clear();
     for (int pos = 0; pos < 64; pos++)
     {

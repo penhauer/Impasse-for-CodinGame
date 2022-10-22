@@ -1,45 +1,61 @@
-#include <iostream>
 #include "game.h"
-#include <thread>
-#include <chrono>
 
 int main()
 {
-    std::cout << "Welcome to Impasse!\n\nFor the game rules write 'rules' or visit: https://www.marksteeregames.com/Impasse_rules.pdf\n\nEngine and AI implemented by: Balazs Horvath (https://bghorvath.dev)" << std::endl;
+    std::cout << "Welcome to Impasse!\n\nFor game rules enter 'howto' or visit: https://www.marksteeregames.com/Impasse_rules.pdf\n\nEngine and AI implemented by: Balazs Horvath (https://bghorvath.dev)" << std::endl;
     bool play = true;
     while (play)
     {
         std::string answer;
-        int player = 0;
-        while (player == 0)
+        std::ofstream newfile;
+        newfile.open(".savegame", std::ios::in);
+        if (newfile.is_open())
         {
-            std::cout << "Choose your color (white/black): ";
+            std::cout << "Do you want to load the last saved game? (yes/no)" << std::endl;
             std::cin >> answer;
-            if (answer == "white")
+            if (answer == "yes")
             {
-                player = 1;
-            }
-            else if (answer == "black")
-            {
-                player = -1;
+                Game game = Game();
             }
             else
             {
-                std::cout << "Invalid answer" << std::endl;
-            };
-        };
-        int timemin = 10;
-        std::cout << "Choose time limit per player (minutes): ";
-        std::cin >> answer;
-        try
-        {
-            timemin = std::stoi(answer);
+                goto newgame;
+            }
         }
-        catch (const std::exception &e)
+        else
         {
-            std::cout << "Invalid answer, defaulting to 10 minutes" << std::endl;
+            newgame:
+            int player = 0;
+            while (player == 0)
+            {
+                std::cout << "Choose your color (white/black): ";
+                std::cin >> answer;
+                if (answer == "white")
+                {
+                    player = 1;
+                }
+                else if (answer == "black")
+                {
+                    player = -1;
+                }
+                else
+                {
+                    std::cout << "Invalid answer" << std::endl;
+                };
+            };
+            int timemin = 10;
+            std::cout << "Choose time limit per player (minutes): ";
+            std::cin >> answer;
+            try
+            {
+                timemin = std::stoi(answer);
+            }
+            catch (const std::exception &e)
+            {
+                std::cout << "Invalid answer, defaulting to 10 minutes" << std::endl;
+            };
+            Game game = Game(player, timemin);
         };
-        Game game = Game(player, timemin);
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
         std::cout << "Would you like to play again? (yes/no): ";
         std::cin >> answer;

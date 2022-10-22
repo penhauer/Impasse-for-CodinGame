@@ -1,15 +1,9 @@
-#include "board.h"
 #include "ai.h"
-#include <algorithm>
-#include <set>
-#include <iostream>
-#include <vector>
 
 Ai::Ai(){};
 Ai::Ai(int color) : color(color) { initZobristTable(); };
 PieceBoard Ai::getMove(Board board, const int &aitime)
 {
-    scores.clear();
     cutoffs = 0;
     leafnodes = 0;
     int searchdepth = 1;
@@ -28,7 +22,6 @@ PieceBoard Ai::getMove(Board board, const int &aitime)
         std::tie(score, pieceboard) = alphaBetaNegaMax(board, searchdepth, color, -100000, 100000);
         end = std::chrono::system_clock::now();
     };
-    int maxIndex = std::distance(scores.begin(), std::max_element(scores.begin(), scores.end()));
     float duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count()/1000.0;
     std::cout << searchdepth << " ply deep search returned best move (with score " << score << ") after " << duration << "s.\nIt considered " << leafnodes << " leaf nodes, and made " << cutoffs << " cutoffs." << std::endl;
     return pieceboard;
