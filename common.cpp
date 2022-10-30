@@ -3,17 +3,18 @@
 Piece::Piece(){};
 Piece::Piece(int piece, int color, int pos) : piece(piece), color(color)
 {
-    transitions = 0;
     getDirection();
     getDistance(pos);
 };
 // Update the direction of the piece
 void Piece::getDirection() { direction = (piece == 1 && color == 1 || piece == 2 && color == -1) ? 1 : -1; };
 // Update the distance of the piece from its last row
-void Piece::getDistance(const int &pos)
+int Piece::getDistance(const int &pos)
 {
     const int row = pos / 8;
+    const int olddistance = distance;
     distance = (direction == 1) ? 7 - row : row;
+    return distance - olddistance;
 };
 Move::Move()
 {

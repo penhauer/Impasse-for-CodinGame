@@ -20,12 +20,11 @@ public:
     int color;
     int direction;
     int distance;
-    int transitions;
     Piece();
     Piece(int piece, int color, int pos);
     void getDirection();
     void changeType();
-    void getDistance(const int &pos);
+    int getDistance(const int &pos);
 };
 
 struct Move

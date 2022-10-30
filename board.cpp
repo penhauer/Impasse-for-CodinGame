@@ -5,20 +5,18 @@ PieceBoard::PieceBoard(){};
 int PieceBoard::evaluate(int color) const
 {
     int piecevalue = color * (2 * piececount.blackSingles + 3 * piececount.blackDoubles - 2 * piececount.whiteSingles - 3 * piececount.whiteDoubles);
+    int transitionvalue = transitions.at(color) - transitions.at(-color);
+    // Average distances from last row for each color
     int distancevalue = 0;
-    int transitionvalue = 0;
-    int pieceno = 0;
-    for (auto x : piecemap)
+    if (color == 1)
     {
-        const Piece &piece = x.second;
-        if (piece.color == color)
-        {
-            distancevalue += piece.distance;
-            transitionvalue += piece.transitions;
-            pieceno += 1;
-        }
+        int distancevalue = distances.at(color) / (piececount.whiteSingles + piececount.whiteDoubles + 1) - distances.at(-color) / (piececount.blackDoubles + piececount.blackSingles + 1);
+    }
+    else
+    {
+        int distancevalue = distances.at(color) / (piececount.blackDoubles + piececount.blackSingles + 1) - distances.at(-color) / (piececount.whiteSingles + piececount.whiteDoubles + 1);
     };
-    return 3 * piecevalue + 5 * transitionvalue + distancevalue / pieceno;
+    return 10 * piecevalue + 6 * transitionvalue - distancevalue;
 };
 Board::Board(){};
 // Load board from file
@@ -184,9 +182,9 @@ void Board::crown(PieceBoard &pieceboard, const Piece &p, const int &pos)
         pieceboard.piececount.blackSingles--;
         break;
     };
+    pieceboard.transitions[piece.color] ++;
     piece.piece = 2;
     piece.getDirection();
-    piece.transitions += 1;
 };
 // Turn double piece into single
 void Board::bearOff(PieceBoard &pieceboard, const Piece &p, const int &pos)
@@ -205,7 +203,7 @@ void Board::bearOff(PieceBoard &pieceboard, const Piece &p, const int &pos)
     };
     piece.piece = 1;
     piece.getDirection();
-    piece.transitions += 1;
+    pieceboard.transitions[piece.color] ++;
 };
 // Remove / bear-off piece based on its type
 void Board::remove(PieceBoard &pieceboard, const Piece &p, const int &pos)
@@ -230,6 +228,7 @@ void Board::remove(PieceBoard &pieceboard, const Piece &p, const int &pos)
         bearOff(pieceboard, p, pos);
         break;
     };
+    pieceboard.distances[p.color] -= p.distance;
     // Chickendinner
     if (pieceboard.piececount.whiteSingles + pieceboard.piececount.whiteDoubles == 0)
     {
@@ -367,7 +366,9 @@ void Board::move(PieceBoard &pieceboard, int pos, int topos)
         Piece topiece = pieceboard.piecemap[topos];
         pieceboard.piecemap[topos] = pieceboard.piecemap.at(pos);
         pieceboard.piecemap[pos] = topiece;
-        pieceboard.piecemap.at(pos).getDistance(pos);
+        int distancediff = pieceboard.piecemap.at(pos).getDistance(pos);
+        pieceboard.distances[turn] += distancediff;
+
     }
     // Else just move the piece
     else
@@ -375,7 +376,8 @@ void Board::move(PieceBoard &pieceboard, int pos, int topos)
         pieceboard.piecemap[topos] = pieceboard.piecemap.at(pos);
         pieceboard.piecemap.erase(pos);
     }
-    pieceboard.piecemap.at(topos).getDistance(topos);
+    int distancediff = pieceboard.piecemap.at(topos).getDistance(topos);
+    pieceboard.distances[turn] += distancediff;
 };
 // Check if there's a piece waiting to be crowned, and if so, crown it with the current piece
 bool Board::crownIf(PieceBoard &pieceboard, const Piece &p, const int &pos)

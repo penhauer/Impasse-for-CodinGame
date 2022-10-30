@@ -83,6 +83,7 @@ loop:
                 }
                 else if (notation == "board")
                 {
+                    std::cout << "----------------------------BOARD----------------------------\n";
                     board.printBoard();
                     std::cout << "\n";
                 }

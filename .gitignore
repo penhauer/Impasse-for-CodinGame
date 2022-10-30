@@ -7,8 +7,6 @@
 # IDEs
 .vscode/
 .idea/
-cmake-build-debug/
-CMakeLists.txt
 
 # CMakes
 CMakeLists.txt

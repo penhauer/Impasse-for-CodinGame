@@ -27,15 +27,15 @@ PieceBoard Ai::getMove(Board board, const int &aitime)
     float duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() / 1000.0;
     // Approximate pruned nodes based on average branching factor and cutoffs / depth
     int cutoffsum = std::accumulate(cutoffs.begin(), cutoffs.end(), 0, [](int sum, const std::pair<int, int> &p) { return sum + p.second; });
-    const double avgbf = 19.304347826086957;
+    const double avgbranchingfactor = 15.3; // calculated beforehand and hardcoded since not worth the computation time
     double multiplier = 1.0;
     int prunedleafnodes = 0;
     for (auto iter = cutoffs.rbegin(); iter != cutoffs.rend(); ++iter)
     {
-        multiplier *= avgbf;
         prunedleafnodes += (double)iter->second * multiplier;
+        multiplier *= avgbranchingfactor;
     };
-    std::cout << searchdepth << " ply deep search returned best move (with score " << score << ") after " << duration << "s.\nIt evaluated " << leafnodes << " leaf nodes, and made " << cutoffsum << " cutoffs (pruning around ~" << prunedleafnodes << " nodes)." << std::endl;
+    std::cout << "Search with final depth of " << searchdepth << " returned best move (with score " << score << ") after " << duration << "s.\nIt evaluated " << leafnodes << " leaf nodes, and made " << cutoffsum << " cutoffs (pruning around ~" << prunedleafnodes << ")." << std::endl;
     return pieceboard;
 };
 // Recursively execute Negamax search algorithm using alpha-beta pruning and transposition tables
@@ -59,7 +59,6 @@ std::tuple<int, PieceBoard> Ai::alphaBetaNegaMax(Board board, int depth, int col
         };
         if (alpha >= beta)
         {
-            addCutoff(depth);
             return std::make_tuple(tt.at(hash).score, board.pieceboard);
         };
     };
@@ -72,9 +71,6 @@ std::tuple<int, PieceBoard> Ai::alphaBetaNegaMax(Board board, int depth, int col
     PieceBoard bestpieceboard;
     board.generateLegalMoves();
     PieceBoardVector childnodes = board.possiblepieceboards;
-    {
-        orderMoves(childnodes, color);
-    };
     orderMoves(childnodes, color);
     for (PieceBoard child : childnodes)
     {

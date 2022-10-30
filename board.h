@@ -20,6 +20,8 @@ class PieceBoard
 public:
     PieceCount piececount;
     PieceMap piecemap;
+    std::map<int, int> transitions = {{1, 0}, {-1, 0}};
+    std::map<int, int> distances = {{1, 26}, {-1, 26}};
     PosToCrown postocrown;
     Move lastmove;
     PieceBoard();
