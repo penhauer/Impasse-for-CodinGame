@@ -9,7 +9,7 @@ struct TranspositionEntry
 };
 
 typedef uint64_t HashValue;
-typedef std::unordered_map<int, std::unordered_map<int, std::unordered_map<int, int>>> ZobristTable;
+typedef std::unordered_map<int, std::unordered_map<int, std::unordered_map<int, HashValue>>> ZobristTable;
 typedef std::unordered_map<HashValue, TranspositionEntry> TranspositionTable;
 
 class Ai

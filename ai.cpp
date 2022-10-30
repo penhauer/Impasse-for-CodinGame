@@ -189,13 +189,16 @@ HashValue Ai::getHashValue(const PieceBoard &pb, const int &turn)
 // Iint ZobristTable for hashing
 void Ai::initZobristTable()
 {
-    for (int i = -1; i < 2; i += 2)
+    std::random_device rd;
+    std::mt19937 mt(rd());
+    std::uniform_int_distribution<HashValue> dist(0, std::numeric_limits<HashValue>::max());
+    for (int i = -1; i < 2; i+=2)
     {
         for (int j = 0; j < 64; j++)
         {
             for (int k = 0; k < 5; k++)
             {
-                zobristtable[i][j][k] = rand();
+                zobristtable[i][j][k] = dist(mt);
             };
         };
     };
