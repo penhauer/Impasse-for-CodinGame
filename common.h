@@ -66,9 +66,6 @@ public:
     int direction;
     int distance;
 
-    // Pos pos = EMPTY_POSE;
-
-
     Piece();
     Piece(int pieceCount, int color);
 
@@ -77,11 +74,6 @@ public:
 
     bool isSingle();
     bool isDouble();
-
-
-    
-    // bool operator==(const Piece& p) const; 
-    // bool operator!=(const Piece& p) const; 
 };
 
 const Piece NO_PIECE = Piece(-1, -1);
@@ -94,12 +86,12 @@ struct Move
 
     Move();
     Move(Pos from, Pos to, Pos remove);
+
     bool operator<(const Move &other) const;
+    bool operator==(const Move &other) const {
+      return from == other.from && to == other.to && remove == other.remove;
+    }
 
     std::string toStr();
 };
 
-void printMove(Move move);
-
-
-bool inside(Pos pos);

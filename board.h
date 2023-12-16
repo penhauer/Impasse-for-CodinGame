@@ -14,9 +14,11 @@ struct PieceCount {
 class PieceBoard {
 public:
     PieceCount piececount;
+
     std::map<int, int> transitions = {{WHITE, 0}, {BLACK, 0}};
     std::map<int, int> distances = {{WHITE, 26}, {BLACK, 26}};
     std::map<int, Pos> postocrown;
+
     Move lastmove;
     PieceBoard();
     int evaluate(int color) const;
@@ -56,8 +58,11 @@ public:
     Board();
     void printBoard();
     void generateLegalMoves();
-    void doMove(const PieceBoard new_pieceboard);
+    void doMove(int moveNumber);
+    void doMove(PieceBoard nextPieceBoard);
     void undoMove();
+
+
 
 private:
     void move(PieceBoard &pieceboard, Pos pos, Pos toPos);
@@ -72,4 +77,6 @@ private:
     bool isTransposable(Pos pos, Pos toPos);
     void checkImpasseForPos(Pos pos);
     void changeTurn();
+
+    bool inside(Pos pos);
 };

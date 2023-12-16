@@ -8,11 +8,6 @@ Piece::Piece(int pieceCount, int color) : pieceCount(pieceCount), color(color)
     // getDistance(pos);
 };
 
-
-bool inside(Pos pos) {
-  return pos.row >= 0 && pos.row < ROWS && pos.col >= 0 && pos.col < COLS;
-}
-
 bool Piece::isSingle() {
   return pieceCount == SINGLE_COUNT;
 }
@@ -25,17 +20,6 @@ bool Piece::isDouble() {
 void Piece::setDirection() { 
   direction = (isDouble() && color == WHITE || isSingle() && color == BLACK) ? DOWN_DIR : UP_DIR; 
 }
-
-// bool Piece::operator==(const Piece& p) const {
-//   if (p.pos == pos) {
-//     assert(piece_count == p.piece_count && p.color == color && p.direction == direction);
-//   }
-//   return p.pos == pos;
-// }
-
-// bool Piece::operator!=(const Piece& p) const {
-//   return !(*this == p);
-// }
 
 // Update the distance of the piece from its last row
 int Piece::getDistance(const Pos &pos) {
@@ -64,7 +48,7 @@ Pos Pos::parseMove(const std::string &s) {
     char letter = tolower(s[0]);
     int row = s[1] - '1';
     int col = (int)letter - 97;
-    if (!inside(Pos(row, col))) {
+    if (row < 0 || row >= ROWS || col < 0 || col >= COLS) {
       return EMPTY_POSE;
     }
     return Pos(row, col);
@@ -89,10 +73,5 @@ std::string Move::toStr() {
       s += " removing " + remove.reverseParseMove();
   }
   return s;
-}
-
-// Print a single move
-void printMove(Move move) {
-  std::cout << move.toStr() << std::endl;
 }
 

@@ -7,9 +7,7 @@
 class Player {
 
 public:
-  virtual void decideOnBoard(Board &board) {
-    std::cout << "oh oh " << std::endl;
-  }
+  virtual int decideOnBoard(Board board) = 0;
 };
 
 

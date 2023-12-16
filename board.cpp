@@ -51,6 +51,11 @@ void Board::printBoard() {
   pieceboard.printBoard();
 }
 
+
+bool Board::inside(Pos pos) {
+  return pos.row >= 0 && pos.row < ROWS && pos.col >= 0 && pos.col < COLS;
+}
+
 // Print board
 void PieceBoard::printBoard() {
     for (int row = 0; row < ROWS; row++)
@@ -144,9 +149,17 @@ void Board::generateLegalMoves() {
 }
 
 // Update board state with selected move
-void Board::doMove(const PieceBoard new_pieceboard) {
+void Board::doMove(int moveNumber) {
+  PieceBoard nextPieceBoard = possiblepieceboards[moveNumber];
+  pieceboardhistory.push_back(nextPieceBoard);
+  pieceboard = nextPieceBoard;
+  changeTurn();
+  generateLegalMoves();
+}
+
+void Board::doMove(const PieceBoard nextPieceBoard) {
     pieceboardhistory.push_back(pieceboard);
-    pieceboard = new_pieceboard;
+    pieceboard = nextPieceBoard;
     changeTurn();
     generateLegalMoves();
 }

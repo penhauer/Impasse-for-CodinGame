@@ -1,13 +1,30 @@
 #include "ai.h"
 #include "board.h"
 #include "common.h"
+#include <cassert>
 #include <vector>
 
-Ai::Ai(){};
-Ai::Ai(int color) : color(color) { initZobristTable(); };
+Ai::Ai(int color, int AITime) : color(color), AITime(AITime) { 
+  initZobristTable(); 
+}
+
+int Ai::decideOnBoard(Board board) {
+  auto pieceboard = getMove(board);
+  int ind = -1;
+  for (int i = 0; i < board.possiblepieceboards.size(); i++) {
+    auto x = board.possiblepieceboards[i];
+    if (x.lastmove == pieceboard.lastmove) {
+      assert(ind == -1);
+      ind = i;
+    }
+  }
+  return ind;
+}
+
+
 // Use iterative deepening to fill transposition table and find the best move by calling alpha-beta search.
 // Use dynamic time allocation based on the time left and expected number of moves left.
-PieceBoard Ai::getMove(Board board, const int &aitime)
+PieceBoard Ai::getMove(Board board)
 {
     cutoffs.clear();
     leafnodes = 0;
@@ -17,7 +34,7 @@ PieceBoard Ai::getMove(Board board, const int &aitime)
     int elapsedplys = board.pieceboardhistory.size();
     const int expectedmaxplys = 100;
     int expectedmovesleft = std::max(10, (expectedmaxplys - elapsedplys) / 2); // expected moves left for AI: always assume at least 10 moves left
-    int timelimit = std::min(20000, aitime / expectedmovesleft);               // minimum of 20sec and remaining time / expected moves left for AI
+    int timelimit = std::min(20000, AITime / expectedmovesleft);               // minimum of 20sec and remaining time / expected moves left for AI
     std::chrono::time_point<std::chrono::system_clock> start, end;
     start = std::chrono::system_clock::now();
     end = std::chrono::system_clock::now();

@@ -10,7 +10,6 @@ public:
 
 private:
     int timemin;
-    Ai ai;
     std::tuple<int, int> timer;
 
 public:

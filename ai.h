@@ -1,5 +1,6 @@
 #pragma once
 #include "board.h"
+#include "player.h"
 #include <vector>
 
 struct TranspositionEntry
@@ -13,19 +14,22 @@ typedef uint64_t HashValue;
 typedef std::unordered_map<int, std::unordered_map<int, std::unordered_map<int, HashValue>>> ZobristTable;
 typedef std::unordered_map<HashValue, TranspositionEntry> TranspositionTable;
 
-class Ai
+class Ai : public Player
 {
 private:
     int color;
     int leafnodes;
+    int AITime;
     std::map<int,int> cutoffs;
     ZobristTable zobristtable;
     TranspositionTable tt;
 
 public:
-    Ai();
-    Ai(int color);
-    PieceBoard getMove(Board board, const int &aitime);
+    Ai(int color, int AITime);
+    PieceBoard getMove(Board board);
+
+
+    int decideOnBoard(Board board) override;
 
 private:
     std::tuple<int, PieceBoard> alphaBetaNegaMax(Board board, int depth, int color, int alpha, int beta);
