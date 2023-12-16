@@ -1,8 +1,6 @@
 # Executables
-*
 !*.*
 !*/
-*.exe
 
 # IDEs
 .vscode/
