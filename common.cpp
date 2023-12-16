@@ -1,4 +1,5 @@
 #include "common.h"
+#include <string>
 
 Piece::Piece(){};
 Piece::Piece(int pieceCount, int color) : pieceCount(pieceCount), color(color)
@@ -56,11 +57,10 @@ bool Move::operator<(const Move &other) const {
 }
 
 // Convert chess notation to board position
-Pos parseMove(const std::string &s) {
-    if (s.size() != 2)
-    {
+Pos Pos::parseMove(const std::string &s) {
+    if (s.size() != 2) {
         return EMPTY_POSE;
-    };
+    }
     char letter = tolower(s[0]);
     int row = s[1] - '1';
     int col = (int)letter - 97;
@@ -71,11 +71,8 @@ Pos parseMove(const std::string &s) {
 };
 
 // Convert board position to chess notation
-std::string reverseParseMove(Pos pos)
-{
-    int col = pos.col;
-    int row = pos.row;
-    char letter = toupper((char)(col + 'a'));
+std::string Pos::reverseParseMove() {
+    char letter = (char)(col + 'A');
     char number = (char)(row + '1');
     std::string notation = "";
     notation += letter;
@@ -83,17 +80,19 @@ std::string reverseParseMove(Pos pos)
     return notation;
 }
 
-// Print a single move
-void printMove(Move move)
-{
-    std::cout << "From " << reverseParseMove(move.from);
-    if (!(move.to == EMPTY_POSE))
-    {
-        std::cout << " to " << reverseParseMove(move.to);
-    };
-    if (!(move.remove == EMPTY_POSE))
-    {
-        std::cout << " removing " << reverseParseMove(move.remove);
-    };
-    std::cout << std::endl;
+std::string Move::toStr() {
+  std::string s = "From "  + from.reverseParseMove();
+  if (!(to == EMPTY_POSE)) {
+      s += " to " + to.reverseParseMove();
+  }
+  if (!(remove == EMPTY_POSE)) {
+      s += " removing " + remove.reverseParseMove();
+  }
+  return s;
 }
+
+// Print a single move
+void printMove(Move move) {
+  std::cout << move.toStr() << std::endl;
+}
+

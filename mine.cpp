@@ -1,6 +1,7 @@
-#include "ai_agent.h"
+#include "player.h"
 #include "common.h"
 #include "game.h"
+#include "simple_terminal_player.h"
 
 int main() {
     bool play = true;
@@ -27,7 +28,8 @@ int main() {
     // agent.decideOnBoard(Board());
 
 
-    TerminalPlayer *t = new TerminalPlayer();
+    // TerminalPlayer *t = new TerminalPlayer();
+    SimpleTerminalPlayer *t = new SimpleTerminalPlayer();
     Player *p = t;
     Game game = Game(timemin);
     game.gameLoop(p, NULL);

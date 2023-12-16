@@ -1,5 +1,5 @@
 #include "game.h"
-#include "ai_agent.h"
+#include "player.h"
 #include "board.h"
 #include "common.h"
 
@@ -15,14 +15,16 @@ Game::Game(int timemin)
 }
 
 
+int Game::getMoveFromPlayer() {
+  return 0;
+}
+
 int Game::gameLoop(Player *white, Player *black) {
     // While game is not over
     while (board.winner == BOARD_GAME_ONGOING) {
         // If it's the player's turn
         if (board.turn == WHITE) {
-          std::cout << board.turn << std::endl;
           white->decideOnBoard(board);
-          std::cout << board.turn << std::endl;
         } else {
           std::cout << "\n";
             auto start = std::chrono::system_clock::now();

@@ -31,8 +31,7 @@ const int DOUBLE_COUNT = 2;
 struct Pos {
   int row, col;
 
-  Pos() { 
-  }
+  Pos() {}
 
   Pos(int row, int col) {
     this->row = row;
@@ -50,6 +49,10 @@ struct Pos {
     }
     return col < other.col;
   }
+
+
+  static Pos parseMove(const std::string &s);
+  std::string reverseParseMove();
 };
 
 
@@ -92,10 +95,9 @@ struct Move
     Move();
     Move(Pos from, Pos to, Pos remove);
     bool operator<(const Move &other) const;
-};
 
-Pos parseMove(const std::string &notation);
-std::string reverseParseMove(Pos pos);
+    std::string toStr();
+};
 
 void printMove(Move move);
 

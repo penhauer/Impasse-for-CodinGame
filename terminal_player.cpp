@@ -1,5 +1,4 @@
-#include "ai_agent.h"
-#include <iostream>
+#include "terminal_player.h"
 
 
 void TerminalPlayer::decideOnBoard(Board &board) {
@@ -43,7 +42,7 @@ void TerminalPlayer::decideOnBoard(Board &board) {
           board.printBoard();
           std::cout << "\n";
       } else {
-          Pos pos = parseMove(notation);
+          Pos pos = Pos::parseMove(notation);
           if (pos == EMPTY_POSE) {
               std::cout << "Invalid position, enter 'help' for help" << std::endl;
           }
@@ -113,7 +112,6 @@ void TerminalPlayer::undoPlayerMove(Board &board)
     if (board.pieceboardhistory.size() > 1) {
         board.undoMove();
         board.undoMove();
-        board.generateLegalMoves();
         std::cout << "Last player move undone" << std::endl;
     }
     else {

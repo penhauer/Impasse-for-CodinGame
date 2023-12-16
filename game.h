@@ -1,7 +1,7 @@
 #pragma once
 
 #include "ai.h"
-#include "ai_agent.h"
+#include "player.h"
 #include "common.h"
 
 class Game {
@@ -21,4 +21,5 @@ public:
 private:
     std::tuple<bool, PieceBoard> trySelect(Pos pos, PieceBoard pb);
     void undoPlayerMove();
+    int getMoveFromPlayer();
 };

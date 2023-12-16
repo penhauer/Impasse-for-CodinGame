@@ -156,6 +156,7 @@ void Board::undoMove() {
     pieceboard = pieceboardhistory.back();
     pieceboardhistory.pop_back();
     changeTurn();
+    generateLegalMoves();
 }
 
 void Board::changeTurn() {
