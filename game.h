@@ -4,21 +4,19 @@
 #include "player.h"
 #include "common.h"
 
+
 class Game {
-public:
-    Board board;
 
-private:
-    int timemin;
-    std::tuple<int, int> timer;
+  public:
+    int turns = 0;
 
-public:
-    Game(int timemin);
     Game();
     int gameLoop(Player *white, Player *black);
 
-private:
+  private:
+    Board board;
     std::tuple<bool, PieceBoard> trySelect(Pos pos, PieceBoard pb);
+    std::tuple<int, int> timer;
+
     void undoPlayerMove();
-    int getMoveFromPlayer();
 };

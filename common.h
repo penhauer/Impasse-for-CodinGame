@@ -69,11 +69,18 @@ public:
     Piece();
     Piece(int pieceCount, int color);
 
-    void setDirection();
+
+    void makeSingle();
+    void makeDouble();
+
     int getDistance(const Pos &pos);
 
     bool isSingle();
     bool isDouble();
+
+
+private:
+    void setDirection();
 };
 
 const Piece NO_PIECE = Piece(-1, -1);
@@ -83,6 +90,8 @@ struct Move
     Pos from = EMPTY_POSE;
     Pos to = EMPTY_POSE;
     Pos remove = EMPTY_POSE;
+    Pos crown = EMPTY_POSE;
+    Pos bearoff = EMPTY_POSE;
 
     Move();
     Move(Pos from, Pos to, Pos remove);

@@ -28,6 +28,18 @@ int Piece::getDistance(const Pos &pos) {
     return distance - olddistance;
 };
 
+void Piece::makeSingle() {
+  pieceCount = SINGLE_COUNT;
+  setDirection();
+}
+
+void Piece::makeDouble() {
+  pieceCount = DOUBLE_COUNT;
+  setDirection();
+}
+
+
+
 Move::Move() {
     from = EMPTY_POSE;
     to = EMPTY_POSE;

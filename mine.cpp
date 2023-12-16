@@ -1,6 +1,11 @@
 #include "player.h"
 #include "game.h"
+#include "random_player.h"
 #include "simple_terminal_player.h"
+#include <cstdlib>
+
+
+using namespace std;
 
 int main() {
     // bool play = true;
@@ -32,8 +37,24 @@ int main() {
     Player *black = new Ai(WHITE * -1, std::get<1>(timer));
 
 
-    Game game = Game(timemin);
-    game.gameLoop(white, black);
+    srand(time(NULL));
+
+    Player *randomPlayer = new RandomPlayer();
+
+
+    int blackWins = 0;
+    int whiteWins = 0;
+    for (int i = 0; i < 10000; i++) {
+      Game game = Game();
+      int winner = game.gameLoop(randomPlayer, randomPlayer);
+      std::cout << "winner is: " << (winner == WHITE ? "white" : "black") << " after" << std::endl;
+
+      blackWins += (winner == BLACK) ? 1 : 0;
+      whiteWins += (winner == WHITE) ? 1 : 0;
+    }
+
+    cout << "White wins vs blackwins : " << whiteWins << ' ' << blackWins << endl;
+
 
 
     std::this_thread::sleep_for(std::chrono::milliseconds(1000));

@@ -37,6 +37,7 @@ public:
   bool isEmpty(Pos pos);
 
   void printBoard();
+  void doSanityCheck();
 };
 
 
@@ -66,7 +67,7 @@ public:
 
 private:
     void move(PieceBoard &pieceboard, Pos pos, Pos toPos);
-    bool crownIf(PieceBoard &pieceboard, Pos pos);
+    Pos crownIf(PieceBoard &pieceboard, Pos pos);
     void crown(PieceBoard &pieceboard, Pos pos);
     void bearOff(PieceBoard &pieceboard, Pos pos);
     void remove(PieceBoard &pieceboard, Pos pos);

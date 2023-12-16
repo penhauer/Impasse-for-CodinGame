@@ -4,11 +4,8 @@
 #include "common.h"
 
 // Init game if savegame was available
-Game::Game(int timemin) {
-    this->timemin = timemin;
+Game::Game() {
     board = Board();
-    std::cout << "Game started, good luck!" << std::endl;
-    std::cout << "Time available: " << timemin << " minutes / player" << std::endl;
 }
 
 
@@ -18,10 +15,10 @@ int Game::gameLoop(Player *white, Player *black) {
         // If it's the player's turn
         int moveNumber = -1;
         if (board.turn == WHITE) {
-          std::cout << "white's turn: " << std::endl;
+          // std::cout << "white's turn: " << std::endl;
           moveNumber = white->decideOnBoard(board);
         } else {
-            std::cout << "black's turn: " << std::endl;
+            // std::cout << "black's turn: " << std::endl;
 
             // std::cout << "\n";
             // auto start = std::chrono::system_clock::now();
@@ -42,8 +39,15 @@ int Game::gameLoop(Player *white, Player *black) {
             moveNumber = black->decideOnBoard(board);
         }
 
+        // std::cout << "\n\n";
+        // std::cout << "Move done: " << board.possiblepieceboards[moveNumber].lastmove.toStr() << std::endl;
         board.doMove(moveNumber);
-        board.printBoard();
+        // board.printBoard();
+        
+        turns += 1;
+        using namespace std;
+        // int x;
+        // cin >> x;
     }
     return board.winner;
 }
