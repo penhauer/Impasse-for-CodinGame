@@ -1,5 +1,6 @@
 #pragma once
 #include "board.h"
+#include <vector>
 
 struct TranspositionEntry
 {
@@ -28,8 +29,8 @@ public:
 
 private:
     std::tuple<int, PieceBoard> alphaBetaNegaMax(Board board, int depth, int color, int alpha, int beta);
-    void orderMoves(PieceBoardVector &childnodes, const int &color);
+    void orderMoves(std::vector<PieceBoard> &childnodes, const int &color);
     void initZobristTable();
-    HashValue getHashValue(const PieceBoard &pb, const int &turn);
+    HashValue getHashValue(PieceBoard &pb, const int &turn);
     void addCutoff(const int &depth);
 };

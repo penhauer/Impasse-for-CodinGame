@@ -1,4 +1,7 @@
 #include "ai.h"
+#include "board.h"
+#include "common.h"
+#include <vector>
 
 Ai::Ai(){};
 Ai::Ai(int color) : color(color) { initZobristTable(); };
@@ -62,7 +65,7 @@ std::tuple<int, PieceBoard> Ai::alphaBetaNegaMax(Board board, int depth, int col
             return std::make_tuple(tt.at(hash).score, board.pieceboard);
         };
     };
-    if (depth == 0 || board.state != 0)
+    if (depth == 0 || board.winner != BOARD_GAME_ONGOING)
     {
         leafnodes += 1;
         return std::make_tuple(board.pieceboard.evaluate(color), board.pieceboard);
@@ -70,7 +73,7 @@ std::tuple<int, PieceBoard> Ai::alphaBetaNegaMax(Board board, int depth, int col
     int bestscore = -10000;
     PieceBoard bestpieceboard;
     board.generateLegalMoves();
-    PieceBoardVector childnodes = board.possiblepieceboards;
+    std::vector<PieceBoard> childnodes = board.possiblepieceboards;
     orderMoves(childnodes, color);
     for (PieceBoard child : childnodes)
     {
@@ -121,7 +124,7 @@ void Ai::addCutoff(const int &depth)
     };
 };
 // Order moves from best to worst based on transposition table entries and heuristic evaluation
-void Ai::orderMoves(PieceBoardVector &childnodes, const int &color)
+void Ai::orderMoves(std::vector<PieceBoard> &childnodes, const int &color)
 {
     std::map<Move, int> nodescores;
     for (PieceBoard child : childnodes)
@@ -142,36 +145,40 @@ void Ai::orderMoves(PieceBoardVector &childnodes, const int &color)
               { return nodescores[a.lastmove] > nodescores[b.lastmove]; });
 };
 // Create a hash value for the given board using the random numbers from the Zobrist table
-HashValue Ai::getHashValue(const PieceBoard &pb, const int &turn)
+HashValue Ai::getHashValue(PieceBoard &pb, const int &turn)
 {
     // generate zobrist key from pb and turn
     HashValue value = 0;
     for (int i = 0; i < 64; i++)
     {
-        if (pb.piecemap.count(i) > 0)
+      int row = i / COLS;
+      int col = i % COLS;
+      Pos pos = Pos(row, col);
+
+        if (!pb.isEmpty(pos))
         {
-            Piece p = pb.piecemap.at(i);
+            Piece p = pb.getPiece(pos);
             int piece;
             switch (p.color)
             {
-            case 1:
-                switch (p.piece)
+            case WHITE:
+                switch (p.pieceCount)
                 {
-                case 1:
+                case SINGLE_COUNT:
                     piece = 1;
                     break;
-                case 2:
+                case DOUBLE_COUNT:
                     piece = 2;
                     break;
                 };
                 break;
-            case -1:
-                switch (p.piece)
+            case BLACK:
+                switch (p.pieceCount)
                 {
-                case 1:
+                case SINGLE_COUNT:
                     piece = 3;
                     break;
-                case 2:
+                case DOUBLE_COUNT:
                     piece = 4;
                     break;
                 };

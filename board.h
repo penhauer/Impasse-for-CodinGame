@@ -1,65 +1,75 @@
 #pragma once
 #include "common.h"
 
-typedef std::set<int> PosSet;
+typedef std::set<Pos> PosSet;
 
-typedef std::map<int, Piece> PieceMap;
 
-typedef std::map<int, int> PosToCrown;
-
-struct PieceCount
-{
+struct PieceCount {
     int whiteSingles = 0;
     int whiteDoubles = 0;
     int blackSingles = 0;
     int blackDoubles = 0;
 };
 
-class PieceBoard
-{
+class PieceBoard {
 public:
     PieceCount piececount;
-    PieceMap piecemap;
-    std::map<int, int> transitions = {{1, 0}, {-1, 0}};
-    std::map<int, int> distances = {{1, 26}, {-1, 26}};
-    PosToCrown postocrown;
+    std::map<int, int> transitions = {{WHITE, 0}, {BLACK, 0}};
+    std::map<int, int> distances = {{WHITE, 26}, {BLACK, 26}};
+    std::map<int, Pos> postocrown;
     Move lastmove;
     PieceBoard();
     int evaluate(int color) const;
+
+
+  Piece table[ROWS][COLS]; 
+
+
+  int count() {
+    return piececount.blackDoubles + piececount.blackSingles + piececount.whiteSingles + piececount.whiteDoubles;
+  }
+
+  Piece getPiece(Pos pos);
+  void setPiece(Pos pos, Piece piece);
+  void removePiece(Pos pos);
+  bool isEmpty(Pos pos);
+
+  void printBoard();
 };
 
-typedef std::vector<PieceBoard> PieceBoardVector;
 
-class Board
-{
+
+const int BOARD_GAME_ONGOING = -10;
+const int BOARD_WHITE_WON = WHITE;
+const int BOARD_BLACK_WON = BLACK;
+
+
+class Board {
 public:
     int turn;
-    int state;
-    PieceBoardVector possiblepieceboards;
-    PieceBoardVector pieceboardhistory;
+    int winner;
+
+    std::vector<PieceBoard>  possiblepieceboards;
+    std::vector<PieceBoard>  pieceboardhistory;
     PieceBoard pieceboard;
 
     Board();
-    Board(bool paused);
-    void reset();
-    void reset(Board oldboard);
-    void initBoard();
-    void printBoard() const;
+    void printBoard();
     void generateLegalMoves();
     void doMove(const PieceBoard new_pieceboard);
     void undoMove();
 
 private:
-    void move(PieceBoard &pieceboard, int pos, int topos);
-    bool crownIf(PieceBoard &pieceboard, const Piece &p, const int &pos);
-    void crown(PieceBoard &pieceboard, const Piece &p, const int &pos);
-    void bearOff(PieceBoard &pieceboard, const Piece &p, const int &pos);
-    void remove(PieceBoard &pieceboard, const Piece &p, const int &pos);
-    PosSet checkSingles(const Piece &piece, const int &pos) const;
-    void addPieceMoves(const Piece &piece, const int &pos);
+    void move(PieceBoard &pieceboard, Pos pos, Pos toPos);
+    bool crownIf(PieceBoard &pieceboard, Pos pos);
+    void crown(PieceBoard &pieceboard, Pos pos);
+    void bearOff(PieceBoard &pieceboard, Pos pos);
+    void remove(PieceBoard &pieceboard, Pos pos);
+    PosSet checkSingles(Pos pos);
+    void addPieceMoves(Pos pos);
     void addImpassable();
     void newBoard();
-    void getPieceCount();
-    bool ifTransposable(const Piece &piece, const int &piecerow, const int &i, const int &topos) const;
-    bool ifEmptySquare(const int &pos) const;
+    bool isTransposable(Pos pos, Pos toPos);
+    void checkImpasseForPos(Pos pos);
+    void changeTurn();
 };

@@ -1,71 +1,99 @@
 #include "common.h"
 
 Piece::Piece(){};
-Piece::Piece(int piece, int color, int pos) : piece(piece), color(color)
+Piece::Piece(int pieceCount, int color) : pieceCount(pieceCount), color(color)
 {
-    getDirection();
-    getDistance(pos);
+    setDirection();
+    // getDistance(pos);
 };
+
+
+bool inside(Pos pos) {
+  return pos.row >= 0 && pos.row < ROWS && pos.col >= 0 && pos.col < COLS;
+}
+
+bool Piece::isSingle() {
+  return pieceCount == SINGLE_COUNT;
+}
+
+bool Piece::isDouble() {
+  return pieceCount == DOUBLE_COUNT;
+}
+
 // Update the direction of the piece
-void Piece::getDirection() { direction = (piece == 1 && color == 1 || piece == 2 && color == -1) ? 1 : -1; };
+void Piece::setDirection() { 
+  direction = (isDouble() && color == WHITE || isSingle() && color == BLACK) ? DOWN_DIR : UP_DIR; 
+}
+
+// bool Piece::operator==(const Piece& p) const {
+//   if (p.pos == pos) {
+//     assert(piece_count == p.piece_count && p.color == color && p.direction == direction);
+//   }
+//   return p.pos == pos;
+// }
+
+// bool Piece::operator!=(const Piece& p) const {
+//   return !(*this == p);
+// }
+
 // Update the distance of the piece from its last row
-int Piece::getDistance(const int &pos)
-{
-    const int row = pos / 8;
+int Piece::getDistance(const Pos &pos) {
     const int olddistance = distance;
-    distance = (direction == 1) ? 7 - row : row;
+    distance = (direction == DOWN_DIR) ? ROWS - pos.row : pos.row;
     return distance - olddistance;
 };
-Move::Move()
-{
-    from = -1;
-    to = -1;
-    remove = -1;
+
+Move::Move() {
+    from = EMPTY_POSE;
+    to = EMPTY_POSE;
+    remove = EMPTY_POSE;
 };
-Move::Move(int from, int to, int remove) : from(from), to(to), remove(remove){};
-bool Move::operator<(const Move &other) const { return from < other.from && to < other.to && remove < other.remove; };
+
+Move::Move(Pos from, Pos to, Pos remove) : from(from), to(to), remove(remove){};
+
+bool Move::operator<(const Move &other) const { 
+  return from < other.from && to < other.to && remove < other.remove; 
+}
 
 // Convert chess notation to board position
-int parseMove(const std::string &notation)
-{
-    if (notation.size() != 2)
+Pos parseMove(const std::string &s) {
+    if (s.size() != 2)
     {
-        return -1;
+        return EMPTY_POSE;
     };
-    char letter = tolower(notation[0]);
-    int row = notation[1] - '1';
+    char letter = tolower(s[0]);
+    int row = s[1] - '1';
     int col = (int)letter - 97;
-    row = (int)row;
-    int pos = col + 8 * row;
-    if (pos < 0 || pos > 63)
-    {
-        return -1;
-    };
-    return pos;
+    if (!inside(Pos(row, col))) {
+      return EMPTY_POSE;
+    }
+    return Pos(row, col);
 };
+
 // Convert board position to chess notation
-std::string reverseParseMove(int pos)
+std::string reverseParseMove(Pos pos)
 {
-    int col = pos % 8;
-    int row = pos / 8;
-    char letter = toupper((char)(col + 97));
-    char number = (char)(row + 49);
+    int col = pos.col;
+    int row = pos.row;
+    char letter = toupper((char)(col + 'a'));
+    char number = (char)(row + '1');
     std::string notation = "";
     notation += letter;
     notation += number;
     return notation;
-};
+}
+
 // Print a single move
-void printMove(const Move &move)
+void printMove(Move move)
 {
     std::cout << "From " << reverseParseMove(move.from);
-    if (move.to != -1)
+    if (!(move.to == EMPTY_POSE))
     {
         std::cout << " to " << reverseParseMove(move.to);
     };
-    if (move.remove != -1)
+    if (!(move.remove == EMPTY_POSE))
     {
         std::cout << " removing " << reverseParseMove(move.remove);
     };
     std::cout << std::endl;
-};
+}
