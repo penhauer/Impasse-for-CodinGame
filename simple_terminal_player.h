@@ -8,5 +8,6 @@
 class SimpleTerminalPlayer: public Player {
 
   public:
+    SimpleTerminalPlayer(int color) : Player(color){};
     int decideOnBoard(State state) override;
 };

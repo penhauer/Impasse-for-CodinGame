@@ -30,6 +30,10 @@ void Piece::makeDouble() {
   setDirection();
 }
 
+bool Piece::IsNoPiece() {
+  return pieceCount == NO_PIECE.pieceCount;
+}
+
 
 
 Move::Move() {

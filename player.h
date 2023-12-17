@@ -5,9 +5,16 @@
 
 
 class Player {
+  private:
 
-public:
-  virtual int decideOnBoard(State state) = 0;
+  public:
+    int color;
+
+    Player(int color) {
+      this->color = color;
+    }
+
+    virtual int decideOnBoard(State state) = 0;
 };
 
 

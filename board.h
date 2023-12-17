@@ -15,6 +15,7 @@ class PieceBoard {
   public:
     int winner;
     PieceCount piececount;
+    Piece table[ROWS * COLS / 2]; 
 
     int transitions[2] = {0, 0};
     int distances[2] = {26, 26};
@@ -25,11 +26,9 @@ class PieceBoard {
     int evaluate(int color) const;
 
 
-    Piece table[ROWS * COLS / 2]; 
 
 
     void placePieces();
-
     Piece getPiece(Pos pos);
     void setPiece(Pos pos, Piece piece);
     void removePiece(Pos pos);
@@ -43,6 +42,13 @@ class PieceBoard {
     void crown(Pos pos);
     void bearOff(Pos pos);
     void remove(Pos pos);
+
+
+    static inline int getCrowningRow(int color);
+    static inline int getBearOffRow(int color);
+    static inline bool canCrown(Piece piece, Pos toPos);
+    static inline bool canBearOff(Piece piece, Pos toPos);
+    static int getDistanceToGoalRow(Piece piece, Pos pos);
 };
 
 

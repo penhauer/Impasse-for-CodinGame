@@ -59,10 +59,12 @@ const Pos EMPTY_POSE = Pos(-1, -1);
 
 class Piece
 {
-  public:
+  private:
     short pieceCount;
-    short color;
     short direction;
+
+  public:
+    short color;
 
     Piece();
     Piece(int pieceCount, int color);
@@ -70,8 +72,14 @@ class Piece
 
     void makeSingle();
     void makeDouble();
+
     bool isSingle();
     bool isDouble();
+    bool IsNoPiece();
+
+    short getDirection() {
+      return direction;
+    }
 
   private:
     void setDirection();

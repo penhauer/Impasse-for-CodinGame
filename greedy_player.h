@@ -4,8 +4,10 @@
 
 
 class GreedyPlayer: public Player {
+  private:
+    int evaluateBoard(PieceBoard &pieceBoard);
 
   public:
-    GreedyPlayer();
+    GreedyPlayer(int color) : Player(color) {};
     int decideOnBoard(State state) override;
 };

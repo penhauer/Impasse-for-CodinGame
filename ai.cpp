@@ -4,7 +4,7 @@
 #include <cassert>
 #include <vector>
 
-Ai::Ai(int color, int AITime) : color(color), AITime(AITime) { 
+Ai::Ai(int color, int AITime) : color(color), AITime(AITime), Player(color) { 
   initZobristTable(); 
 }
 
@@ -179,26 +179,14 @@ HashValue Ai::getHashValue(PieceBoard &pb, const int &turn)
             switch (p.color)
             {
             case WHITE:
-                switch (p.pieceCount)
-                {
-                case SINGLE_COUNT:
-                    piece = 1;
-                    break;
-                case DOUBLE_COUNT:
-                    piece = 2;
-                    break;
-                };
+                if (p.isSingle())
+                  piece = 1;
+                else piece = 2;
                 break;
             case BLACK:
-                switch (p.pieceCount)
-                {
-                case SINGLE_COUNT:
-                    piece = 3;
-                    break;
-                case DOUBLE_COUNT:
-                    piece = 4;
-                    break;
-                };
+                if (p.isSingle())
+                  piece = 3;
+                else piece = 4;
                 break;
             };
             value ^= zobristtable.at(turn).at(i).at(piece);

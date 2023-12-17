@@ -177,7 +177,7 @@ void PieceBoard::doSanityCheck() {
       if (!isEmpty(Pos(i, j))) {
         Piece piece = getPiece(Pos(i, j));
         int d = (piece.isDouble() && piece.color == WHITE || piece.isSingle() && piece.color == BLACK) ? DOWN_DIR : UP_DIR; 
-        assert(d == piece.direction);
+        assert(d == piece.getDirection());
 
         if (piece.isSingle()) {
           if (piece.color == WHITE)
@@ -209,7 +209,7 @@ void PieceBoard::doSanityCheck() {
       assert(!isEmpty(pos));
       Piece piece = getPiece(pos);
       assert(piece.color == color);
-      int r = pos.row + piece.direction;
+      int r = pos.row + piece.getDirection();
       assert(r < 0 || r >= ROWS);
       assert(piece.isSingle());
     }
@@ -355,6 +355,9 @@ void PieceBoard::remove(Pos pos) {
   }
 }
 
+
+
+
 // Create set of singles color matching the player in turn for crowning
 std::vector<Pos> State::checkSingles(Pos currentPiecePos)
 {
@@ -381,7 +384,7 @@ bool State::isTransposable(Pos pos, Pos toPos) {
   }
   Piece piece = pieceboard.getPiece(pos);
   Piece toPiece = pieceboard.getPiece(toPos);
-  if (abs(pos.col - toPos.col) != 1 || (pos.row + piece.direction) != toPos.row) {
+  if (abs(pos.col - toPos.col) != 1 || (pos.row + piece.getDirection()) != toPos.row) {
     return false;
   }
   if (toPiece.color != piece.color) {
@@ -405,26 +408,37 @@ bool State::isTransposable(Pos pos, Pos toPos) {
 // Return true if position is empty
 bool PieceBoard::isEmpty(Pos pos) {
   Piece p = getPiece(pos);
-  return p.pieceCount == NO_PIECE.pieceCount;
+  return p.IsNoPiece();
+}
+
+inline int PieceBoard::getCrowningRow(int color) {
+  return color == WHITE ? 0 : ROWS - 1;
+}
+
+inline int PieceBoard::getBearOffRow(int color) {
+  return color == WHITE ? ROWS - 1 : 0;
 }
 
 // can piece crown if it moves to toPos?
-bool canCrown(Piece piece, Pos toPos) {
-  int crowningRow = piece.color == WHITE ? 0 : ROWS - 1;
-  return piece.isSingle() && toPos.row == crowningRow;
+inline bool PieceBoard::canCrown(Piece piece, Pos toPos) {
+  return piece.isSingle() && toPos.row == getCrowningRow(piece.color);
 }
 
 // can piece bearOff if it moves to toPos?
-bool canBearOff(Piece piece, Pos toPos) {
-  int bearOffRow = piece.color == WHITE ? ROWS - 1: 0;
-  return piece.isDouble() && toPos.row == bearOffRow;
+inline bool PieceBoard::canBearOff(Piece piece, Pos toPos) {
+  return piece.isDouble() && toPos.row == getBearOffRow(piece.color);
+}
+
+
+int PieceBoard::getDistanceToGoalRow(Piece piece, Pos pos) {
+  return piece.getDirection() == UP_DIR ? pos.row : ROWS - 1 - pos.row;
 }
 
 
 void State::checkBearOff(Pos pos, Pos toPos) {
   assert(!pieceboard.isEmpty(pos));
   Piece piece = pieceboard.getPiece(pos);
-  if (canBearOff(piece, toPos)){
+  if (PieceBoard::canBearOff(piece, toPos)){
     PieceBoard new_pieceboard = pieceboard;
     new_pieceboard.move(pos, toPos);
     new_pieceboard.remove(toPos);
@@ -442,7 +456,7 @@ void State::checkBearOff(Pos pos, Pos toPos) {
 void State::checkCrown(Pos pos, Pos toPos) {
   assert(!pieceboard.isEmpty(pos));
   Piece piece = pieceboard.getPiece(pos);
-  if (canCrown(piece, toPos)) {
+  if (PieceBoard::canCrown(piece, toPos)) {
     auto singles = checkSingles(pos);
     // If other single available
     if (singles.size() > 0) {
@@ -480,7 +494,7 @@ void State::addPieceMoves(Pos pos) {
   Piece piece = pieceboard.getPiece(pos);
 
   // Separate left and right search
-  int dr = piece.direction;
+  int dr = piece.getDirection();
   for (int dc = -1; dc <= 1; dc += 2) {
     for (int steps = 1; ; steps++) {
       int toRow = pos.row + dr * steps;
