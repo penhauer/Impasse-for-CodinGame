@@ -9,12 +9,12 @@ class Game {
 
   public:
     int turns = 0;
-
-    Game();
-    int gameLoop(Player *white, Player *black);
+    Player *white, *black;
+    Game(Player *white, Player *black);
+    int gameLoop();
 
   private:
-    Board board;
+    State board;
     std::tuple<bool, PieceBoard> trySelect(Pos pos, PieceBoard pb);
     std::tuple<int, int> timer;
 

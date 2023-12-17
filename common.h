@@ -63,7 +63,6 @@ class Piece
     int pieceCount;
     int color;
     int direction;
-    int distance;
 
     Piece();
     Piece(int pieceCount, int color);
@@ -71,12 +70,8 @@ class Piece
 
     void makeSingle();
     void makeDouble();
-
-    int getDistance(const Pos &pos);
-
     bool isSingle();
     bool isDouble();
-
 
   private:
     void setDirection();

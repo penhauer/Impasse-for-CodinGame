@@ -4,12 +4,14 @@
 #include "common.h"
 
 // Init game if savegame was available
-Game::Game() {
-  board = Board();
+Game::Game(Player *white, Player *black) {
+  board = State();
+  this->white = white;
+  this->black = black;
 }
 
 
-int Game::gameLoop(Player *white, Player *black) {
+int Game::gameLoop() {
   // While game is not over
   while (board.winner == BOARD_GAME_ONGOING) {
     // If it's the player's turn
@@ -40,6 +42,7 @@ int Game::gameLoop(Player *white, Player *black) {
     }
 
     board.doMove(moveNumber);
+    // board.printBoard();
 
     turns += 1;
   }

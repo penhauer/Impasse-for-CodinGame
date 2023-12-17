@@ -5,7 +5,6 @@ Piece::Piece(){};
 Piece::Piece(int pieceCount, int color) : pieceCount(pieceCount), color(color)
 {
   setDirection();
-  // getDistance(pos);
 };
 
 bool Piece::isSingle() {
@@ -20,13 +19,6 @@ bool Piece::isDouble() {
 void Piece::setDirection() { 
   direction = (isDouble() && color == WHITE || isSingle() && color == BLACK) ? DOWN_DIR : UP_DIR; 
 }
-
-// Update the distance of the piece from its last row
-int Piece::getDistance(const Pos &pos) {
-  const int olddistance = distance;
-  distance = (direction == DOWN_DIR) ? ROWS - pos.row : pos.row;
-  return distance - olddistance;
-};
 
 void Piece::makeSingle() {
   pieceCount = SINGLE_COUNT;

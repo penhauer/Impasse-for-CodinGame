@@ -17,8 +17,8 @@ void testRandomAgent() {
   int totalTurns = 0;
   int n = 10000;
   for (int i = 0; i < n; i++) {
-    Game game = Game();
-    int winner = game.gameLoop(randomPlayer, randomPlayer);
+    Game game = Game(randomPlayer, randomPlayer);
+    int winner = game.gameLoop();
     // std::cout << "winner is: " << (winner == WHITE ? "white" : "black") << " after" << std::endl;
 
     blackWins += (winner == BLACK) ? 1 : 0;
@@ -30,11 +30,22 @@ void testRandomAgent() {
   cout << "average turns: " << averageTurns << endl;
 }
 
+void testRandomAgentWithSimpleTerminalPlayer() {
+  srand(time(NULL));
+  Player *randomPlayer = new RandomPlayer();
+  Player *user = new SimpleTerminalPlayer();
+  Game game = Game(user, randomPlayer);
+  game.gameLoop();
+}
+
 int main() {
   int timemin = 3;
   Player *white = new SimpleTerminalPlayer();
   auto timer = std::make_tuple(timemin * 60 * 1000, timemin * 60 * 1000);
   Player *black = new Ai(WHITE * -1, std::get<1>(timer));
+
+  testRandomAgent();
+  // testRandomAgentWithSimpleTerminalPlayer();
 
   return 0;
 }

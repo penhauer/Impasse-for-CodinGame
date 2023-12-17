@@ -8,7 +8,7 @@ Ai::Ai(int color, int AITime) : color(color), AITime(AITime) {
   initZobristTable(); 
 }
 
-int Ai::decideOnBoard(Board board) {
+int Ai::decideOnBoard(State board) {
   auto pieceboard = getMove(board);
   int ind = -1;
   for (int i = 0; i < board.possiblepieceboards.size(); i++) {
@@ -24,7 +24,7 @@ int Ai::decideOnBoard(Board board) {
 
 // Use iterative deepening to fill transposition table and find the best move by calling alpha-beta search.
 // Use dynamic time allocation based on the time left and expected number of moves left.
-PieceBoard Ai::getMove(Board board)
+PieceBoard Ai::getMove(State board)
 {
     cutoffs.clear();
     leafnodes = 0;
@@ -59,7 +59,7 @@ PieceBoard Ai::getMove(Board board)
     return pieceboard;
 };
 // Recursively execute Negamax search algorithm using alpha-beta pruning and transposition tables
-std::tuple<int, PieceBoard> Ai::alphaBetaNegaMax(Board board, int depth, int color, int alpha, int beta)
+std::tuple<int, PieceBoard> Ai::alphaBetaNegaMax(State board, int depth, int color, int alpha, int beta)
 {
     HashValue hash = getHashValue(board.pieceboard, color);
     int oldalpha = alpha;

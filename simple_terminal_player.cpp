@@ -1,6 +1,6 @@
 #include "simple_terminal_player.h"
 
-int SimpleTerminalPlayer::decideOnBoard(Board board) {
+int SimpleTerminalPlayer::decideOnBoard(State board) {
   board.printBoard();
   int movesCount = board.possiblepieceboards.size();
   int moveNumber = -1;

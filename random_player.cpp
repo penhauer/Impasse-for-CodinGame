@@ -2,7 +2,7 @@
 #include <cstdlib>
 
 
-int RandomPlayer::decideOnBoard(Board board) {
+int RandomPlayer::decideOnBoard(State board) {
   int movesCount = board.possiblepieceboards.size();
   return rand() % movesCount;
 }
