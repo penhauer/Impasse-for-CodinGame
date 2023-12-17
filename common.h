@@ -5,7 +5,6 @@
 #include <thread>
 #include <algorithm>
 #include <tuple>
-#include <set>
 #include <vector>
 #include <string>
 #include <map>
@@ -21,8 +20,8 @@ const int COLS = 8;
 
 
 
-const int BLACK = -1;
-const int WHITE = 1;
+const int WHITE = 0;
+const int BLACK = 1;
 const int UP_DIR = -1;
 const int DOWN_DIR = 1;
 const int SINGLE_COUNT = 1;

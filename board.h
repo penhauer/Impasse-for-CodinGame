@@ -15,11 +15,9 @@ class PieceBoard {
   public:
     PieceCount piececount;
 
-    std::map<int, int> transitions = {{WHITE, 0}, {BLACK, 0}};
-    std::map<int, int> distances = {{WHITE, 26}, {BLACK, 26}};
-
-    std::map<int, Pos> postocrown;
-    // Pos posToCrown[2] = {EMPTY_POSE, EMPTY_POSE};
+    int transitions[2] = {0, 0};
+    int distances[2] = {26, 26};
+    Pos posToCrown[2] = {EMPTY_POSE, EMPTY_POSE};
 
     Move lastmove;
     PieceBoard();

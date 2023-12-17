@@ -39,15 +39,9 @@ int Game::gameLoop(Player *white, Player *black) {
       moveNumber = black->decideOnBoard(board);
     }
 
-    // std::cout << "\n\n";
-    // std::cout << "Move done: " << board.possiblepieceboards[moveNumber].lastmove.toStr() << std::endl;
     board.doMove(moveNumber);
-    // board.printBoard();
 
     turns += 1;
-    using namespace std;
-    // int x;
-    // cin >> x;
   }
   return board.winner;
 }

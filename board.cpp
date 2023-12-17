@@ -9,17 +9,20 @@ PieceBoard::PieceBoard(){};
 // Evaluate board position based on piece count, number of transitions, and distances from the pieces' last rows
 
 int PieceBoard::evaluate(int color) const {
-  int piecevalue = color * (2 * piececount.blackSingles + 3 * piececount.blackDoubles - 2 * piececount.whiteSingles - 3 * piececount.whiteDoubles);
-  int transitionvalue = transitions.at(color) - transitions.at(-color);
+  int coefficient = (color == WHITE ? 1 : -1);
+  int otherColor = color ^ WHITE ^ BLACK;
+
+  int piecevalue = coefficient * (2 * piececount.blackSingles + 3 * piececount.blackDoubles - 2 * piececount.whiteSingles - 3 * piececount.whiteDoubles);
+  int transitionvalue = transitions[color] - transitions[otherColor];
   // Average distances from last row for each color
   int distancevalue = 0;
-  if (color == 1)
+  if (color == WHITE)
   {
-    int distancevalue = distances.at(color) / (piececount.whiteSingles + piececount.whiteDoubles + 1) - distances.at(-color) / (piececount.blackDoubles + piececount.blackSingles + 1);
+    int distancevalue = distances[color] / (piececount.whiteSingles + piececount.whiteDoubles + 1) - distances[-otherColor] / (piececount.blackDoubles + piececount.blackSingles + 1);
   }
   else
   {
-    int distancevalue = distances.at(color) / (piececount.blackDoubles + piececount.blackSingles + 1) - distances.at(-color) / (piececount.whiteSingles + piececount.whiteDoubles + 1);
+    int distancevalue = distances[color] / (piececount.blackDoubles + piececount.blackSingles + 1) - distances[-otherColor] / (piececount.whiteSingles + piececount.whiteDoubles + 1);
   };
   return 10 * piecevalue + 6 * transitionvalue - distancevalue;
 };
@@ -38,7 +41,7 @@ void PieceBoard::removePiece(Pos pos) {
 
 Board::Board() {
   pieceboardhistory.clear();
-  pieceboard.postocrown.clear();
+  pieceboard.posToCrown[0] = pieceboard.posToCrown[1] = EMPTY_POSE;
 
   turn = WHITE;
   winner = BOARD_GAME_ONGOING;
@@ -198,9 +201,8 @@ void PieceBoard::doSanityCheck() {
   int colors[2] = {WHITE, BLACK};
   for (int i = 0; i < 2; i++) {
     int color = colors[i];
-    if (postocrown.count(color) > 0) {
-      assert(postocrown.count(color) == 1);
-      auto pos = postocrown.at(color);
+    if (!(posToCrown[color] == EMPTY_POSE)) {
+      auto pos = posToCrown[color];
       assert(pos.row == 0 || pos.row == ROWS - 1);
       assert(!isEmpty(pos));
       Piece piece = getPiece(pos);
@@ -219,8 +221,8 @@ void PieceBoard::doSanityCheck() {
       Pos pos = Pos(crowningRow, col);
       if (!isEmpty(pos)) {
         Piece piece = getPiece(pos);
-        if (piece.color == color && piece.isSingle() && postocrown.count(color) > 0) {
-          assert(pos == postocrown.at(color));
+        if (piece.color == color && piece.isSingle() && !(posToCrown[color] == EMPTY_POSE)) {
+          assert(pos == posToCrown[color]);
         }
       }
     }
@@ -266,10 +268,10 @@ void Board::crown(PieceBoard &pieceboard, Pos pos) {
       break;
   }
 
-  if (pieceboard.postocrown.count(piece.color) > 0) {
-    Pos toCrownPos = pieceboard.postocrown.at(piece.color);
+  if (!(pieceboard.posToCrown[piece.color] == EMPTY_POSE)) {
+    Pos toCrownPos = pieceboard.posToCrown[piece.color];
     if (pos == toCrownPos) {
-      pieceboard.postocrown.erase(piece.color);
+      pieceboard.posToCrown[piece.color] = EMPTY_POSE;
     }
   }
 
@@ -304,8 +306,8 @@ void Board::bearOff(PieceBoard &pieceboard, Pos pos) {
     // either this piece or that one. But in the case we're crowning this one
     // we make sure first the other piece in this row is removed and then this one
     // is crowed
-    assert(pieceboard.postocrown.count(piece.color) == 0);
-    pieceboard.postocrown[piece.color] = pos;
+    assert(pieceboard.posToCrown[piece.color] == EMPTY_POSE);
+    pieceboard.posToCrown[piece.color] = pos;
   }
 
   piece.makeSingle();
@@ -331,12 +333,10 @@ void Board::remove(PieceBoard &pieceboard, Pos pos) {
         pieceboard.piececount.blackSingles--;
         break;
     }
-    if (pieceboard.postocrown.count(piece.color) > 0) {
-      Pos posToCrown = pieceboard.postocrown.at(piece.color);
-      assert(pieceboard.postocrown.count(piece.color) == 1);
+    if (!(pieceboard.posToCrown[piece.color] == EMPTY_POSE)) {
+      Pos posToCrown = pieceboard.posToCrown[piece.color];
       if (posToCrown == pos) {
-        pieceboard.postocrown.erase(piece.color);
-        assert(pieceboard.postocrown.count(piece.color) == 0);
+        pieceboard.posToCrown[piece.color] = EMPTY_POSE;
       }
     }
     pieceboard.removePiece(pos);
@@ -458,7 +458,7 @@ void Board::checkCrown(Pos pos, Pos toPos) {
       PieceBoard new_pieceboard = pieceboard;
       new_pieceboard.lastmove = Move(pos, toPos, EMPTY_POSE);
       move(new_pieceboard, pos, toPos);
-      new_pieceboard.postocrown[piece.color] = toPos;
+      new_pieceboard.posToCrown[piece.color] = toPos;
       possiblepieceboards.push_back(new_pieceboard);
     }
   }
@@ -533,8 +533,10 @@ void Board::move(PieceBoard &pieceboard, Pos pos, Pos toPos) {
 // Check if there's a piece waiting to be crowned, and if so, crown it with the current piece
 Pos Board::crownIf(PieceBoard &pieceboard, Pos pos) {
   bool crowned = false;
-  if (pieceboard.postocrown.count(turn) > 0) {
-    Pos crownpiecepos = pieceboard.postocrown.at(turn);
+  assert(!pieceboard.isEmpty(pos));
+  Piece piece = pieceboard.getPiece(pos);
+  if (!(pieceboard.posToCrown[piece.color] == EMPTY_POSE)) {
+    Pos crownpiecepos = pieceboard.posToCrown[piece.color];
     crown(pieceboard, crownpiecepos);
     remove(pieceboard, pos);
     return crownpiecepos;
@@ -550,10 +552,10 @@ void Board::checkImpasseForPos(Pos pos) {
   // If so, in case of impasse of this double, 2 crownings are made possible.
   // If not, just add the double as a normal impasse move.
   if (piece.isDouble()) {
-    if ((pos.row == 0 || pos.row == ROWS - 1) && pieceboard.postocrown.count(turn) > 0)
+    if ((pos.row == 0 || pos.row == ROWS - 1) && !(pieceboard.posToCrown[piece.color] == EMPTY_POSE))
     {
       PieceBoard new_pieceboard = pieceboard;
-      Pos removepiecepos = pieceboard.postocrown.at(turn);
+      Pos removepiecepos = pieceboard.posToCrown[piece.color];
       remove(new_pieceboard, removepiecepos);
       remove(new_pieceboard, pos);
       crown(new_pieceboard, pos);
