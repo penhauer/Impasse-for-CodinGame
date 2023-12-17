@@ -5,7 +5,10 @@
 #include <iostream>
 #include <vector>
 
-PieceBoard::PieceBoard(){};
+PieceBoard::PieceBoard(){
+  winner = BOARD_GAME_ONGOING;
+  placePieces();
+};
 // Evaluate board position based on piece count, number of transitions, and distances from the pieces' last rows
 
 int PieceBoard::evaluate(int color) const {
@@ -44,9 +47,7 @@ State::State() {
   pieceboard.posToCrown[0] = pieceboard.posToCrown[1] = EMPTY_POSE;
 
   turn = WHITE;
-  winner = BOARD_GAME_ONGOING;
 
-  newBoard();
   generateLegalMoves();
 };
 
@@ -161,7 +162,6 @@ void State::doMove(int moveNumber) {
 void State::doMove(const PieceBoard nextPieceBoard) {
   pieceboardhistory.push_back(pieceboard);
   pieceboard = nextPieceBoard;
-  checkWinner();
   changeTurn();
   generateLegalMoves();
 }
@@ -344,6 +344,11 @@ void PieceBoard::remove(Pos pos) {
   }
 
   // pieceboard.distances[p.color] -= p.distance;
+  if (piececount.whiteSingles + piececount.whiteDoubles == 0) {
+    winner = BOARD_WHITE_WON;
+  } else if (piececount.blackSingles + piececount.blackDoubles == 0) {
+    winner = BOARD_BLACK_WON;
+  }
 }
 
 // Create set of singles color matching the player in turn for crowning
@@ -586,19 +591,11 @@ void State::addImpassable() {
 };
 
 
-void State::checkWinner() {
-  if (pieceboard.piececount.whiteSingles + pieceboard.piececount.whiteDoubles == 0) {
-    winner = BOARD_WHITE_WON;
-  } else if (pieceboard.piececount.blackSingles + pieceboard.piececount.blackDoubles == 0) {
-    winner = BOARD_BLACK_WON;
-  }
-}
-
 // Create new board
-void State::newBoard() {
+void PieceBoard::placePieces() {
   for (int i = 0; i < ROWS; i++) {
     for (int j = 0; j < COLS; j++) {
-      pieceboard.removePiece(Pos(i, j));
+      removePiece(Pos(i, j));
     }
   }
 
@@ -647,13 +644,13 @@ void State::newBoard() {
   };
 
   for (int i = 0; i < 16; i++) {
-    pieceboard.setPiece(poses[i], pieces[i]);
+    setPiece(poses[i], pieces[i]);
   }
 
-  pieceboard.piececount.whiteDoubles = 4;
-  pieceboard.piececount.whiteSingles = 4;
+  piececount.whiteDoubles = 4;
+  piececount.whiteSingles = 4;
 
-  pieceboard.piececount.blackSingles = 4;
-  pieceboard.piececount.blackDoubles = 4;
+  piececount.blackSingles = 4;
+  piececount.blackDoubles = 4;
 }
 

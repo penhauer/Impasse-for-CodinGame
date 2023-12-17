@@ -12,7 +12,7 @@ Game::Game(Player *white, Player *black) {
 
 
 int Game::gameLoop() {
-  while (board.winner == BOARD_GAME_ONGOING) {
+  while (board.pieceboard.winner == BOARD_GAME_ONGOING) {
     int moveNumber = -1;
     if (board.turn == WHITE) {
       moveNumber = white->decideOnBoard(board);
@@ -25,6 +25,6 @@ int Game::gameLoop() {
 
     turns += 1;
   }
-  return board.winner;
+  return board.pieceboard.winner;
 }
 

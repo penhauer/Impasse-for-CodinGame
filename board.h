@@ -13,6 +13,7 @@ struct PieceCount {
 
 class PieceBoard {
   public:
+    int winner;
     PieceCount piececount;
 
     int transitions[2] = {0, 0};
@@ -26,6 +27,8 @@ class PieceBoard {
 
     Piece table[ROWS][COLS]; 
 
+
+    void placePieces();
 
     Piece getPiece(Pos pos);
     void setPiece(Pos pos, Piece piece);
@@ -52,7 +55,6 @@ const int BOARD_BLACK_WON = BLACK;
 class State {
   public:
     int turn;
-    int winner;
 
     std::vector<PieceBoard>  possiblepieceboards;
     std::vector<PieceBoard>  pieceboardhistory;
@@ -76,7 +78,6 @@ class State {
     std::vector<Pos> checkSingles(Pos pos);
     void addPieceMoves(Pos pos);
     void addImpassable();
-    void newBoard();
     void changeTurn();
 
     bool isTransposable(Pos pos, Pos toPos);
@@ -85,7 +86,6 @@ class State {
     void checkBearOff(Pos pos, Pos toPos);
     void checkCrown(Pos pos, Pos toPos);
     void doSimpleMove(Pos pos, Pos toPos);
-    void checkWinner();
 
     bool inside(Pos pos);
 };

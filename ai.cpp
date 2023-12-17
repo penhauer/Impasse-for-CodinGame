@@ -82,7 +82,7 @@ std::tuple<int, PieceBoard> Ai::alphaBetaNegaMax(State board, int depth, int col
             return std::make_tuple(tt.at(hash).score, board.pieceboard);
         };
     };
-    if (depth == 0 || board.winner != BOARD_GAME_ONGOING)
+    if (depth == 0 || board.pieceboard.winner != BOARD_GAME_ONGOING)
     {
         leafnodes += 1;
         return std::make_tuple(board.pieceboard.evaluate(color), board.pieceboard);
