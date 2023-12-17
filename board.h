@@ -25,7 +25,7 @@ class PieceBoard {
     int evaluate(int color) const;
 
 
-    Piece table[ROWS][COLS]; 
+    Piece table[ROWS * COLS / 2]; 
 
 
     void placePieces();

@@ -30,12 +30,16 @@ int PieceBoard::evaluate(int color) const {
   return 10 * piecevalue + 6 * transitionvalue - distancevalue;
 };
 
+inline int getInd(Pos pos) {
+  return (pos.row << 2) + (pos.col >> 1);
+}
+
 Piece PieceBoard::getPiece(Pos pos){
-  return table[pos.row][pos.col];
+  return table[getInd(pos)];
 }
 
 void PieceBoard::setPiece(Pos pos, Piece piece) {
-  table[pos.row][pos.col] = piece;
+  table[getInd(pos)] = piece;
 }
 
 void PieceBoard::removePiece(Pos pos) {
@@ -137,7 +141,7 @@ void PieceBoard::printBoard() {
 void State::generateLegalMoves() {
   possiblepieceboards.clear();
   for (int i = 0; i < ROWS; i++)
-    for (int j = 0; j < COLS; j++) {
+    for (int j = (1 - i % 2); j < COLS; j += 2) {
       Pos pos = Pos(i, j);
       if (!pieceboard.isEmpty(pos)) {
         Piece piece = pieceboard.getPiece(pos);
@@ -169,7 +173,7 @@ void State::doMove(const PieceBoard nextPieceBoard) {
 void PieceBoard::doSanityCheck() {
   PieceCount pc = PieceCount();
   for (int i = 0; i < ROWS; i++)
-    for (int j = 0; j < COLS; j++) {
+    for (int j = (1 - i % 2); j < COLS; j += 2) {
       if (!isEmpty(Pos(i, j))) {
         Piece piece = getPiece(Pos(i, j));
         int d = (piece.isDouble() && piece.color == WHITE || piece.isSingle() && piece.color == BLACK) ? DOWN_DIR : UP_DIR; 
@@ -358,7 +362,7 @@ std::vector<Pos> State::checkSingles(Pos currentPiecePos)
   Piece currentPiece = pieceboard.getPiece(currentPiecePos);
   std::vector<Pos> singles;
   for (int i = 0; i < ROWS; i++)
-    for (int j = 0; j < COLS; j++) {
+    for (int j = (1 - i % 2); j < COLS; j += 2) {
       Pos pos = Pos(i, j);
       if (!pieceboard.isEmpty(pos)) {
         Piece p = pieceboard.getPiece(pos);
@@ -579,7 +583,7 @@ void State::checkImpasseForPos(Pos pos) {
 // Add all legal impasse moves
 void State::addImpassable() {
   for (int i = 0; i < ROWS; i++)
-    for (int j = 0; j < COLS; j++) {
+    for (int j = (1 - i % 2); j < COLS; j += 2) {
       Pos pos = Pos(i, j);
       if (!pieceboard.isEmpty(pos)) {
         Piece piece = pieceboard.getPiece(pos);
@@ -594,7 +598,7 @@ void State::addImpassable() {
 // Create new board
 void PieceBoard::placePieces() {
   for (int i = 0; i < ROWS; i++) {
-    for (int j = 0; j < COLS; j++) {
+    for (int j = (1 - i % 2); j < COLS; j += 2) {
       removePiece(Pos(i, j));
     }
   }
