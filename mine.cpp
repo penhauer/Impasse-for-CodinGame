@@ -44,7 +44,7 @@ int main() {
 
     int blackWins = 0;
     int whiteWins = 0;
-    for (int i = 0; i < 10000; i++) {
+    for (int i = 0; i < 1000; i++) {
       Game game = Game();
       int winner = game.gameLoop(randomPlayer, randomPlayer);
       std::cout << "winner is: " << (winner == WHITE ? "white" : "black") << " after" << std::endl;

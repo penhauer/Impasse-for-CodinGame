@@ -3,6 +3,7 @@
 #include <cassert>
 #include <cstdlib>
 #include <iostream>
+#include <vector>
 
 PieceBoard::PieceBoard(){};
 // Evaluate board position based on piece count, number of transitions, and distances from the pieces' last rows
@@ -153,7 +154,6 @@ void Board::doMove(int moveNumber) {
   PieceBoard nextPieceBoard = possiblepieceboards[moveNumber];
   pieceboardhistory.push_back(nextPieceBoard);
   pieceboard = nextPieceBoard;
-  pieceboard.doSanityCheck();
   changeTurn();
   generateLegalMoves();
 }
@@ -161,7 +161,6 @@ void Board::doMove(int moveNumber) {
 void Board::doMove(const PieceBoard nextPieceBoard) {
     pieceboardhistory.push_back(pieceboard);
     pieceboard = nextPieceBoard;
-    pieceboard.doSanityCheck();
     changeTurn();
     generateLegalMoves();
 }
@@ -252,7 +251,6 @@ void Board::changeTurn() {
 
 // Turn single piece into double
 void Board::crown(PieceBoard &pieceboard, Pos pos) {
-  // TODO: if piece was waiting to be crown erase postocrown
   assert(!pieceboard.isEmpty(pos));
   Piece piece = pieceboard.getPiece(pos);
     
@@ -266,7 +264,15 @@ void Board::crown(PieceBoard &pieceboard, Pos pos) {
         pieceboard.piececount.blackDoubles++;
         pieceboard.piececount.blackSingles--;
         break;
-    };
+    }
+
+    if (pieceboard.postocrown.count(piece.color) > 0) {
+      Pos toCrownPos = pieceboard.postocrown.at(piece.color);
+      if (pos == toCrownPos) {
+        pieceboard.postocrown.erase(piece.color);
+      }
+    }
+
     pieceboard.transitions[piece.color] ++;
     piece.makeDouble();
     pieceboard.setPiece(pos, piece);
@@ -288,7 +294,20 @@ void Board::bearOff(PieceBoard &pieceboard, Pos pos) {
         pieceboard.piececount.blackDoubles--;
         pieceboard.piececount.blackSingles++;
         break;
-    };
+    }
+
+    int crowningRow = piece.color == WHITE ? 0 : ROWS - 1;
+    if (pos.row == crowningRow) {
+      // this happens in case of impasse
+      // when removing the top checker of a double piece making it a single piece
+      // in this case if there is any single piece in the same row we should crown
+      // either this piece or that one. But in the case we're crowning this one
+      // we make sure first the other piece in this row is removed and then this one
+      // is crowed
+      assert(pieceboard.postocrown.count(piece.color) == 0);
+      pieceboard.postocrown[piece.color] = pos;
+    }
+
     piece.makeSingle();
     pieceboard.setPiece(pos, piece);
     pieceboard.transitions[piece.color]++;
@@ -315,8 +334,10 @@ void Board::remove(PieceBoard &pieceboard, Pos pos) {
     if (pieceboard.postocrown.count(piece.color) > 0) {
       Pos posToCrown = pieceboard.postocrown.at(piece.color);
       assert(pieceboard.postocrown.count(piece.color) == 1);
-      if (posToCrown == pos)
+      if (posToCrown == pos) {
         pieceboard.postocrown.erase(piece.color);
+        assert(pieceboard.postocrown.count(piece.color) == 0);
+      }
     }
     pieceboard.removePiece(pos);
   } else if (piece.isDouble()) {
@@ -326,7 +347,6 @@ void Board::remove(PieceBoard &pieceboard, Pos pos) {
 
     // pieceboard.distances[p.color] -= p.distance;
 
-
     if (pieceboard.piececount.whiteSingles + pieceboard.piececount.whiteDoubles == 0) {
         winner = BOARD_WHITE_WON;
     } else if (pieceboard.piececount.blackSingles + pieceboard.piececount.blackDoubles == 0) {
@@ -335,20 +355,18 @@ void Board::remove(PieceBoard &pieceboard, Pos pos) {
 }
 
 // Create set of singles color matching the player in turn for crowning
-PosSet Board::checkSingles(Pos currentPiecePos)
+std::vector<Pos> Board::checkSingles(Pos currentPiecePos)
 {
   assert(!pieceboard.isEmpty(currentPiecePos));
   Piece currentPiece = pieceboard.getPiece(currentPiecePos);
-  PosSet singles;
-  // std::vector<Pos> singles;
+  std::vector<Pos> singles;
   for (int i = 0; i < ROWS; i++)
     for (int j = 0; j < COLS; j++) {
       Pos pos = Pos(i, j);
       if (!pieceboard.isEmpty(pos)) {
         Piece p = pieceboard.getPiece(pos);
         if (p.isSingle() && p.color == currentPiece.color && !(pos == currentPiecePos)) {
-          singles.insert(pos);
-          // singles.push_back(pos);
+          singles.push_back(pos);
         }
       }
     }
@@ -389,80 +407,107 @@ bool PieceBoard::isEmpty(Pos pos) {
   return p.pieceCount == NO_PIECE.pieceCount;
 }
 
+// can piece crown if it moves to toPos?
+bool canCrown(Piece piece, Pos toPos) {
+  int crowningRow = piece.color == WHITE ? 0 : ROWS - 1;
+  return piece.isSingle() && toPos.row == crowningRow;
+}
+
+// can piece bearOff if it moves to toPos?
+bool canBearOff(Piece piece, Pos toPos) {
+  int bearOffRow = piece.color == WHITE ? ROWS - 1: 0;
+  return piece.isDouble() && toPos.row == bearOffRow;
+}
+
+
+void Board::checkBearOff(Pos pos, Pos toPos) {
+  assert(!pieceboard.isEmpty(pos));
+  Piece piece = pieceboard.getPiece(pos);
+  if (canBearOff(piece, toPos)){
+    PieceBoard new_pieceboard = pieceboard;
+    move(new_pieceboard, pos, toPos);
+    remove(new_pieceboard, toPos);
+    Pos crownedPiecePos = crownIf(new_pieceboard, toPos);
+    if (!(crownedPiecePos == EMPTY_POSE)) {
+      new_pieceboard.lastmove = Move(pos, toPos, pos);
+    } else {
+      new_pieceboard.lastmove = Move(pos, toPos, EMPTY_POSE);
+    }
+    possiblepieceboards.push_back(new_pieceboard);
+  }
+}
+
+
+void Board::checkCrown(Pos pos, Pos toPos) {
+  assert(!pieceboard.isEmpty(pos));
+  Piece piece = pieceboard.getPiece(pos);
+  if (canCrown(piece, toPos)) {
+    auto singles = checkSingles(pos);
+    // If other single available
+    if (singles.size() > 0) {
+      for (auto removepiecepos : singles) {
+        PieceBoard new_pieceboard = pieceboard;
+        new_pieceboard.lastmove = Move(pos, toPos, removepiecepos);
+        move(new_pieceboard, pos, toPos);
+        crown(new_pieceboard, toPos);
+        remove(new_pieceboard, removepiecepos);
+        possiblepieceboards.push_back(new_pieceboard);
+      }
+    } else {
+      // if no other singles available, just add as normal slide (and add to crownstack)
+      PieceBoard new_pieceboard = pieceboard;
+      new_pieceboard.lastmove = Move(pos, toPos, EMPTY_POSE);
+      move(new_pieceboard, pos, toPos);
+      new_pieceboard.postocrown[piece.color] = toPos;
+      possiblepieceboards.push_back(new_pieceboard);
+    }
+  }
+}
+
+
+void Board::doSimpleMove(Pos pos, Pos toPos) {
+  PieceBoard new_pieceboard = pieceboard;
+  new_pieceboard.lastmove = Move(pos, toPos, EMPTY_POSE);
+  move(new_pieceboard, pos, toPos);
+  possiblepieceboards.push_back(new_pieceboard);
+}
+
 
 // Add legal moves for a piece
 void Board::addPieceMoves(Pos pos) {
-    assert(!pieceboard.isEmpty(pos));
-    Piece piece = pieceboard.getPiece(pos);
+  assert(!pieceboard.isEmpty(pos));
+  Piece piece = pieceboard.getPiece(pos);
 
-
-    // Separate left and right search
-    int dr = piece.direction;
-    for (int dc = -1; dc <= 1; dc += 2) {
-      for (int steps = 1; ; steps++) {
-            int toRow = pos.row + dr * steps;
-            int toCol = pos.col + dc * steps;
-            Pos toPos = Pos(toRow, toCol);
-            if (!inside(toPos)) {
-              break;
-            }
-            // Slide or transpose
-            bool transposable = isTransposable(pos, toPos);
-            bool emptysquare = pieceboard.isEmpty(toPos);
-            if (emptysquare || transposable) {
-                // Crowning
-                if (toRow == 0 || toRow == ROWS - 1) {
-                    if (piece.isSingle()) {
-                        PosSet singles = checkSingles(pos);
-                        // If other single available
-                        if (singles.size() > 0) {
-                            for (auto removepiecepos : singles)
-                            {
-                                PieceBoard new_pieceboard = pieceboard;
-                                new_pieceboard.lastmove = Move(pos, toPos, removepiecepos);
-                                move(new_pieceboard, pos, toPos);
-                                crown(new_pieceboard, toPos);
-                                remove(new_pieceboard, removepiecepos);
-                                possiblepieceboards.push_back(new_pieceboard);
-                            }
-                        } else {
-                          // if no other singles available, just add as normal slide (and add to crownstack)
-                            PieceBoard new_pieceboard = pieceboard;
-                            new_pieceboard.lastmove = Move(pos, toPos, EMPTY_POSE);
-                            move(new_pieceboard, pos, toPos);
-                            new_pieceboard.postocrown[turn] = toPos;
-                            possiblepieceboards.push_back(new_pieceboard);
-                        }
-                    }
-                    else {
-                        PieceBoard new_pieceboard = pieceboard;
-                        bearOff(new_pieceboard, pos);
-                        Pos crownedPiecePos = crownIf(new_pieceboard, pos);
-                        if (!(crownedPiecePos == EMPTY_POSE)) {
-                            new_pieceboard.lastmove = Move(pos, toPos, pos);
-                            move(new_pieceboard, pos, toPos);
-                        } else {
-                            new_pieceboard.lastmove = Move(pos, toPos, EMPTY_POSE);
-                        }
-                        possiblepieceboards.push_back(new_pieceboard);
-                    }
-                }
-                else {
-                    PieceBoard new_pieceboard = pieceboard;
-                    new_pieceboard.lastmove = Move(pos, toPos, EMPTY_POSE);
-                    move(new_pieceboard, pos, toPos);
-                    possiblepieceboards.push_back(new_pieceboard);
-                }
-                // if it was a transpose, break loop with current sign
-                if (transposable) {
-                    break;
-                }
-            } else {
-              // If the square was not empty or transposable, break the loop
-                break;
-            }
+  // Separate left and right search
+  int dr = piece.direction;
+  for (int dc = -1; dc <= 1; dc += 2) {
+    for (int steps = 1; ; steps++) {
+      int toRow = pos.row + dr * steps;
+      int toCol = pos.col + dc * steps;
+      Pos toPos = Pos(toRow, toCol);
+      if (!inside(toPos)) {
+        break;
+      }
+      // Slide or transpose
+      bool transposable = isTransposable(pos, toPos);
+      bool emptysquare = pieceboard.isEmpty(toPos);
+      if (emptysquare || transposable) {
+        if (toRow == 0 || toRow == ROWS - 1) {
+          checkCrown(pos, toPos);
+          checkBearOff(pos, toPos);
+        } else {
+          doSimpleMove(pos, toPos);
         }
+        // if it was a transpose, break loop with current sign
+        if (transposable) {
+          break;
+        }
+      } else {
+        // If the square was not empty or transposable, break the loop
+        break;
+      }
     }
+  }
 }
 
 // Move piece by transposing with the target square
@@ -471,23 +516,14 @@ void Board::move(PieceBoard &pieceboard, Pos pos, Pos toPos) {
     if (!pieceboard.isEmpty(toPos)) {
         Piece currentPiece = pieceboard.getPiece(pos);
         Piece toPiece = pieceboard.getPiece(toPos);
-
         pieceboard.setPiece(pos, toPiece);
         pieceboard.setPiece(toPos, currentPiece);
-
-        // pieceboard.piecemap[toPos] = pieceboard.piecemap.at(pos);
-        // pieceboard.piecemap[pos] = toPiece;
-        // int distancediff = pieceboard.piecemap.at(pos).getDistance(pos);
-        // pieceboard.distances[turn] += distancediff;
     }
     // Else just move the piece
     else {
         Piece currentPiece = pieceboard.getPiece(pos);
         pieceboard.setPiece(toPos, currentPiece);
         pieceboard.removePiece(pos);
-
-        // pieceboard.piecemap[toPos] = pieceboard.piecemap.at(pos);
-        // pieceboard.piecemap.erase(pos);
     }
     // int distancediff = pieceboard.piecemap.at(toPos).getDistance(toPos);
     // pieceboard.distances[turn] += distancediff;
@@ -500,7 +536,6 @@ Pos Board::crownIf(PieceBoard &pieceboard, Pos pos) {
     if (pieceboard.postocrown.count(turn) > 0) {
         Pos crownpiecepos = pieceboard.postocrown.at(turn);
         crown(pieceboard, crownpiecepos);
-        pieceboard.postocrown.erase(turn);
         remove(pieceboard, pos);
         return crownpiecepos;
     }
@@ -508,72 +543,37 @@ Pos Board::crownIf(PieceBoard &pieceboard, Pos pos) {
 }
 
 
-bool canBearOff(Pos pos, Piece piece) {
-  return piece.isDouble() &&
-    (pos.row == ROWS - 1 && piece.color == WHITE || pos.row == 0 && piece.color == BLACK);
-}
 
 void Board::checkImpasseForPos(Pos pos) {
   Piece piece = pieceboard.getPiece(pos);
-
-
   // If piece is double, check if it's first row, and a single is waiting to be crowned.
   // If so, in case of impasse of this double, 2 crownings are made possible.
   // If not, just add the double as a normal impasse move.
   if (piece.isDouble()) {
       if ((pos.row == 0 || pos.row == ROWS - 1) && pieceboard.postocrown.count(turn) > 0)
       {
-
-          // std::cout << " //////////////////////////////// //////// hendeeeeeeeeeeeelllllllllll " << std::endl;
-          // std::cout << pos.row << ' ' << pos.col << std::endl;
-          // new_pieceboard.doSanityCheck();
-          // new_pieceboard.printBoard();
-
           PieceBoard new_pieceboard = pieceboard;
           Pos removepiecepos = pieceboard.postocrown.at(turn);
           remove(new_pieceboard, removepiecepos);
           remove(new_pieceboard, pos);
-
-          assert(new_pieceboard.postocrown.count(turn) == 0);
-
-          // TODO: remove the line below embedding it into crown
-          new_pieceboard.postocrown.erase(turn);
           crown(new_pieceboard, pos);
           new_pieceboard.lastmove = Move(pos, EMPTY_POSE, removepiecepos);
           possiblepieceboards.push_back(new_pieceboard);
 
           // TODO: add other way around
-
-          // new_pieceboard.doSanityCheck();
-          // std::cout << " enddddddddddddddddddddddddddddd " << std::endl;
-      }
-      {
-        // std::cout << "\n\n" << std::endl;
-        // std::cout << "pashm begin" << pos.row << ' ' << pos.col << std::endl;
-
+      } else {
         PieceBoard new_pieceboard = pieceboard;
         remove(new_pieceboard, pos);
         Pos crownedPiecePos = crownIf(new_pieceboard, pos);
         new_pieceboard.lastmove = Move(pos, crownedPiecePos, pos);
         possiblepieceboards.push_back(new_pieceboard);
-
-        // new_pieceboard.printBoard();
-        // new_pieceboard.doSanityCheck();
-        // std::cout << "pashm end\n\n" << std::endl;
       }
   } // If piece is single, no need to check for crowning, since then wouldn't be a single in the first place
   else {
       PieceBoard new_pieceboard = pieceboard;
-
-      // std::cout << "single impasse " << std::endl;
-
       remove(new_pieceboard, pos);
       new_pieceboard.lastmove = Move(pos, EMPTY_POSE, pos);
       possiblepieceboards.push_back(new_pieceboard);
-
-      // new_pieceboard.printBoard();
-      // new_pieceboard.doSanityCheck();
-      // std::cout << "single impasse done" << std::endl;
   }
 }
 

@@ -1,7 +1,7 @@
 #pragma once
 #include "common.h"
+#include <vector>
 
-typedef std::set<Pos> PosSet;
 
 
 struct PieceCount {
@@ -17,7 +17,9 @@ public:
 
     std::map<int, int> transitions = {{WHITE, 0}, {BLACK, 0}};
     std::map<int, int> distances = {{WHITE, 26}, {BLACK, 26}};
+
     std::map<int, Pos> postocrown;
+    // Pos posToCrown[2] = {EMPTY_POSE, EMPTY_POSE};
 
     Move lastmove;
     PieceBoard();
@@ -71,13 +73,17 @@ private:
     void crown(PieceBoard &pieceboard, Pos pos);
     void bearOff(PieceBoard &pieceboard, Pos pos);
     void remove(PieceBoard &pieceboard, Pos pos);
-    PosSet checkSingles(Pos pos);
+    std::vector<Pos> checkSingles(Pos pos);
     void addPieceMoves(Pos pos);
     void addImpassable();
     void newBoard();
     bool isTransposable(Pos pos, Pos toPos);
     void checkImpasseForPos(Pos pos);
     void changeTurn();
+
+    void checkBearOff(Pos pos, Pos toPos);
+    void checkCrown(Pos pos, Pos toPos);
+    void doSimpleMove(Pos pos, Pos toPos);
 
     bool inside(Pos pos);
 };
