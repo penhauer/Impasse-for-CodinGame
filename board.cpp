@@ -450,8 +450,8 @@ void State::checkCrown(Pos pos, Pos toPos) {
       PieceBoard new_pieceboard = pieceboard;
       new_pieceboard.lastmove = Move(pos, toPos, EMPTY_POSE);
       new_pieceboard.move(pos, toPos);
-      possiblepieceboards.push_back(new_pieceboard);
       new_pieceboard.posToCrown[piece.color] = toPos;
+      possiblepieceboards.push_back(new_pieceboard);
     }
   }
 }
@@ -657,8 +657,3 @@ void State::newBoard() {
   pieceboard.piececount.blackDoubles = 4;
 }
 
-
-State State::newChildState() {
-  State child = State();
-  child.pieceboard = pieceboard;
-}

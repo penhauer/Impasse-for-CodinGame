@@ -60,9 +60,9 @@ const Pos EMPTY_POSE = Pos(-1, -1);
 class Piece
 {
   public:
-    int pieceCount;
-    int color;
-    int direction;
+    short pieceCount;
+    short color;
+    short direction;
 
     Piece();
     Piece(int pieceCount, int color);
