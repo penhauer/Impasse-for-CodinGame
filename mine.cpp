@@ -9,31 +9,30 @@
 using namespace std;
 
 
-
-void testRandomAgent() {
-  srand(time(NULL));
-  Player *randomPlayer1 = new RandomPlayer(WHITE);
-  Player *randomPlayer2 = new RandomPlayer(BLACK);
+void simulateWithTwoPlayers(int games, Player *white, Player *black) {
   int blackWins = 0;
   int whiteWins = 0;
   int totalTurns = 0;
-  int n = 10000;
-  for (int i = 0; i < n; i++) {
-    Game game = Game(randomPlayer1, randomPlayer2);
+  for (int i = 0; i < games; i++) {
+    Game game = Game(white, black);
     int winner = game.gameLoop();
     // std::cout << "winner is: " << (winner == WHITE ? "white" : "black") << " after" << std::endl;
-
     blackWins += (winner == BLACK) ? 1 : 0;
     whiteWins += (winner == WHITE) ? 1 : 0;
     totalTurns += game.turns;
   }
   cout << "White wins vs blackwins : " << whiteWins << ' ' << blackWins << endl;
-  double averageTurns = 1.0 * totalTurns / n;
+  double averageTurns = 1.0 * totalTurns / games;
   cout << "average turns: " << averageTurns << endl;
 }
 
+void testRandomAgent() {
+  Player *randomPlayer1 = new RandomPlayer(WHITE);
+  Player *randomPlayer2 = new RandomPlayer(BLACK);
+  simulateWithTwoPlayers(10000, randomPlayer1, randomPlayer2);
+}
+
 void testRandomAgentWithSimpleTerminalPlayer() {
-  srand(time(NULL));
   Player *randomPlayer = new RandomPlayer(BLACK);
   Player *user = new SimpleTerminalPlayer(WHITE);
   Game game = Game(user, randomPlayer);
@@ -42,27 +41,15 @@ void testRandomAgentWithSimpleTerminalPlayer() {
 
 
 void testRandomAgentWithGreedyAgent() {
-  srand(time(NULL));
-  Player *randomPlayer1 = new RandomPlayer(WHITE);
+  Player *randomPlayer = new RandomPlayer(WHITE);
   Player *greedyPlayer = new GreedyPlayer(BLACK);
-  int blackWins = 0;
-  int whiteWins = 0;
-  int totalTurns = 0;
-  int n = 10000;
-  for (int i = 0; i < n; i++) {
-    Game game = Game(randomPlayer1, greedyPlayer);
-    int winner = game.gameLoop();
-    // std::cout << "winner is: " << (winner == WHITE ? "white" : "black") << " after" << std::endl;
-    blackWins += (winner == BLACK) ? 1 : 0;
-    whiteWins += (winner == WHITE) ? 1 : 0;
-    totalTurns += game.turns;
-  }
-  cout << "White wins vs blackwins : " << whiteWins << ' ' << blackWins << endl;
-  double averageTurns = 1.0 * totalTurns / n;
-  cout << "average turns: " << averageTurns << endl;
+  simulateWithTwoPlayers(100000, randomPlayer, greedyPlayer);
 }
 
+
+
 int main() {
+  srand(time(NULL));
   // testRandomAgent();
   // testRandomAgentWithSimpleTerminalPlayer();
   testRandomAgentWithGreedyAgent();
