@@ -14,7 +14,7 @@ class Game {
     int gameLoop();
 
   private:
-    State board;
+    State state;
     std::tuple<bool, PieceBoard> trySelect(Pos pos, PieceBoard pb);
     std::tuple<int, int> timer;
 

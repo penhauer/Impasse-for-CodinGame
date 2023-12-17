@@ -12,7 +12,7 @@
 //   }
 // }
 
-int GreedyPlayer::decideOnBoard(State board) {
+int GreedyPlayer::decideOnBoard(State state) {
   return 0;
 }
 

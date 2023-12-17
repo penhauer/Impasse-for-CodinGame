@@ -2,8 +2,8 @@
 #include <cstdlib>
 
 
-int RandomPlayer::decideOnBoard(State board) {
-  int movesCount = board.possiblepieceboards.size();
+int RandomPlayer::decideOnBoard(State state) {
+  int movesCount = state.possiblepieceboards.size();
   return rand() % movesCount;
 }
 

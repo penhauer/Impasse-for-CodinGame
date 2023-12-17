@@ -8,11 +8,11 @@ Ai::Ai(int color, int AITime) : color(color), AITime(AITime) {
   initZobristTable(); 
 }
 
-int Ai::decideOnBoard(State board) {
-  auto pieceboard = getMove(board);
+int Ai::decideOnBoard(State state) {
+  auto pieceboard = getMove(state);
   int ind = -1;
-  for (int i = 0; i < board.possiblepieceboards.size(); i++) {
-    auto x = board.possiblepieceboards[i];
+  for (int i = 0; i < state.possiblepieceboards.size(); i++) {
+    auto x = state.possiblepieceboards[i];
     if (x.lastmove == pieceboard.lastmove) {
       assert(ind == -1);
       ind = i;
@@ -24,14 +24,14 @@ int Ai::decideOnBoard(State board) {
 
 // Use iterative deepening to fill transposition table and find the best move by calling alpha-beta search.
 // Use dynamic time allocation based on the time left and expected number of moves left.
-PieceBoard Ai::getMove(State board)
+PieceBoard Ai::getMove(State state)
 {
     cutoffs.clear();
     leafnodes = 0;
     int searchdepth = 1;
     int score;
     PieceBoard pieceboard;
-    int elapsedplys = board.pieceboardhistory.size();
+    int elapsedplys = state.pieceboardhistory.size();
     const int expectedmaxplys = 100;
     int expectedmovesleft = std::max(10, (expectedmaxplys - elapsedplys) / 2); // expected moves left for AI: always assume at least 10 moves left
     int timelimit = std::min(20000, AITime / expectedmovesleft);               // minimum of 20sec and remaining time / expected moves left for AI
@@ -41,7 +41,7 @@ PieceBoard Ai::getMove(State board)
     while (end - start < std::chrono::milliseconds(timelimit))
     {
         searchdepth += 1;
-        std::tie(score, pieceboard) = alphaBetaNegaMax(board, searchdepth, color, -100000, 100000);
+        std::tie(score, pieceboard) = alphaBetaNegaMax(state, searchdepth, color, -100000, 100000);
         end = std::chrono::system_clock::now();
     };
     float duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() / 1000.0;
@@ -59,15 +59,15 @@ PieceBoard Ai::getMove(State board)
     return pieceboard;
 };
 // Recursively execute Negamax search algorithm using alpha-beta pruning and transposition tables
-std::tuple<int, PieceBoard> Ai::alphaBetaNegaMax(State board, int depth, int color, int alpha, int beta)
+std::tuple<int, PieceBoard> Ai::alphaBetaNegaMax(State state, int depth, int color, int alpha, int beta)
 {
-    HashValue hash = getHashValue(board.pieceboard, color);
+    HashValue hash = getHashValue(state.pieceboard, color);
     int oldalpha = alpha;
     if (tt.count(hash) > 0 && tt.at(hash).depth >= depth)
     {
         if (tt.at(hash).type == 0) // exact score
         {
-            return std::make_tuple(tt.at(hash).score, board.pieceboard);
+            return std::make_tuple(tt.at(hash).score, state.pieceboard);
         }
         else if (tt.at(hash).type == 1) // lower bound
         {
@@ -79,25 +79,25 @@ std::tuple<int, PieceBoard> Ai::alphaBetaNegaMax(State board, int depth, int col
         };
         if (alpha >= beta)
         {
-            return std::make_tuple(tt.at(hash).score, board.pieceboard);
+            return std::make_tuple(tt.at(hash).score, state.pieceboard);
         };
     };
-    if (depth == 0 || board.pieceboard.winner != BOARD_GAME_ONGOING)
+    if (depth == 0 || state.pieceboard.winner != BOARD_GAME_ONGOING)
     {
         leafnodes += 1;
-        return std::make_tuple(board.pieceboard.evaluate(color), board.pieceboard);
+        return std::make_tuple(state.pieceboard.evaluate(color), state.pieceboard);
     };
     int bestscore = -10000;
     PieceBoard bestpieceboard;
-    board.generateLegalMoves();
-    std::vector<PieceBoard> childnodes = board.possiblepieceboards;
+    state.generateLegalMoves();
+    std::vector<PieceBoard> childnodes = state.possiblepieceboards;
     orderMoves(childnodes, color);
     for (PieceBoard child : childnodes)
     {
-        board.doMove(child);
+        state.doMove(child);
         int score;
         PieceBoard pb;
-        std::tie(score, pb) = alphaBetaNegaMax(board, depth - 1, -color, -beta, -alpha);
+        std::tie(score, pb) = alphaBetaNegaMax(state, depth - 1, -color, -beta, -alpha);
         score = -score;
         if (score > bestscore)
         {
@@ -113,7 +113,7 @@ std::tuple<int, PieceBoard> Ai::alphaBetaNegaMax(State board, int depth, int col
             addCutoff(depth);
             break;
         };
-        board.undoMove();
+        state.undoMove();
     };
     if (bestscore <= oldalpha)
     {

@@ -26,13 +26,13 @@ private:
 
 public:
     Ai(int color, int AITime);
-    PieceBoard getMove(State board);
+    PieceBoard getMove(State state);
 
 
-    int decideOnBoard(State board) override;
+    int decideOnBoard(State state) override;
 
 private:
-    std::tuple<int, PieceBoard> alphaBetaNegaMax(State board, int depth, int color, int alpha, int beta);
+    std::tuple<int, PieceBoard> alphaBetaNegaMax(State state, int depth, int color, int alpha, int beta);
     void orderMoves(std::vector<PieceBoard> &childnodes, const int &color);
     void initZobristTable();
     HashValue getHashValue(PieceBoard &pb, const int &turn);

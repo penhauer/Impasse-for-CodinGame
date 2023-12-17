@@ -7,7 +7,7 @@
 class Player {
 
 public:
-  virtual int decideOnBoard(State board) = 0;
+  virtual int decideOnBoard(State state) = 0;
 };
 
 

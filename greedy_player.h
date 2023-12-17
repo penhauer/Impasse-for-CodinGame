@@ -7,5 +7,5 @@ class GreedyPlayer: public Player {
 
   public:
     GreedyPlayer();
-    int decideOnBoard(State board) override;
+    int decideOnBoard(State state) override;
 };

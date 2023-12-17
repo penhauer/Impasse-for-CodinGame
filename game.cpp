@@ -5,26 +5,26 @@
 
 // Init game if savegame was available
 Game::Game(Player *white, Player *black) {
-  board = State();
+  state = State();
   this->white = white;
   this->black = black;
 }
 
 
 int Game::gameLoop() {
-  while (board.pieceboard.winner == BOARD_GAME_ONGOING) {
+  while (state.pieceboard.winner == BOARD_GAME_ONGOING) {
     int moveNumber = -1;
-    if (board.turn == WHITE) {
-      moveNumber = white->decideOnBoard(board);
+    if (state.turn == WHITE) {
+      moveNumber = white->decideOnBoard(state);
     } else {
-      moveNumber = black->decideOnBoard(board);
+      moveNumber = black->decideOnBoard(state);
     }
 
-    board.doMove(moveNumber);
-    // board.printBoard();
+    state.doMove(moveNumber);
+    // state.printBoard();
 
     turns += 1;
   }
-  return board.pieceboard.winner;
+  return state.pieceboard.winner;
 }
 

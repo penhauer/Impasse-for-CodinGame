@@ -8,5 +8,5 @@
 class SimpleTerminalPlayer: public Player {
 
   public:
-    int decideOnBoard(State board) override;
+    int decideOnBoard(State state) override;
 };

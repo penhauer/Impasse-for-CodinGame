@@ -6,7 +6,7 @@
 class RandomPlayer : public Player {
 
   public:
-    int decideOnBoard(State board);
+    int decideOnBoard(State state);
 };
 
 
