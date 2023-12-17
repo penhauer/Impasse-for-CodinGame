@@ -60,7 +60,7 @@ const Pos EMPTY_POSE = Pos(-1, -1);
 
 class Piece
 {
-public:
+  public:
     int pieceCount;
     int color;
     int direction;
@@ -79,7 +79,7 @@ public:
     bool isDouble();
 
 
-private:
+  private:
     void setDirection();
 };
 
@@ -87,20 +87,20 @@ const Piece NO_PIECE = Piece(-1, -1);
 
 struct Move
 {
-    Pos from = EMPTY_POSE;
-    Pos to = EMPTY_POSE;
-    Pos remove = EMPTY_POSE;
-    Pos crown = EMPTY_POSE;
-    Pos bearoff = EMPTY_POSE;
+  Pos from = EMPTY_POSE;
+  Pos to = EMPTY_POSE;
+  Pos remove = EMPTY_POSE;
+  Pos crown = EMPTY_POSE;
+  Pos bearoff = EMPTY_POSE;
 
-    Move();
-    Move(Pos from, Pos to, Pos remove);
+  Move();
+  Move(Pos from, Pos to, Pos remove);
 
-    bool operator<(const Move &other) const;
-    bool operator==(const Move &other) const {
-      return from == other.from && to == other.to && remove == other.remove;
-    }
+  bool operator<(const Move &other) const;
+  bool operator==(const Move &other) const {
+    return from == other.from && to == other.to && remove == other.remove;
+  }
 
-    std::string toStr();
+  std::string toStr();
 };
 

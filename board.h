@@ -5,14 +5,14 @@
 
 
 struct PieceCount {
-    int whiteSingles = 0;
-    int whiteDoubles = 0;
-    int blackSingles = 0;
-    int blackDoubles = 0;
+  int whiteSingles = 0;
+  int whiteDoubles = 0;
+  int blackSingles = 0;
+  int blackDoubles = 0;
 };
 
 class PieceBoard {
-public:
+  public:
     PieceCount piececount;
 
     std::map<int, int> transitions = {{WHITE, 0}, {BLACK, 0}};
@@ -26,20 +26,20 @@ public:
     int evaluate(int color) const;
 
 
-  Piece table[ROWS][COLS]; 
+    Piece table[ROWS][COLS]; 
 
 
-  int count() {
-    return piececount.blackDoubles + piececount.blackSingles + piececount.whiteSingles + piececount.whiteDoubles;
-  }
+    int count() {
+      return piececount.blackDoubles + piececount.blackSingles + piececount.whiteSingles + piececount.whiteDoubles;
+    }
 
-  Piece getPiece(Pos pos);
-  void setPiece(Pos pos, Piece piece);
-  void removePiece(Pos pos);
-  bool isEmpty(Pos pos);
+    Piece getPiece(Pos pos);
+    void setPiece(Pos pos, Piece piece);
+    void removePiece(Pos pos);
+    bool isEmpty(Pos pos);
 
-  void printBoard();
-  void doSanityCheck();
+    void printBoard();
+    void doSanityCheck();
 };
 
 
@@ -50,7 +50,7 @@ const int BOARD_BLACK_WON = BLACK;
 
 
 class Board {
-public:
+  public:
     int turn;
     int winner;
 
@@ -67,7 +67,7 @@ public:
 
 
 
-private:
+  private:
     void move(PieceBoard &pieceboard, Pos pos, Pos toPos);
     Pos crownIf(PieceBoard &pieceboard, Pos pos);
     void crown(PieceBoard &pieceboard, Pos pos);
