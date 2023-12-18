@@ -22,6 +22,8 @@ int Game::gameLoop() {
 
     state.doMove(moveNumber);
     // state.printBoard();
+    // std::cout << (state.turn == WHITE ? "white " : "black ") << " did " << state.pieceboard.lastmove.toStr() << "\n\n";
+
 
     turns += 1;
   }

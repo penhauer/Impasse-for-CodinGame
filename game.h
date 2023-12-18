@@ -17,6 +17,5 @@ class Game {
     State state;
     std::tuple<bool, PieceBoard> trySelect(Pos pos, PieceBoard pb);
     std::tuple<int, int> timer;
-
     void undoPlayerMove();
 };

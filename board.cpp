@@ -33,6 +33,8 @@ inline int getInd(Pos pos) {
 }
 
 Piece PieceBoard::getPiece(Pos pos){
+  if ((pos.row + pos.col) % 2 == 0)
+    return NO_PIECE;
   return table[getInd(pos)];
 }
 

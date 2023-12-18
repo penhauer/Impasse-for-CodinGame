@@ -1,4 +1,4 @@
-#include "greedy_player.h"
+#include "minimax_player.h"
 #include "player.h"
 #include "game.h"
 #include "random_player.h"
@@ -40,18 +40,24 @@ void testRandomAgentWithSimpleTerminalPlayer() {
 }
 
 
-void testRandomAgentWithGreedyAgent() {
+void testRandomAgentWithMiniMaxPlayer() {
   Player *randomPlayer = new RandomPlayer(WHITE);
-  Player *greedyPlayer = new GreedyPlayer(BLACK);
-  simulateWithTwoPlayers(100000, randomPlayer, greedyPlayer);
+  Player *miniMaxPlayer = new MiniMaxPlayer(BLACK, 1);
+  simulateWithTwoPlayers(10000, randomPlayer, miniMaxPlayer);
 }
 
+void testMinimaxAgent() {
+  Player *minimaxPlayer1 = new MiniMaxPlayer(WHITE, 3);
+  Player *minimaxPlayer2 = new MiniMaxPlayer(BLACK, 5);
+  simulateWithTwoPlayers(100, minimaxPlayer1, minimaxPlayer2);
+}
 
 
 int main() {
   srand(time(NULL));
-  testRandomAgent();
+  // testRandomAgent();
   // testRandomAgentWithSimpleTerminalPlayer();
-  // testRandomAgentWithGreedyAgent();
+  testRandomAgentWithMiniMaxPlayer();
+  // testMinimaxAgent();
   return 0;
 }

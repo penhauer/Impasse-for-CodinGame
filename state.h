@@ -12,10 +12,9 @@ class State {
     PieceBoard pieceboard;
 
     State();
-    State(PieceBoard pb);
+    State(int turn, PieceBoard *pb);
 
     void printBoard();
-    void generateLegalMoves();
     void doMove(int moveNumber);
     void doMove(PieceBoard nextPieceBoard);
     void undoMove();
@@ -26,7 +25,12 @@ class State {
 
   private:
 
+    void generateLegalMoves();
+
+
+    // TODO: find singles only onetime per color instead of this function
     std::vector<Pos> checkSingles(Pos pos);
+
     void addPieceMoves(Pos pos);
     void addImpassable();
     void changeTurn();

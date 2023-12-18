@@ -1,11 +1,20 @@
 #include "state.h"
+#include "board.h"
 
 State::State() {
   pieceboardhistory.clear();
   pieceboard.posToCrown[0] = pieceboard.posToCrown[1] = EMPTY_POSE;
-
   turn = WHITE;
+  generateLegalMoves();
+}
 
+
+// TODO: pieceboard should also contain the turn
+State::State(int turn, PieceBoard *pb) {
+  pieceboardhistory.clear();
+  this->turn = turn;
+  pieceboard = *pb;
+  pieceboard.doSanityCheck();
   generateLegalMoves();
 }
 
