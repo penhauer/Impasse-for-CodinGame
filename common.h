@@ -26,6 +26,9 @@ const int UP_DIR = -1;
 const int DOWN_DIR = 1;
 const int SINGLE_COUNT = 1;
 const int DOUBLE_COUNT = 2;
+const int BOARD_GAME_ONGOING = -10;
+const int BOARD_WHITE_WON = WHITE;
+const int BOARD_BLACK_WON = BLACK;
 
 struct Pos {
   int row, col;
@@ -106,3 +109,25 @@ struct Move
   std::string toStr();
 };
 
+
+inline int getCrowningRow(int color) {
+  return color == WHITE ? 0 : ROWS - 1;
+}
+
+inline int getBearOffRow(int color) {
+  return color == WHITE ? ROWS - 1 : 0;
+}
+
+// can piece crown if it moves to toPos?
+inline bool canCrown(Piece piece, Pos toPos) {
+  return piece.isSingle() && toPos.row == getCrowningRow(piece.color);
+}
+
+// can piece bearOff if it moves to toPos?
+inline bool canBearOff(Piece piece, Pos toPos) {
+  return piece.isDouble() && toPos.row == getBearOffRow(piece.color);
+}
+
+inline int getDistanceToGoalRow(Piece piece, Pos pos) {
+  return piece.getDirection() == UP_DIR ? pos.row : ROWS - 1 - pos.row;
+}

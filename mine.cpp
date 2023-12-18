@@ -50,8 +50,8 @@ void testRandomAgentWithGreedyAgent() {
 
 int main() {
   srand(time(NULL));
-  // testRandomAgent();
+  testRandomAgent();
   // testRandomAgentWithSimpleTerminalPlayer();
-  testRandomAgentWithGreedyAgent();
+  // testRandomAgentWithGreedyAgent();
   return 0;
 }

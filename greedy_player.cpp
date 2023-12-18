@@ -14,14 +14,13 @@ int GreedyPlayer::evaluateBoard(PieceBoard &pieceBoard) {
       Pos pos = Pos(i, j);
       if (!pieceBoard.isEmpty(pos)) {
         Piece piece = pieceBoard.getPiece(pos);
-        int v = colorC[piece.color] * PieceBoard::getDistanceToGoalRow(piece, pos);
+        int v = colorC[piece.color] * getDistanceToGoalRow(piece, pos);
         distanceValue[piece.color] += v;
       }
     }
   }
 
-  distanceValue[0] /= (pc->whiteDoubles + pc->whiteSingles);
-  distanceValue[1] /= (pc->whiteDoubles + pc->whiteSingles);
+  distanceValue[0] /= (pc->whiteDoubles + pc->whiteSingles); distanceValue[1] /= (pc->whiteDoubles + pc->whiteSingles);
 
   return 10 * pieceValue + distanceValue[0] + distanceValue[1];
 }
