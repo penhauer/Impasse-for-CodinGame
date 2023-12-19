@@ -72,7 +72,7 @@ void PieceBoard::printBoard() {
       if (!isEmpty(pos)) {
         Piece piece = getPiece(pos);
         if (piece.isSingle()) {
-          switch (piece.color) {
+          switch (piece.getColor()) {
             case WHITE:
               std::cout << "○";
               break;
@@ -81,7 +81,7 @@ void PieceBoard::printBoard() {
               break;
           }
         } else if (piece.isDouble()) {
-          switch (piece.color)
+          switch (piece.getColor())
           {
             case WHITE:
               std::cout << "●";
@@ -125,20 +125,20 @@ void PieceBoard::doSanityCheck() {
     for (int j = (1 - i % 2); j < COLS; j += 2) {
       if (!isEmpty(Pos(i, j))) {
         Piece piece = getPiece(Pos(i, j));
-        int d = (piece.isDouble() && piece.color == WHITE || piece.isSingle() && piece.color == BLACK) ? DOWN_DIR : UP_DIR; 
+        int d = (piece.isDouble() && piece.getColor() == WHITE || piece.isSingle() && piece.getColor() == BLACK) ? DOWN_DIR : UP_DIR; 
         assert(d == piece.getDirection());
 
         if (piece.isSingle()) {
-          if (piece.color == WHITE)
+          if (piece.getColor() == WHITE)
             pc.whiteSingles++;
-          if (piece.color == BLACK)
+          if (piece.getColor() == BLACK)
             pc.blackSingles++;
         }
 
         if (piece.isDouble()) {
-          if (piece.color == WHITE)
+          if (piece.getColor() == WHITE)
             pc.whiteDoubles++;
-          if (piece.color == BLACK)
+          if (piece.getColor() == BLACK)
             pc.blackDoubles++;
         }
       }
@@ -157,7 +157,7 @@ void PieceBoard::doSanityCheck() {
       assert(pos.row == 0 || pos.row == ROWS - 1);
       assert(!isEmpty(pos));
       Piece piece = getPiece(pos);
-      assert(piece.color == color);
+      assert(piece.getColor() == color);
       int r = pos.row + piece.getDirection();
       assert(r < 0 || r >= ROWS);
       assert(piece.isSingle());
@@ -172,7 +172,7 @@ void PieceBoard::doSanityCheck() {
       Pos pos = Pos(crowningRow, col);
       if (!isEmpty(pos)) {
         Piece piece = getPiece(pos);
-        if (piece.color == color && piece.isSingle() && !(posToCrown[color] == EMPTY_POSE)) {
+        if (piece.getColor() == color && piece.isSingle() && !(posToCrown[color] == EMPTY_POSE)) {
           assert(pos == posToCrown[color]);
         }
       }
@@ -183,7 +183,7 @@ void PieceBoard::doSanityCheck() {
       Pos pos = Pos(bearOffRow, col);
       if (!isEmpty(pos)) {
         Piece piece = getPiece(pos);
-        if (piece.color == color)
+        if (piece.getColor() == color)
           assert(!piece.isDouble());
       }
     }
@@ -195,7 +195,7 @@ void PieceBoard::crown(Pos pos) {
   assert(!isEmpty(pos));
   Piece piece = getPiece(pos);
 
-  switch (piece.color)
+  switch (piece.getColor())
   {
     case WHITE:
       piececount.whiteDoubles++;
@@ -207,14 +207,14 @@ void PieceBoard::crown(Pos pos) {
       break;
   }
 
-  if (!(posToCrown[piece.color] == EMPTY_POSE)) {
-    Pos toCrownPos = posToCrown[piece.color];
+  int color = piece.getColor();
+  if (!(posToCrown[color] == EMPTY_POSE)) {
+    Pos toCrownPos = posToCrown[color];
     if (pos == toCrownPos) {
-      posToCrown[piece.color] = EMPTY_POSE;
+      posToCrown[color] = EMPTY_POSE;
     }
   }
 
-  transitions[piece.color] ++;
   piece.makeDouble();
   setPiece(pos, piece);
 }
@@ -226,7 +226,8 @@ void PieceBoard::bearOff(Pos pos) {
   Piece piece = getPiece(pos);
   assert(piece.isDouble());
 
-  switch (piece.color) {
+  int color = piece.getColor();
+  switch (color) {
     case WHITE:
       piececount.whiteDoubles--;
       piececount.whiteSingles++;
@@ -237,7 +238,7 @@ void PieceBoard::bearOff(Pos pos) {
       break;
   }
 
-  int crowningRow = piece.color == WHITE ? 0 : ROWS - 1;
+  int crowningRow = color == WHITE ? 0 : ROWS - 1;
   if (pos.row == crowningRow) {
     // this happens in case of impasse
     // when removing the top checker of a double piece making it a single piece
@@ -245,13 +246,13 @@ void PieceBoard::bearOff(Pos pos) {
     // either this piece or that one. But in the case we're crowning this one
     // we make sure first the other piece in this row is removed and then this one
     // is crowed
-    assert(posToCrown[piece.color] == EMPTY_POSE);
-    posToCrown[piece.color] = pos;
+    assert(posToCrown[color] == EMPTY_POSE);
+    posToCrown[color] = pos;
   }
 
   piece.makeSingle();
   setPiece(pos, piece);
-  transitions[piece.color]++;
+  transitions[color]++;
 }
 
 
@@ -260,10 +261,11 @@ void PieceBoard::remove(Pos pos) {
 
   assert(!isEmpty(pos));
   Piece piece = getPiece(pos);
+  int color = piece.getColor();
 
   if (piece.isSingle()) {
     // Remove single
-    switch (piece.color)
+    switch (color)
     {
       case WHITE:
         piececount.whiteSingles--;
@@ -272,10 +274,10 @@ void PieceBoard::remove(Pos pos) {
         piececount.blackSingles--;
         break;
     }
-    if (!(posToCrown[piece.color] == EMPTY_POSE)) {
-      Pos crownPos = posToCrown[piece.color];
+    if (!(posToCrown[color] == EMPTY_POSE)) {
+      Pos crownPos = posToCrown[color];
       if (crownPos == pos) {
-        posToCrown[piece.color] = EMPTY_POSE;
+        posToCrown[color] = EMPTY_POSE;
       }
     }
     removePiece(pos);
@@ -329,8 +331,9 @@ Pos PieceBoard::crownIf(Pos pos) {
   bool crowned = false;
   assert(!isEmpty(pos));
   Piece piece = getPiece(pos);
-  if (!(posToCrown[piece.color] == EMPTY_POSE)) {
-    Pos crownpiecepos = posToCrown[piece.color];
+  int color = piece.getColor();
+  if (!(posToCrown[color] == EMPTY_POSE)) {
+    Pos crownpiecepos = posToCrown[color];
     crown(crownpiecepos);
     remove(pos);
     return crownpiecepos;

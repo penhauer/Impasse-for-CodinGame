@@ -27,7 +27,7 @@ void State::generateLegalMoves() {
       Pos pos = Pos(i, j);
       if (!pieceboard.isEmpty(pos)) {
         Piece piece = pieceboard.getPiece(pos);
-        if (piece.color == turn) {
+        if (piece.getColor() == turn) {
           addPieceMoves(pos);
         }
       }
@@ -88,7 +88,7 @@ std::vector<Pos> State::checkSingles(Pos currentPiecePos)
       Pos pos = Pos(i, j);
       if (!pieceboard.isEmpty(pos)) {
         Piece p = pieceboard.getPiece(pos);
-        if (p.isSingle() && p.color == currentPiece.color && !(pos == currentPiecePos)) {
+        if (p.isSingle() && p.getColor() == currentPiece.getColor() && !(pos == currentPiecePos)) {
           singles.push_back(pos);
         }
       }
@@ -106,7 +106,7 @@ bool State::isTransposable(Pos pos, Pos toPos) {
   if (abs(pos.col - toPos.col) != 1 || (pos.row + piece.getDirection()) != toPos.row) {
     return false;
   }
-  if (toPiece.color != piece.color) {
+  if (toPiece.getColor() != piece.getColor()) {
     return false;
   }
 
@@ -128,14 +128,15 @@ bool State::isTransposable(Pos pos, Pos toPos) {
 
 void State::checkImpasseForPos(Pos pos) {
   Piece piece = pieceboard.getPiece(pos);
+  int color = piece.getColor();
   // If piece is double, check if it's first row, and a single is waiting to be crowned.
   // If so, in case of impasse of this double, 2 crownings are made possible.
   // If not, just add the double as a normal impasse move.
   if (piece.isDouble()) {
-    if ((pos.row == 0 || pos.row == ROWS - 1) && !(pieceboard.posToCrown[piece.color] == EMPTY_POSE))
+    if ((pos.row == 0 || pos.row == ROWS - 1) && !(pieceboard.posToCrown[color] == EMPTY_POSE))
     {
       PieceBoard new_pieceboard = pieceboard;
-      Pos removepiecepos = pieceboard.posToCrown[piece.color];
+      Pos removepiecepos = pieceboard.posToCrown[color];
       new_pieceboard.remove(removepiecepos);
       new_pieceboard.remove(pos);
       new_pieceboard.crown(pos);
@@ -166,7 +167,7 @@ void State::addImpassable() {
       Pos pos = Pos(i, j);
       if (!pieceboard.isEmpty(pos)) {
         Piece piece = pieceboard.getPiece(pos);
-        if (piece.color == turn) {
+        if (piece.getColor() == turn) {
           checkImpasseForPos(pos);
         }
       }
@@ -213,7 +214,7 @@ void State::checkCrown(Pos pos, Pos toPos) {
       PieceBoard new_pieceboard = pieceboard;
       new_pieceboard.lastmove = Move(pos, toPos, EMPTY_POSE);
       new_pieceboard.move(pos, toPos);
-      new_pieceboard.posToCrown[piece.color] = toPos;
+      new_pieceboard.posToCrown[piece.getColor()] = toPos;
       possiblepieceboards.push_back(new_pieceboard);
     }
   }

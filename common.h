@@ -65,9 +65,9 @@ class Piece
   private:
     short pieceCount;
     short direction;
+    short color;
 
   public:
-    short color;
 
     Piece();
     Piece(int pieceCount, int color);
@@ -82,6 +82,10 @@ class Piece
 
     short getDirection() {
       return direction;
+    }
+
+    short getColor() {
+      return color;
     }
 
   private:
@@ -120,12 +124,12 @@ inline int getBearOffRow(int color) {
 
 // can piece crown if it moves to toPos?
 inline bool canCrown(Piece piece, Pos toPos) {
-  return piece.isSingle() && toPos.row == getCrowningRow(piece.color);
+  return piece.isSingle() && toPos.row == getCrowningRow(piece.getColor());
 }
 
 // can piece bearOff if it moves to toPos?
 inline bool canBearOff(Piece piece, Pos toPos) {
-  return piece.isDouble() && toPos.row == getBearOffRow(piece.color);
+  return piece.isDouble() && toPos.row == getBearOffRow(piece.getColor());
 }
 
 inline int getDistanceToGoalRow(Piece piece, Pos pos) {

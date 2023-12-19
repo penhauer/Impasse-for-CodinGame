@@ -3,7 +3,7 @@
 #include "common.h"
 #include <algorithm>
 #include <numeric>
-#include <math.h>
+
 
 
 int inf = 100000;
@@ -27,8 +27,9 @@ int MiniMaxPlayer::evaluateBoard(PieceBoard &pieceBoard) {
       Pos pos = Pos(i, j);
       if (!pieceBoard.isEmpty(pos)) {
         Piece piece = pieceBoard.getPiece(pos);
-        int v = colorC[piece.color] * getDistanceToGoalRow(piece, pos);
-        distanceValue[piece.color] += v;
+        int color = piece.getColor();
+        int v = colorC[color] * getDistanceToGoalRow(piece, pos);
+        distanceValue[color] += v;
       }
     }
   }

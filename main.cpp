@@ -55,9 +55,9 @@ void testMinimaxAgent() {
 
 int main() {
   srand(time(NULL));
-  // testRandomAgent();
+  testRandomAgent();
   // testRandomAgentWithSimpleTerminalPlayer();
   // testRandomAgentWithMiniMaxPlayer();
-  testMinimaxAgent();
+  // testMinimaxAgent();
   return 0;
 }
