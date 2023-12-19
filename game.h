@@ -1,6 +1,5 @@
 #pragma once
 
-#include "ai.h"
 #include "player.h"
 #include "common.h"
 

@@ -15,10 +15,6 @@ OBJ_FILES := $(patsubst $(SRC_DIR)/%.cpp,$(OBJ_DIR)/%.o,$(SRC_FILES))
 TARGET_NAME = main
 
 
-clean:
-	rm -rf main build/*
-
-.PHONY: clean
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@
@@ -27,8 +23,19 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
 all: $(OBJ_FILES)
 	$(CXX) $(CXXFLAGS) $^ -o $(OBJ_DIR)/$(TARGET_NAME)
 
+single:
+	cat common.h board.h state.h game.h player.h random_player.h > hendel.cpp
+
+
+combine:
+	cat common.h board.h state.h player.h game.h minimax_player.h random_player.h simple_terminal_player.h common.cpp board.cpp state.cpp game.cpp minimax_player.cpp random_player.cpp simple_terminal_player.cpp main.cpp | grep  -E "pragma|#ifndef|#endif|#define|state.h|common.h|random_player.h|player.h|state.h|board.h|game.h" -v > combined.cpp
+
 
 run: all
 	$(OBJ_DIR)/$(TARGET_NAME)
 
 
+clean:
+	rm -rf main build/*
+
+.PHONY: clean combine
