@@ -22,12 +22,13 @@ State::State(int turn, PieceBoard *pb) {
 // Generate legal moves for the player in turn
 void State::generateLegalMoves() {
   possiblepieceboards.clear();
+  int color = turn;
   for (int i = 0; i < ROWS; i++)
     for (int j = (1 - i % 2); j < COLS; j += 2) {
       Pos pos = Pos(i, j);
       if (!pieceboard.isEmpty(pos)) {
         Piece piece = pieceboard.getPiece(pos);
-        if (piece.getColor() == turn) {
+        if (piece.getColor() == color) {
           addPieceMoves(pos);
         }
       }
@@ -77,23 +78,20 @@ bool State::inside(Pos pos) {
 }
 
 
-// Create set of singles color matching the player in turn for crowning
-std::vector<Pos> State::checkSingles(Pos currentPiecePos)
-{
-  assert(!pieceboard.isEmpty(currentPiecePos));
-  Piece currentPiece = pieceboard.getPiece(currentPiecePos);
-  std::vector<Pos> singles;
+void State::findAllSingles(int color) {
+  if (singlesGenerated)
+    return;
+  singles.clear();
   for (int i = 0; i < ROWS; i++)
     for (int j = (1 - i % 2); j < COLS; j += 2) {
       Pos pos = Pos(i, j);
       if (!pieceboard.isEmpty(pos)) {
         Piece p = pieceboard.getPiece(pos);
-        if (p.isSingle() && p.getColor() == currentPiece.getColor() && !(pos == currentPiecePos)) {
+        if (p.isSingle() && p.getColor() == color) {
           singles.push_back(pos);
         }
       }
     }
-  return singles;
 }
 
 
@@ -198,18 +196,22 @@ void State::checkCrown(Pos pos, Pos toPos) {
   assert(!pieceboard.isEmpty(pos));
   Piece piece = pieceboard.getPiece(pos);
   if (canCrown(piece, toPos)) {
-    auto singles = checkSingles(pos);
     // If other single available
-    if (singles.size() > 0) {
-      for (auto removepiecepos : singles) {
+    findAllSingles(piece.getColor());
+    bool otherSingleAvaliable = false;
+    for (auto singlePos : singles) {
+      if (!(singlePos == pos)) {
         PieceBoard new_pieceboard = pieceboard;
-        new_pieceboard.lastmove = Move(pos, toPos, removepiecepos);
+        new_pieceboard.lastmove = Move(pos, toPos, singlePos);
         new_pieceboard.move(pos, toPos);
         new_pieceboard.crown(toPos);
-        new_pieceboard.remove(removepiecepos);
+        new_pieceboard.remove(singlePos);
         possiblepieceboards.push_back(new_pieceboard);
+        otherSingleAvaliable = true;
       }
-    } else {
+    }
+
+    if (!otherSingleAvaliable) {
       // if no other singles available, just add as normal slide (and add to crownstack)
       PieceBoard new_pieceboard = pieceboard;
       new_pieceboard.lastmove = Move(pos, toPos, EMPTY_POSE);

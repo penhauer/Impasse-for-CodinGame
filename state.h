@@ -24,12 +24,14 @@ class State {
 
 
   private:
+    std::vector<Pos> singles;
 
     void generateLegalMoves();
 
 
-    // TODO: find singles only onetime per color instead of this function
-    std::vector<Pos> checkSingles(Pos pos);
+
+    bool singlesGenerated = false;
+    void findAllSingles(int color);
 
     void addPieceMoves(Pos pos);
     void checkMove(Pos pos, Pos toPos);
