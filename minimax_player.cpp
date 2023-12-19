@@ -1,6 +1,9 @@
 #include "minimax_player.h"
 #include "board.h"
 #include "common.h"
+#include <algorithm>
+#include <numeric>
+#include <math.h>
 
 
 int inf = 100000;
@@ -54,8 +57,16 @@ MinMaxValIndex MiniMaxPlayer::minimax(int depth, State *state, int alpha, int be
     return MinMaxValIndex(evaluateBoard(state->pieceboard), bestInd);
   }
 
-  for (int i = 0; i < state->possiblepieceboards.size(); i++) {
-    auto child = state->possiblepieceboards[i];
+  int n = state->possiblepieceboards.size();
+  int *arr = new int[n];
+  std::iota(arr, arr + n, 0);
+  std::random_shuffle(arr, arr + n);
+  int candidates = std::max(n - depth * 5, std::min(10, n));
+
+  for (int i = 0; i < candidates; i++) {
+    int ind = arr[i];
+    assert(ind >= 0 && ind < n);
+    auto child = state->possiblepieceboards[ind];
     auto s = new State(state->turn ^ BLACK ^ WHITE, &child);
     auto mmvind = minimax(depth + 1, s, alpha, beta, !maximizing);
     delete s;
@@ -63,11 +74,11 @@ MinMaxValIndex MiniMaxPlayer::minimax(int depth, State *state, int alpha, int be
 
     if (maximizing && val >= alpha) {
       alpha = val;
-      bestInd = i;
+      bestInd = ind;
     }
     if (!maximizing && val <= beta) {
       beta = val;
-      bestInd = i;
+      bestInd = ind;
     }
     if (!maximizing && val <= alpha)
       break;

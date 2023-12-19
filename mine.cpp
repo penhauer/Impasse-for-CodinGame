@@ -57,7 +57,7 @@ int main() {
   srand(time(NULL));
   // testRandomAgent();
   // testRandomAgentWithSimpleTerminalPlayer();
-  testRandomAgentWithMiniMaxPlayer();
-  // testMinimaxAgent();
+  // testRandomAgentWithMiniMaxPlayer();
+  testMinimaxAgent();
   return 0;
 }
