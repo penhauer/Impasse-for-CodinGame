@@ -31,7 +31,7 @@ const int BOARD_WHITE_WON = WHITE;
 const int BOARD_BLACK_WON = BLACK;
 
 struct Pos {
-  int row, col;
+  short row, col;
 
   Pos() {}
 
@@ -63,14 +63,12 @@ const Pos EMPTY_POSE = Pos(-1, -1);
 class Piece
 {
   private:
-    short pieceCount;
-    short direction;
-    short color;
+    char c = '.';
 
   public:
 
     Piece();
-    Piece(int pieceCount, int color);
+    Piece(char c);
 
 
     void makeSingle();
@@ -81,18 +79,22 @@ class Piece
     bool IsNoPiece();
 
     short getDirection() {
-      return direction;
+      return (c == 'W' || c == 'b' ? DOWN_DIR : UP_DIR);
     }
 
     short getColor() {
-      return color;
+      return (c == 'w' || c == 'W') ? WHITE : BLACK;
     }
 
-  private:
-    void setDirection();
+    const static char EMPTY_PIECE = '.';
+    const static char SINGLE_WHITE = 'w';
+    const static char DOUBLE_WHITE = 'W';
+    const static char SINGLE_BLACK = 'b';
+    const static char DOUBLE_BLACK = 'B';
+
 };
 
-const Piece NO_PIECE = Piece(-1, -1);
+const Piece NO_PIECE = Piece(Piece::EMPTY_PIECE);
 
 struct Move
 {

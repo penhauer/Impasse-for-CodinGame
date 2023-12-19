@@ -9,24 +9,24 @@ PieceBoard::PieceBoard(){
 };
 // Evaluate board position based on piece count, number of transitions, and distances from the pieces' last rows
 
-int PieceBoard::evaluate(int color) const {
-  int coefficient = (color == WHITE ? 1 : -1);
-  int otherColor = color ^ WHITE ^ BLACK;
-
-  int piecevalue = coefficient * (2 * piececount.blackSingles + 3 * piececount.blackDoubles - 2 * piececount.whiteSingles - 3 * piececount.whiteDoubles);
-  int transitionvalue = transitions[color] - transitions[otherColor];
-  // Average distances from last row for each color
-  int distancevalue = 0;
-  if (color == WHITE)
-  {
-    int distancevalue = distances[color] / (piececount.whiteSingles + piececount.whiteDoubles + 1) - distances[-otherColor] / (piececount.blackDoubles + piececount.blackSingles + 1);
-  }
-  else
-  {
-    int distancevalue = distances[color] / (piececount.blackDoubles + piececount.blackSingles + 1) - distances[-otherColor] / (piececount.whiteSingles + piececount.whiteDoubles + 1);
-  };
-  return 10 * piecevalue + 6 * transitionvalue - distancevalue;
-};
+// int PieceBoard::evaluate(int color) const {
+//   int coefficient = (color == WHITE ? 1 : -1);
+//   int otherColor = color ^ WHITE ^ BLACK;
+//
+//   int piecevalue = coefficient * (2 * piececount.blackSingles + 3 * piececount.blackDoubles - 2 * piececount.whiteSingles - 3 * piececount.whiteDoubles);
+//   int transitionvalue = transitions[color] - transitions[otherColor];
+//   // Average distances from last row for each color
+//   int distancevalue = 0;
+//   if (color == WHITE)
+//   {
+//     int distancevalue = distances[color] / (piececount.whiteSingles + piececount.whiteDoubles + 1) - distances[-otherColor] / (piececount.blackDoubles + piececount.blackSingles + 1);
+//   }
+//   else
+//   {
+//     int distancevalue = distances[color] / (piececount.blackDoubles + piececount.blackSingles + 1) - distances[-otherColor] / (piececount.whiteSingles + piececount.whiteDoubles + 1);
+//   };
+//   return 10 * piecevalue + 6 * transitionvalue - distancevalue;
+// };
 
 inline int getInd(Pos pos) {
   return (pos.row << 2) + (pos.col >> 1);
@@ -252,7 +252,6 @@ void PieceBoard::bearOff(Pos pos) {
 
   piece.makeSingle();
   setPiece(pos, piece);
-  transitions[color]++;
 }
 
 
@@ -286,7 +285,6 @@ void PieceBoard::remove(Pos pos) {
     bearOff(pos);
   }
 
-  // pieceboard.distances[p.color] -= p.distance;
   if (piececount.whiteSingles + piececount.whiteDoubles == 0) {
     winner = BOARD_WHITE_WON;
   } else if (piececount.blackSingles + piececount.blackDoubles == 0) {
@@ -321,8 +319,6 @@ void PieceBoard::move(Pos pos, Pos toPos) {
     setPiece(toPos, currentPiece);
     removePiece(pos);
   }
-  // int distancediff = pieceboard.piecemap.at(toPos).getDistance(toPos);
-  // pieceboard.distances[turn] += distancediff;
 }
 
 
@@ -374,25 +370,25 @@ void PieceBoard::placePieces() {
   };
 
   Piece pieces[16] = {
-    Piece(DOUBLE_COUNT, WHITE),
-    Piece(DOUBLE_COUNT, WHITE),
-    Piece(DOUBLE_COUNT, WHITE),
-    Piece(DOUBLE_COUNT, WHITE),
+    Piece(Piece::DOUBLE_WHITE),
+    Piece(Piece::DOUBLE_WHITE),
+    Piece(Piece::DOUBLE_WHITE),
+    Piece(Piece::DOUBLE_WHITE),
 
-    Piece(SINGLE_COUNT, WHITE),
-    Piece(SINGLE_COUNT, WHITE),
-    Piece(SINGLE_COUNT, WHITE),
-    Piece(SINGLE_COUNT, WHITE),
+    Piece(Piece::SINGLE_WHITE),
+    Piece(Piece::SINGLE_WHITE),
+    Piece(Piece::SINGLE_WHITE),
+    Piece(Piece::SINGLE_WHITE),
 
-    Piece(SINGLE_COUNT, BLACK),
-    Piece(SINGLE_COUNT, BLACK),
-    Piece(SINGLE_COUNT, BLACK),
-    Piece(SINGLE_COUNT, BLACK),
+    Piece(Piece::SINGLE_BLACK),
+    Piece(Piece::SINGLE_BLACK),
+    Piece(Piece::SINGLE_BLACK),
+    Piece(Piece::SINGLE_BLACK),
 
-    Piece(DOUBLE_COUNT, BLACK),
-    Piece(DOUBLE_COUNT, BLACK),
-    Piece(DOUBLE_COUNT, BLACK),
-    Piece(DOUBLE_COUNT, BLACK),
+    Piece(Piece::DOUBLE_BLACK),
+    Piece(Piece::DOUBLE_BLACK),
+    Piece(Piece::DOUBLE_BLACK),
+    Piece(Piece::DOUBLE_BLACK),
   };
 
   for (int i = 0; i < 16; i++) {

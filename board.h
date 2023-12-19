@@ -5,27 +5,22 @@
 
 
 struct PieceCount {
-  int whiteSingles = 0;
-  int whiteDoubles = 0;
-  int blackSingles = 0;
-  int blackDoubles = 0;
+  short whiteSingles = 0;
+  short whiteDoubles = 0;
+  short blackSingles = 0;
+  short blackDoubles = 0;
 };
 
 class PieceBoard {
   public:
-    int winner;
+    short winner;
     PieceCount piececount;
     Piece table[ROWS * COLS / 2]; 
 
-    int transitions[2] = {0, 0};
-    int distances[2] = {26, 26};
     Pos posToCrown[2] = {EMPTY_POSE, EMPTY_POSE};
 
     Move lastmove;
     PieceBoard();
-    int evaluate(int color) const;
-
-
 
 
     void placePieces();
@@ -42,7 +37,6 @@ class PieceBoard {
     void crown(Pos pos);
     void bearOff(Pos pos);
     void remove(Pos pos);
-
 };
 
 

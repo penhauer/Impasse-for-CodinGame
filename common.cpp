@@ -1,37 +1,33 @@
 #include "common.h"
+#include <cctype>
 #include <string>
 
-Piece::Piece(){};
-Piece::Piece(int pieceCount, int color) : pieceCount(pieceCount), color(color)
-{
-  setDirection();
-};
+Piece::Piece() {
+  c = '.';
+}
+
+Piece::Piece(char c) {
+  this->c = c;
+}
 
 bool Piece::isSingle() {
-  return pieceCount == SINGLE_COUNT;
+  return c == 'w' || c == 'b';
 }
 
 bool Piece::isDouble() {
-  return pieceCount == DOUBLE_COUNT;
-}
-
-// Update the direction of the piece
-void Piece::setDirection() { 
-  direction = (isDouble() && color == WHITE || isSingle() && color == BLACK) ? DOWN_DIR : UP_DIR; 
+  return c == 'W' || c == 'B';
 }
 
 void Piece::makeSingle() {
-  pieceCount = SINGLE_COUNT;
-  setDirection();
+  c = tolower(c);
 }
 
 void Piece::makeDouble() {
-  pieceCount = DOUBLE_COUNT;
-  setDirection();
+  c = toupper(c);
 }
 
 bool Piece::IsNoPiece() {
-  return pieceCount == NO_PIECE.pieceCount;
+  return c == '.';
 }
 
 
