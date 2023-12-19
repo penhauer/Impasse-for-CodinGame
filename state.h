@@ -32,6 +32,7 @@ class State {
     std::vector<Pos> checkSingles(Pos pos);
 
     void addPieceMoves(Pos pos);
+    void checkMove(Pos pos, Pos toPos);
     void addImpassable();
     void changeTurn();
 

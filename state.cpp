@@ -229,37 +229,38 @@ void State::doSimpleMove(Pos pos, Pos toPos) {
 }
 
 
-// Add legal moves for a piece
+void State::checkMove(Pos pos, Pos toPos) {
+  if (toPos.row == 0 || toPos.row == ROWS - 1) {
+    checkCrown(pos, toPos);
+    checkBearOff(pos, toPos);
+  } else {
+    doSimpleMove(pos, toPos);
+  }
+}
+
 void State::addPieceMoves(Pos pos) {
   assert(!pieceboard.isEmpty(pos));
   Piece piece = pieceboard.getPiece(pos);
 
-  // Separate left and right search
   int dr = piece.getDirection();
   for (int dc = -1; dc <= 1; dc += 2) {
-    for (int steps = 1; ; steps++) {
-      int toRow = pos.row + dr * steps;
-      int toCol = pos.col + dc * steps;
+    int toRow = pos.row;
+    int toCol = pos.col;
+    while (true) {
+      toRow += dr;
+      toCol += dc;
       Pos toPos = Pos(toRow, toCol);
       if (!inside(toPos)) {
         break;
       }
-      // Slide or transpose
       bool transposable = isTransposable(pos, toPos);
       bool emptysquare = pieceboard.isEmpty(toPos);
       if (emptysquare || transposable) {
-        if (toRow == 0 || toRow == ROWS - 1) {
-          checkCrown(pos, toPos);
-          checkBearOff(pos, toPos);
-        } else {
-          doSimpleMove(pos, toPos);
-        }
-        // if it was a transpose, break loop with current sign
+        checkMove(pos, toPos);
         if (transposable) {
           break;
         }
       } else {
-        // If the square was not empty or transposable, break the loop
         break;
       }
     }
