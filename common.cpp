@@ -50,8 +50,8 @@ Pos Pos::parseMove(const std::string &s) {
     return EMPTY_POSE;
   }
   char letter = tolower(s[0]);
-  int row = s[1] - '1';
-  int col = (int)letter - 97;
+  int row = ROWS - 1 - (s[1] - '1');
+  int col = letter - 'a';
   if (row < 0 || row >= ROWS || col < 0 || col >= COLS) {
     return EMPTY_POSE;
   }
@@ -60,8 +60,8 @@ Pos Pos::parseMove(const std::string &s) {
 
 // Convert board position to chess notation
 std::string Pos::reverseParseMove() {
-  char letter = (char)(col + 'A');
-  char number = (char)(row + '1');
+  char letter = (char)(col + 'a');
+  char number = (char)(ROWS - 1 - row + '1');
   std::string notation = "";
   notation += letter;
   notation += number;

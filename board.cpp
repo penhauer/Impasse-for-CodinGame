@@ -51,7 +51,7 @@ void PieceBoard::printBoard() {
   for (int row = 0; row < ROWS; row++)
   {
     std::cout << "  +---+---+---+---+---+---+---+---+" << std::endl;
-    std::cout << row + 1 << " ";
+    std::cout << ROWS - row << " ";
     for (int col = 0; col < COLS; col++)
     {
       std::cout << "|";
@@ -115,7 +115,7 @@ void PieceBoard::printBoard() {
     std::cout << "|" << std::endl;
   };
   std::cout << "  +---+---+---+---+---+---+---+---+" << std::endl;
-  std::cout << "    A   B   C   D   E   F   G   H " << std::endl;
+  std::cout << "    a   b   c   d   e   f   g   h " << std::endl;
 }
 
 
