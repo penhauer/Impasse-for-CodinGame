@@ -3,6 +3,7 @@
 #include "game.h"
 #include "random_player.h"
 #include "simple_terminal_player.h"
+#include "move_player.h"
 #include <cstdlib>
 
 
@@ -53,11 +54,30 @@ void testMinimaxAgent() {
 }
 
 
+void testMovePlayer() {
+  Player *movePlayer = new MovePlayer(WHITE);
+  Player *randomPlayer = new RandomPlayer(BLACK);
+  simulateWithTwoPlayers(1, movePlayer, randomPlayer);
+}
+
+
+void playInCodinGame() {
+    string colorStr; // color of your pieces ("w" or "b")
+    cin >> colorStr; cin.ignore();
+    int color = colorStr == "w" ? WHITE : BLACK;
+
+    Player *miniMaxPlayer = new MiniMaxPlayer(color, 3);
+    Game game = Game(miniMaxPlayer, miniMaxPlayer);
+    game.codingGameLoop(miniMaxPlayer);
+}
+
 int main() {
-  srand(time(NULL));
-  testRandomAgent();
+  // srand(time(NULL));
+  // testRandomAgent();
   // testRandomAgentWithSimpleTerminalPlayer();
   // testRandomAgentWithMiniMaxPlayer();
   // testMinimaxAgent();
+  // testMovePlayer();
+  playInCodinGame();
   return 0;
 }

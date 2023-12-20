@@ -63,9 +63,9 @@ const Pos EMPTY_POSE = Pos(-1, -1);
 class Piece
 {
   private:
-    char c = '.';
 
   public:
+    char c = '.';
 
     Piece();
     Piece(char c);
@@ -101,8 +101,6 @@ struct Move
   Pos from = EMPTY_POSE;
   Pos to = EMPTY_POSE;
   Pos remove = EMPTY_POSE;
-  Pos crown = EMPTY_POSE;
-  Pos bearoff = EMPTY_POSE;
 
   Move();
   Move(Pos from, Pos to, Pos remove);

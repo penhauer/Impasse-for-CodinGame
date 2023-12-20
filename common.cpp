@@ -69,13 +69,19 @@ std::string Pos::reverseParseMove() {
 }
 
 std::string Move::toStr() {
-  std::string s = "From "  + from.reverseParseMove();
-  if (!(to == EMPTY_POSE)) {
-    s += " to " + to.reverseParseMove();
-  }
-  if (!(remove == EMPTY_POSE)) {
-    s += " removing " + remove.reverseParseMove();
-  }
+  std::string s = from.reverseParseMove();
+  if (!(to == EMPTY_POSE))
+    s += to.reverseParseMove();
+  if (!(remove == EMPTY_POSE))
+    s += remove.reverseParseMove();
   return s;
+  // std::string s = "From "  + from.reverseParseMove();
+  // if (!(to == EMPTY_POSE)) {
+  //   s += " to " + to.reverseParseMove();
+  // }
+  // if (!(remove == EMPTY_POSE)) {
+  //   s += " removing " + remove.reverseParseMove();
+  // }
+  // return s;
 }
 

@@ -39,6 +39,8 @@ class State {
     void changeTurn();
 
     bool isTransposable(Pos pos, Pos toPos);
+    void removeCheckCrowning(Pos pos);
+    void simplyRemove(Pos pos);
     void checkImpasseForPos(Pos pos);
 
     void checkBearOff(Pos pos, Pos toPos);

@@ -1,5 +1,6 @@
 #include "state.h"
 #include "board.h"
+#include "common.h"
 
 State::State() {
   pieceboardhistory.clear();
@@ -123,6 +124,25 @@ bool State::isTransposable(Pos pos, Pos toPos) {
 }
 
 
+void State::removeCheckCrowning(Pos pos) {
+  PieceBoard new_pieceboard = pieceboard;
+  new_pieceboard.remove(pos);
+  Pos crownedPiecePos = new_pieceboard.crownIf(pos);
+  if (!(crownedPiecePos == EMPTY_POSE)) {
+    new_pieceboard.lastmove = Move(pos, EMPTY_POSE, pos);
+  } else {
+    new_pieceboard.lastmove = Move(pos, EMPTY_POSE, EMPTY_POSE);
+  }
+  possiblepieceboards.push_back(new_pieceboard);
+}
+
+void State::simplyRemove(Pos pos) {
+  PieceBoard new_pieceboard = pieceboard;
+  new_pieceboard.remove(pos);
+  new_pieceboard.lastmove = Move(pos, EMPTY_POSE, EMPTY_POSE);
+  possiblepieceboards.push_back(new_pieceboard);
+}
+
 
 void State::checkImpasseForPos(Pos pos) {
   Piece piece = pieceboard.getPiece(pos);
@@ -131,30 +151,46 @@ void State::checkImpasseForPos(Pos pos) {
   // If so, in case of impasse of this double, 2 crownings are made possible.
   // If not, just add the double as a normal impasse move.
   if (piece.isDouble()) {
-    if ((pos.row == 0 || pos.row == ROWS - 1) && !(pieceboard.posToCrown[color] == EMPTY_POSE))
-    {
-      PieceBoard new_pieceboard = pieceboard;
-      Pos removepiecepos = pieceboard.posToCrown[color];
-      new_pieceboard.remove(removepiecepos);
-      new_pieceboard.remove(pos);
-      new_pieceboard.crown(pos);
-      new_pieceboard.lastmove = Move(pos, EMPTY_POSE, removepiecepos);
-      possiblepieceboards.push_back(new_pieceboard);
+    if ((pos.row == 0 || pos.row == ROWS - 1)) {
+      assert(pos.row == getCrowningRow(piece.getColor()));
+      if (!(pieceboard.posToCrown[color] == EMPTY_POSE)) {
+        PieceBoard new_pieceboard = pieceboard;
+        Pos removepiecepos = pieceboard.posToCrown[color];
+        new_pieceboard.remove(removepiecepos);
+        // new_pieceboard.remove(pos);
+        // new_pieceboard.crown(pos);
+        new_pieceboard.lastmove = Move(pos, EMPTY_POSE, removepiecepos);
+        possiblepieceboards.push_back(new_pieceboard);
 
-      // TODO: add other way around
+        new_pieceboard = pieceboard;
+        Pos toCrown = pieceboard.posToCrown[color];
+        new_pieceboard.crown(toCrown);
+        new_pieceboard.remove(pos);
+        new_pieceboard.remove(pos);
+        new_pieceboard.lastmove = Move(pos, EMPTY_POSE, pos);
+        possiblepieceboards.push_back(new_pieceboard);
+      } else {
+        findAllSingles(piece.getColor());
+        if (!singles.empty()) {
+          for (auto singlePos : singles) {
+            PieceBoard new_pieceboard = pieceboard;
+            new_pieceboard.remove(pos);
+            new_pieceboard.crownIf(singlePos);
+            // new_pieceboard.remove(singlePos);
+            // new_pieceboard.crown(pos);
+            new_pieceboard.lastmove = Move(pos, EMPTY_POSE, singlePos);
+            possiblepieceboards.push_back(new_pieceboard);
+          }
+        } else {
+          simplyRemove(pos);
+        }
+      }
     } else {
-      PieceBoard new_pieceboard = pieceboard;
-      new_pieceboard.remove(pos);
-      Pos crownedPiecePos = new_pieceboard.crownIf(pos);
-      new_pieceboard.lastmove = Move(pos, crownedPiecePos, pos);
-      possiblepieceboards.push_back(new_pieceboard);
+      removeCheckCrowning(pos);
     }
   } // If piece is single, no need to check for crowning, since then wouldn't be a single in the first place
   else {
-    PieceBoard new_pieceboard = pieceboard;
-    new_pieceboard.remove(pos);
-    new_pieceboard.lastmove = Move(pos, EMPTY_POSE, pos);
-    possiblepieceboards.push_back(new_pieceboard);
+    simplyRemove(pos);
   }
 }
 
@@ -183,7 +219,7 @@ void State::checkBearOff(Pos pos, Pos toPos) {
     new_pieceboard.remove(toPos);
     Pos crownedPiecePos = new_pieceboard.crownIf(toPos);
     if (!(crownedPiecePos == EMPTY_POSE)) {
-      new_pieceboard.lastmove = Move(pos, toPos, pos);
+      new_pieceboard.lastmove = Move(pos, toPos, toPos);
     } else {
       new_pieceboard.lastmove = Move(pos, toPos, EMPTY_POSE);
     }
@@ -203,6 +239,9 @@ void State::checkCrown(Pos pos, Pos toPos) {
       if (!(singlePos == pos)) {
         PieceBoard new_pieceboard = pieceboard;
         new_pieceboard.lastmove = Move(pos, toPos, singlePos);
+        if (!new_pieceboard.isEmpty(toPos)) {
+          new_pieceboard.lastmove = Move(toPos, pos, singlePos);
+        }
         new_pieceboard.move(pos, toPos);
         new_pieceboard.crown(toPos);
         new_pieceboard.remove(singlePos);
@@ -215,6 +254,9 @@ void State::checkCrown(Pos pos, Pos toPos) {
       // if no other singles available, just add as normal slide (and add to crownstack)
       PieceBoard new_pieceboard = pieceboard;
       new_pieceboard.lastmove = Move(pos, toPos, EMPTY_POSE);
+      if (!new_pieceboard.isEmpty(toPos)) {
+        new_pieceboard.lastmove = Move(toPos, pos, EMPTY_POSE);
+      }
       new_pieceboard.move(pos, toPos);
       new_pieceboard.posToCrown[piece.getColor()] = toPos;
       possiblepieceboards.push_back(new_pieceboard);

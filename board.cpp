@@ -328,7 +328,7 @@ Pos PieceBoard::crownIf(Pos pos) {
   assert(!isEmpty(pos));
   Piece piece = getPiece(pos);
   int color = piece.getColor();
-  if (!(posToCrown[color] == EMPTY_POSE)) {
+  if (!(posToCrown[color] == EMPTY_POSE) && !(posToCrown[color] == pos)) {
     Pos crownpiecepos = posToCrown[color];
     crown(crownpiecepos);
     remove(pos);

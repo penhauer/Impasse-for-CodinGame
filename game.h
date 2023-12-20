@@ -11,6 +11,7 @@ class Game {
     Player *white, *black;
     Game(Player *white, Player *black);
     int gameLoop();
+    void codingGameLoop(Player *us);
 
   private:
     State state;

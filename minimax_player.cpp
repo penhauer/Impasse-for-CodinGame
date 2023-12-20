@@ -15,11 +15,19 @@ int MiniMaxPlayer::evaluateBoard(PieceBoard &pieceBoard) {
     return -inf;
   }
 
-
   int c = color == WHITE ? 1 : -1;
   int colorC[2] = {-c, c};
   PieceCount *pc = &pieceBoard.piececount;
-  int pieceValue = colorC[1] * (2 * pc->blackSingles + 3 * pc->blackDoubles) + colorC[0] * (2 * pc->whiteSingles - 3 * pc->whiteDoubles);
+
+  int totalPieces = 2 * pc->whiteDoubles + pc->whiteSingles + 2 * pc->blackDoubles + pc->blackSingles;
+  int whiteOut = (-colorC[0]) * (12 - 2 * pc->whiteDoubles + pc->whiteSingles);
+  int blackOut = (-colorC[1]) * (12 - 2 * pc->blackDoubles + pc->blackSingles);
+  int out = whiteOut + blackOut;
+  out = out * 2400 * 3; // / (25 - totalPieces);
+
+  int whiteReady = (-colorC[0]) * pc->whiteDoubles;
+  int blackReady = (-colorC[1]) * pc->blackDoubles;
+  int ready = whiteOut + blackReady;
 
   int distanceValue[2] = {0, 0};
   for (int i = 0; i < ROWS; i++) {
@@ -29,14 +37,17 @@ int MiniMaxPlayer::evaluateBoard(PieceBoard &pieceBoard) {
         Piece piece = pieceBoard.getPiece(pos);
         int color = piece.getColor();
         int v = colorC[color] * getDistanceToGoalRow(piece, pos);
-        distanceValue[color] += v;
+        int cnt = piece.isSingle() ? 1 : 2;
+        distanceValue[color] += v * cnt;
       }
     }
   }
 
-  distanceValue[0] /= (pc->whiteDoubles + pc->whiteSingles); distanceValue[1] /= (pc->whiteDoubles + pc->whiteSingles);
+  int dis = distanceValue[0] + distanceValue[1];
+  return out + 100 * ready + dis;
 
-  return 10 * pieceValue + distanceValue[0] + distanceValue[1];
+  // return 10 * pieceValue + distanceValue[0] + distanceValue[1];
+
 }
 
 int MiniMaxPlayer::decideOnBoard(State state) {
@@ -59,15 +70,11 @@ MinMaxValIndex MiniMaxPlayer::minimax(int depth, State *state, int alpha, int be
   }
 
   int n = state->possiblepieceboards.size();
-  int *arr = new int[n];
-  std::iota(arr, arr + n, 0);
-  std::random_shuffle(arr, arr + n);
-  int candidates = std::max(n - depth * 5, std::min(10, n));
+  int candidates = n;
 
   for (int i = 0; i < candidates; i++) {
-    int ind = arr[i];
-    assert(ind >= 0 && ind < n);
-    auto child = state->possiblepieceboards[ind];
+    assert(i >= 0 && i < n);
+    auto child = state->possiblepieceboards[i];
     auto s = new State(state->turn ^ BLACK ^ WHITE, &child);
     auto mmvind = minimax(depth + 1, s, alpha, beta, !maximizing);
     delete s;
@@ -75,11 +82,11 @@ MinMaxValIndex MiniMaxPlayer::minimax(int depth, State *state, int alpha, int be
 
     if (maximizing && val >= alpha) {
       alpha = val;
-      bestInd = ind;
+      bestInd = i;
     }
     if (!maximizing && val <= beta) {
       beta = val;
-      bestInd = ind;
+      bestInd = i;
     }
     if (!maximizing && val <= alpha)
       break;
