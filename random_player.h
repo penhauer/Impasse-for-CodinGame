@@ -8,7 +8,7 @@ class RandomPlayer : public Player {
   public:
     RandomPlayer(int color) : Player(color) {};
 
-    int decideOnBoard(State state);
+    int decideOnBoard(State state, std::string lastMove) override;
 };
 
 

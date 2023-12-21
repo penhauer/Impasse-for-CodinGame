@@ -14,7 +14,7 @@ class Player {
       this->color = color;
     }
 
-    virtual int decideOnBoard(State state) = 0;
+    virtual int decideOnBoard(State state, std::string lastMove) = 0;
 };
 
 

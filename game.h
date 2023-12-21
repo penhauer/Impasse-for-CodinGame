@@ -7,10 +7,14 @@
 class Game {
 
   public:
+    bool print = false;
     int turns = 0;
     Player *white, *black;
-    Game(Player *white, Player *black);
-    int gameLoop();
+    Game();
+    Game(State *state) {
+      this->state = *state;
+    };
+    int gameLoop(Player *white, Player *black);
     void codingGameLoop(Player *us);
 
   private:

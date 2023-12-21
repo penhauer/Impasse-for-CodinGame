@@ -69,7 +69,9 @@ std::string Pos::reverseParseMove() {
 }
 
 std::string Move::toStr() {
-  std::string s = from.reverseParseMove();
+  std::string s = "";
+  if (!(from == EMPTY_POSE))
+    s += from.reverseParseMove();
   if (!(to == EMPTY_POSE))
     s += to.reverseParseMove();
   if (!(remove == EMPTY_POSE))

@@ -1,5 +1,6 @@
 export CXX=g++
 export CXXFLAGS=-O3
+# export CXXFLAGS=-g
 
 
 SRC_DIR := ./
@@ -18,7 +19,7 @@ COMBINED_TARGET=combined
 
 
 combine:
-	cat common.h board.h state.h player.h game.h minimax_player.h random_player.h simple_terminal_player.h move_player.h common.cpp board.cpp state.cpp game.cpp minimax_player.cpp random_player.cpp simple_terminal_player.cpp move_player.cpp main.cpp | grep  -E "pragma|#ifndef|#endif|#define|state.h|common.h|random_player.h|player.h|state.h|board.h|game.h" -v > combined.cpp; \
+	cat common.h board.h state.h player.h game.h minimax_player.h random_player.h simple_terminal_player.h mcts_player.h common.cpp board.cpp state.cpp game.cpp minimax_player.cpp random_player.cpp simple_terminal_player.cpp mcts_player.cpp main.cpp | grep  -E "pragma|#ifndef|#endif|#define|state.h|common.h|random_player.h|player.h|state.h|board.h|game.h" -v > combined.cpp; \
 		$(CXX) $(CXXFLAGS) $(COMBINED_TARGET).cpp -o $(COMBINED_TARGET)
 
 

@@ -1,8 +1,6 @@
 #include "minimax_player.h"
 #include "board.h"
 #include "common.h"
-#include <algorithm>
-#include <numeric>
 
 
 
@@ -50,7 +48,7 @@ int MiniMaxPlayer::evaluateBoard(PieceBoard &pieceBoard) {
 
 }
 
-int MiniMaxPlayer::decideOnBoard(State state) {
+int MiniMaxPlayer::decideOnBoard(State state, std::string lastMove) {
   auto x = minimax(0, &state, -inf, inf, true);
   auto z = x.index >= 0 && x.index < state.possiblepieceboards.size();
   assert(z);

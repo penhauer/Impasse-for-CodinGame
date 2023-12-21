@@ -20,5 +20,6 @@ class MiniMaxPlayer: public Player {
 
   public:
     MiniMaxPlayer(int color, int maxDepth) : Player(color), maxDepth(maxDepth) {};
-    int decideOnBoard(State state) override;
+    int decideOnBoard(State state, std::string lastMove) override;
 };
+
